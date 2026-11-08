@@ -143,6 +143,21 @@ describe("a line spoken", () => {
     expect(done.result).toEqual({ spoken: 1 });
     expect(spoken.map((s) => s.input)).toEqual(["Hello?"]);
   });
+
+  test("the film's lines ask only for the voice models they need: every speaker recorded, the design model never", async () => {
+    const { film, mara } = await scene();
+    mkdirSync(path.join(filmDir(dataDir, film.id), "cards"), { recursive: true });
+    writeFileSync(path.join(filmDir(dataDir, film.id), "cards", "mara-voice.wav"), wav(3));
+    updateCard(getDb(), mara.id, { voiceSample: "mara-voice.wav" });
+    const checked = [];
+    getState().services.voiceCheck = (model) => {
+      checked.push(model);
+      if (model === "qwen3-vd-1.7b-q8") throw new Error("the design model isn't downloaded");
+    };
+    const done = await settle((await client.post(`/v1/films/${film.id}/lines`, { json: {} })).json());
+    expect(done.state).toBe("done");
+    expect(new Set(checked)).toEqual(new Set(["qwen3-base-1.7b-q8"]));
+  });
 });
 
 describe("music and effects", () => {

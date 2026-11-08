@@ -114,11 +114,20 @@ export function router() {
 
   app.post("/v1/films/:id/lines", input({ params: IdParams }), (c) => {
     const film = mustFilm(c.req.valid("param").id);
-    voiceReady();
+    const unspoken = () => shots.listShots(getDb(), film.id).filter((s) => s.line.trim() && s.speakerId && !sounds.lineOf(getDb(), s.id));
+    // refused at once when a voice these lines need can't run: the cloning model for a speaker with a recording, the
+    // design model for the rest — only the ones needed
+    const speakers = new Map(unspoken().map((s) => [s.speakerId, films.getCard(getDb(), s.speakerId)]));
+    const checked = new Set();
+    for (const speaker of speakers.size ? speakers.values() : [null]) {
+      const key = speaker?.voiceSample ? "clone" : "design";
+      if (!checked.has(key)) voiceReady(speaker);
+      checked.add(key);
+    }
     const job = getState().jobs.start(
       { kind: "lines", key: film.id, label: film.title, failTitle: "The lines weren't spoken", clientId: clientOf(c) },
       async ({ signal, progress, update }) => {
-        const todo = shots.listShots(getDb(), film.id).filter((s) => s.line.trim() && s.speakerId && !sounds.lineOf(getDb(), s.id));
+        const todo = unspoken();
         update({ filmId: film.id, shots: todo.length });
         for (const [i, s] of todo.entries()) {
           progress(i / Math.max(1, todo.length), "speaking");
