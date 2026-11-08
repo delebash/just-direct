@@ -4,7 +4,7 @@
 // A film's page mounted for real (app-structure §18) against a stand-in server in the real one's shapes: the tab in the
 // address; the Story form's save with its version; a card added on the Cards tab; Plan the shots as a server job on the
 // AI tasks strip (its result read again); a hand edit to a shot, then Carry it forward with the user's note.
-import { _resolveDialog, installLlmUi, LlmUiHosts } from "@delebash/ui";
+import { installLlmUi, LlmUiHosts } from "@delebash/ui";
 import { QUASAR_TEST_OPTIONS } from "@delebash/ui/quasar/install.js";
 import { DOMWrapper, flushPromises, mount } from "@vue/test-utils";
 import { createPinia } from "pinia";
@@ -22,7 +22,6 @@ const QUASAR_COMPONENTS = Object.fromEntries(Object.entries(quasar).filter(([k, 
 
 let server;
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": status >= 400 ? "application/problem+json" : "application/json" } });
-const at = "2026-11-07T10:00:00.000Z";
 
 function fakeFetch(input, init = {}) {
   const url = new URL(String(input));
