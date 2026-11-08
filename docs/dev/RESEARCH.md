@@ -118,6 +118,29 @@ free). Files in `E:\Dev\Web\test-just-direct\real-run-2026-11-07\`; frames looke
   a hidden window), each decoded picture and sound — sd.cpp's clip (VP8 with PCM sound in WebM: 113 KB of sound in
   0.85 s), the repaired clip (VP9, Opus), the export (H.264, AAC).
 
+### Make the film, end to end on real models (2026-11-08, 08:38–09:13 UTC)
+
+`real-run-make.js` (the scratchpad) on a new film, "The Last Light" — a four-sentence story, `planner.maxShots` 3 for
+the run — through JustDirect's own routes, JustVoice headless on 17494, the card to itself. Files in
+`E:\Dev\Web\test-just-direct\real-run-make-2026-11-08\` (`look\` the sheets). *measured* / *seen*.
+
+- **The plan, alone first:** 221 s; 8 cards (2 characters, 3 places, 3 props), 3 shots, one line (Ines, shot 2).
+- **A song from lyrics** (ACE-Step 1.5 Turbo through `sounds.song`): 35 s for 20 s, mean −17.0 dB. It peaks at full
+  scale: about 50 samples at 0 dBFS with flat tops (flat factor 18.9) — mild clipping in the model's own output; at the
+  mix's 0.6 the export peaks at −3.1 dB.
+- **Make the film in one job: 1,839 s.** Plan: not needed (shots existed). First frames: 3 shots, 5 card pictures
+  painted first, 3 checked. Voices: Ines's card had a recording (Mara's audition, JustVoice-made) → JustVoice cloned it
+  (VoxCPM2), her line spoken in it (2.72 s); Pell had no line, so no voice was asked for. Clips: 3 — one pass (121
+  frames), talking (97), a long take (145) — none failed. Export: 15.1 s, 3 shots, H.264 and AAC.
+- **What it looks like:** Ines (white hair, grey wool coat) and Pell (blue knit cap) hold their cards' looks in every
+  shot; the key and the papers in shot 2 read clearly; the lamp's beam crosses the sea in shot 3.
+- **What it found:** (1) the plan's line had no delivery or feeling and the characters no voice words — the dev
+  database still held its first prompts: prompt rows are seeded insert-if-missing and JustDirect registered no heals
+  (fixed, 5fcbaf7; the texts checked byte for byte against git and the database). (2) The place cards said what happens
+  there ("Spiral stairs: Stairs climbed by Ines."), and their pictures lost the story's lighthouse — a town's straight
+  steps, a house's courtyard (`look\cards.png`). The cards prompt now asks for looks only, a place's kind and setting
+  (b14e8c3) — to be measured on the card.
+
 ### The voices round trip through JustVoice's server (2026-11-08, 06:43–06:47 UTC)
 
 Run by `real-run-clips.js --part voices` (the scratchpad) against JustVoice e23e09a8 on its development audio.cpp
