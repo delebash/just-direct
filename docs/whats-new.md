@@ -16,6 +16,8 @@
 - **Voices**: each shot's line spoken in its character's voice, made from the words on the
   character's card or cloned from a recording you give it (a file, or recorded in the app); a clip
   made after it moves the mouth with it.
+- **Repair lips**: a talking clip's mouth redrawn to its line's voice as a new clip — off until you
+  turn it on in Settings, because its face models are for non-commercial research only.
 - **Cut**: the film's shots on a timeline with their trims and transitions (cut, dissolve, fade), music, songs with your own lyrics and sound effects made from words and laid over the film, and **Export the
   film** as one MP4 to watch and save.
 - **More than one window**: the app open in several places at once shows each one's changes in the

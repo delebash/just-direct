@@ -3,17 +3,21 @@
 // A shot's clip — how it is made (the app's pick; one pass; a long take; led by drawn paths; led by a guide video), the
 // paths drawn over its first frame or its guide video added, Make clip (a server job), and its clips to watch, choose
 // and delete. The chosen clip is the one in the film. A video plays from the server's address with the app's Origin
-// (crossorigin="anonymous" — app-structure §19).
+// (crossorigin="anonymous" — app-structure §19). A talking clip offers Repair lips (LatentSync, non-commercial) once
+// Settings → Clips turns it on.
 import { AppModal, confirmDialog, EmptyState, Icon, reportError, serverUrl, UiButton, UiField, UiSelect, UiTag } from "@delebash/ui";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useFilmsStore } from "../../stores/films.js";
+import { useSettingsStore } from "../../stores/settings.js";
 import PathsEditor from "./PathsEditor.vue";
 
 const props = defineProps({ shot: { type: Object, required: true } });
 const emit = defineEmits(["close"]);
 const { t } = useI18n();
 const films = useFilmsStore();
+const settings = useSettingsStore();
+const lipsOffered = computed(() => settings.values["clips.lipRepair"] === true);
 
 const items = ref([]);
 const loaded = ref(false);
@@ -79,6 +83,14 @@ async function make() {
     if (e?.name !== "AbortError") reportError(e);
   }
 }
+async function repairLips(c) {
+  try {
+    await films.repairLips(current.value, c, t("clips.lips.task", { n: n.value }));
+    await load();
+  } catch (e) {
+    if (e?.name !== "AbortError") reportError(e);
+  }
+}
 async function choose(c) {
   try {
     await films.chooseClip(current.value, c.id);
@@ -138,6 +150,10 @@ async function remove(c) {
           </div>
           <div class="clip-tile__actions">
             <UiButton v-if="current.clipId !== c.id" intent="primary" size="small" :label="t('clips.use')" @click="choose(c)" />
+            <UiButton
+              v-if="lipsOffered && c.recipe.talking" intent="secondary" size="small" focusable-when-disabled
+              :disabled="!!films.clipping[shot.id] || films.clippingFilm" :label="t('clips.lips.action')" :title="t('clips.lips.hint')" @click="repairLips(c)"
+            />
             <UiButton intent="ghost" size="small" :label="t('clips.delete.action')" @click="remove(c)" />
           </div>
         </li>

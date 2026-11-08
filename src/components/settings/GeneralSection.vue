@@ -66,6 +66,9 @@ const GROUPS = [
     fields: [
       { key: "clips.fps", id: "setting-clip-fps", label: "settings.general.clipFps" },
       { key: "clips.maxGuideMegabytes", id: "setting-clip-guide", label: "settings.general.clipGuideMegabytes" },
+      { key: "clips.lipRepair", id: "setting-clip-lips", label: "settings.general.clipLipRepair", type: "toggle" },
+      { key: "clips.lipSteps", id: "setting-clip-lip-steps", label: "settings.general.clipLipSteps" },
+      { key: "clips.lipGuidance", id: "setting-clip-lip-guidance", label: "settings.general.clipLipGuidance", step: 0.1 },
     ],
   },
   // the lines' voices: the voice design model, the lines' language, the voice of a speaker whose card has none

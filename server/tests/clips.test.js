@@ -3,13 +3,16 @@
 // real one is the kit's runVideoFeature on LTX-2.3): each mode's request (one pass, the long take's two stages, a
 // talking shot driven by its line's voice, drawn paths, a guide video), the clip saved and chosen, a choice by hand, a
 // delete, the refusals. And the method's own pieces.
-import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { constants } from "node:buffer";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import { beforeEach, describe, expect, test } from "vitest";
 import { createApp } from "../src/app.js";
 import { getDb, getState } from "../src/app_state.js";
-import { clipPrompt, fitGuide, frameCount, modeOf, pathFrames, wavSeconds } from "../src/clips.js";
+import { clipPrompt, fitGuide, frameCount, lipClipArgs, lipFramesMax, modeOf, pathFrames, wavSeconds } from "../src/clips.js";
+import { addClip } from "../src/database/clips.js";
 import { seedWorkspace } from "../src/database/seed.js";
 import { addSound } from "../src/database/sounds.js";
 import { filmDir } from "../src/files.js";
@@ -17,19 +20,39 @@ import { testClient, tmpDir, useHermeticKit } from "./helpers.js";
 
 useHermeticKit();
 
+// LatentSync's answer as audio.cpp's server writes it (app/server/server_protocol.cpp write_artifact_json): the frames as
+// one Base64 payload of raw rgb24, every meta value a string
+const LIP = { width: 64, height: 64, frames: 9, fps: 24 };
+const lipAnswer = () => ({
+  artifacts: [
+    {
+      id: "latentsync_video_rgb24",
+      kind: "custom",
+      payload: Buffer.alloc(LIP.width * LIP.height * 3 * LIP.frames, 90).toString("base64"),
+      meta: { extension: "rgb", mime: "application/octet-stream", format: "rgb24", width: "64", height: "64", frames: "9", fps: "24" },
+    },
+  ],
+});
+
 let client;
 let dataDir;
 let made;
+let lipped;
 beforeEach(async () => {
   dataDir = tmpDir();
   made = [];
+  lipped = [];
   const makeVideo = async (feature, request) => {
     made.push({ feature, ...request });
     return { bytes: Buffer.from(`webm-${made.length}`), fps: request.fps, frames: request.frames, format: "webm" };
   };
+  const makeAudio = async (feature, request, opts) => {
+    lipped.push({ feature, request, opts });
+    return lipAnswer();
+  };
   const paintImage = async (feature, request) => sharp({ create: { width: request.width / 16, height: request.height / 16, channels: 3, background: "#333" } }).png().toBuffer();
   const run = async () => ({ content: JSON.stringify({ cards: [], extraPeople: 0, lettering: false, faults: [], match: 8, note: "" }) });
-  client = testClient(await createApp(dataDir, { services: { makeVideo, paintImage, run } }));
+  client = testClient(await createApp(dataDir, { services: { makeVideo, makeAudio, paintImage, run } }));
   seedWorkspace(getDb());
 });
 
@@ -212,5 +235,93 @@ describe("the method", () => {
     expect(fitGuide(["a", "b"], 4)).toEqual(["a", "b", "b", "b"]);
     expect(fitGuide(["a", "b", "c"], 2)).toEqual(["a", "b"]);
     expect(fitGuide([], 3)).toEqual([]);
+  });
+  test("lip repair's longest clip: its frames' Base64 fits one JavaScript string — about 6 s at 1280×704", () => {
+    const most = lipFramesMax(1280, 704);
+    expect(most * 1280 * 704 * 4).toBeLessThan(constants.MAX_STRING_LENGTH);
+    expect(most / 24).toBeGreaterThan(5);
+    expect(lipFramesMax(640, 352)).toBeGreaterThan(4 * most - 4);
+  });
+  test("lip repair's join: the raw frames at their size and rate, the line's voice as the sound, a WebM", () => {
+    const args = lipClipArgs({ raw: "f.rgb", width: 64, height: 32, fps: 24, voice: "v.wav" }, "out.webm");
+    expect(args.join(" ")).toContain("-f rawvideo -pix_fmt rgb24 -s 64x32 -r 24 -i f.rgb -i v.wav -map 0:v:0 -map 1:a:0");
+    expect(args.at(-1)).toBe("out.webm");
+  });
+});
+
+describe("lip repair", () => {
+  /** A talking clip of `shot`: its line's voice on file, a clip made from it (`frames` long at 1280×704). */
+  async function talkingClip({ frames = null, voice = true } = {}) {
+    const { film, mara, shot } = await filmWithShot({ line: "This is the last crossing, for good.", seconds: 3 });
+    await client.patch(`/v1/shots/${shot.id}`, { json: { speakerId: mara.id } });
+    if (voice) {
+      const dir = path.join(filmDir(dataDir, film.id), "sounds");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(path.join(dir, "line1.wav"), wav(3.2));
+      addSound(getDb(), { filmId: film.id, shotId: shot.id, kind: "line", file: "line1.wav", seconds: 3.2 });
+    }
+    if (frames) {
+      const clip = addClip(getDb(), { shotId: shot.id, file: "long.webm", seed: 1, seconds: frames / 24, recipe: { mode: "one", talking: true, width: 1280, height: 704, frames, fps: 24 } });
+      return { film, shot, clip };
+    }
+    const done = await makeClip(shot.id);
+    return { film, shot, clip: done.result.clip };
+  }
+  const repair = (clip) => client.post(`/v1/clips/${clip.id}/lips`, { json: {} });
+  const turnOn = () => client.patch("/v1/settings", { json: { "clips.lipRepair": true } });
+
+  test("off until Settings turns it on; then only a talking clip with its line's voice, and only with FFmpeg", async () => {
+    const { shot, clip } = await talkingClip();
+    expect((await repair(clip)).json()).toMatchObject({ status: 409, title: "Lip repair is off" });
+    await turnOn();
+    // a clip that isn't talking
+    const quiet = addClip(getDb(), { shotId: shot.id, file: "q.webm", seed: 1, seconds: 3, recipe: { mode: "one", talking: false, width: 1280, height: 704, frames: 73, fps: 24 } });
+    expect((await repair(quiet)).json()).toMatchObject({ title: "This clip has no voice to match" });
+    expect((await repair(clip)).json()).toMatchObject({ status: 409, title: "FFmpeg isn't installed" });
+    expect((await client.post("/v1/clips/nope/lips", { json: {} })).statusCode).toBe(404);
+    // a talking shot whose line has no voice on file
+    const mute = await talkingClip({ frames: 73, voice: false });
+    expect((await repair(mute.clip)).json()).toMatchObject({ title: "The shot's line has no voice" });
+    expect(lipped).toHaveLength(0);
+  });
+
+  const FFMPEG =
+    process.env.JD_TEST_FFMPEG || "E:\\Dev\\Web\\test-just-direct\\ai-cache\\kit-ffmpeg\\ffmpeg\\9.0.2\\cpu\\ffmpeg-9.0.2-essentials_build\\bin\\ffmpeg.exe";
+  const FFPROBE = path.join(path.dirname(FFMPEG), process.platform === "win32" ? "ffprobe.exe" : "ffprobe");
+  describe.skipIf(!(existsSync(FFMPEG) && existsSync(FFPROBE)))("with this computer's FFmpeg", () => {
+    beforeEach(async () => {
+      expect((await client.put("/v1/ai/runtimes/ffmpeg/settings", { json: { settings: { path: FFMPEG } } })).statusCode).toBe(200);
+      await turnOn();
+    });
+
+    test("LatentSync's frames and the line's voice make a new clip, chosen; the old one kept", { timeout: 60_000 }, async () => {
+      const { film, shot, clip } = await talkingClip();
+      const done = await settle((await repair(clip)).json());
+      expect(done.state).toBe("done");
+      // the request: the line's voice, the clip as LatentSync's video, the settings' steps and guidance, the clip's rate
+      expect(lipped[0].feature).toBe("clips.lips");
+      expect(Buffer.from(lipped[0].request.audio_base64, "base64").toString("ascii", 0, 4)).toBe("RIFF");
+      expect(lipped[0].request.options).toMatchObject({ reference_video_file: path.join(filmDir(dataDir, film.id), "clips", clip.file), fps: 24, num_inference_steps: 20, guidance_scale: 1.5 });
+      expect(lipped[0].opts.timeout).toBeGreaterThan(3600);
+      const fixed = done.result.clip;
+      expect(fixed).toMatchObject({ chosen: true, seconds: 9 / 24 });
+      expect(fixed.recipe).toMatchObject({ mode: "lips", talking: true, width: 64, height: 64, frames: 9, repairedFrom: clip.id });
+      expect(done.result.shot.clipId).toBe(fixed.id);
+      expect((await client.get(`/v1/shots/${shot.id}/clips`)).json().items.map((c) => c.id).sort()).toEqual([clip.id, fixed.id].sort());
+      // a real WebM: the frames as VP9, the voice as Opus
+      const file = path.join(filmDir(dataDir, film.id), "clips", `${fixed.id}.webm`);
+      const probe = JSON.parse(execFileSync(FFPROBE, ["-v", "error", "-show_entries", "stream=codec_type,codec_name,width,height", "-of", "json", file]).toString());
+      expect(probe.streams).toEqual(
+        expect.arrayContaining([expect.objectContaining({ codec_type: "video", codec_name: "vp9", width: 64, height: 64 }), expect.objectContaining({ codec_type: "audio", codec_name: "opus" })]),
+      );
+      // nothing left in the scratch folder
+      expect(readdirSync(path.join(dataDir, "work"))).toHaveLength(0);
+    });
+
+    test("a clip longer than one answer can carry is refused before LatentSync runs", async () => {
+      const { clip } = await talkingClip({ frames: lipFramesMax(1280, 704) + 8 });
+      expect((await repair(clip)).json()).toMatchObject({ status: 409, title: "This clip is too long to repair" });
+      expect(lipped).toHaveLength(0);
+    });
   });
 });

@@ -6,8 +6,10 @@
 //   - talking: one pass with the line's voice as the driving track (audio-to-video), the mouth drawn to it;
 //   - drawn paths: the Motion Track LoRA with the kit's motion-track frames (cars, blades, creatures, the camera);
 //   - a guide video: the Union Control LoRA with the video's frames (depth, pose or edges from a 3D tool).
-// Every one starts from the shot's chosen first frame when it has one.
+// Every one starts from the shot's chosen first frame when it has one. A talking clip's mouth can be redrawn to its
+// line afterwards by LatentSync (lip repair, off until Settings turns it on).
 
+import { constants } from "node:buffer";
 import { drawMotionTracks, sampleTrack } from "@delebash/core/runner/motion_tracks";
 import sharp from "sharp";
 import { SIZES } from "./schemas/shots.js";
@@ -89,6 +91,24 @@ export function wavSeconds(buf) {
     // not a WAV
   }
   return 0;
+}
+
+/** The most frames lip repair takes at `width`×`height`: LatentSync answers with its frames as one Base64 string of raw
+ *  rgb24, and a JavaScript string holds at most MAX_STRING_LENGTH characters (a few percent left for the rest of the
+ *  answer) — about 6 s at 1280×704, the length the user's decision 6 (2026-11-06) accepted. */
+export function lipFramesMax(width, height) {
+  const perFrame = width * height * 4; // one rgb24 frame is 3 bytes a pixel, Base64 4 characters for every 3 bytes
+  return Math.floor((constants.MAX_STRING_LENGTH * 0.97) / perFrame);
+}
+
+/** FFmpeg's arguments for a repaired clip: LatentSync's raw frames (`raw`, rgb24, `width`×`height` at `fps`) and the line's
+ *  voice they were drawn to (`voice`, a WAV — a talking shot's sound in the cut is its line's, cut.js) → a WebM at `out`. */
+export function lipClipArgs({ raw, width, height, fps, voice }, out) {
+  return [
+    ...["-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", `${width}x${height}`, "-r", String(fps), "-i", raw, "-i", voice],
+    ...["-map", "0:v:0", "-map", "1:a:0", "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "30", "-deadline", "good", "-cpu-used", "4"],
+    ...["-row-mt", "1", "-pix_fmt", "yuv420p", "-c:a", "libopus", "-shortest", out],
+  ];
 }
 
 /** Half of a side, on the 64 grid LTX takes (a long take's first stage). */

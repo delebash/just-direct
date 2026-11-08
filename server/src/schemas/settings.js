@@ -43,6 +43,11 @@ export const SETTINGS = {
   "clips.prompt": T.String({ minLength: 1, maxLength: 600 }),
   "clips.negative": T.String({ maxLength: 600 }),
   "clips.maxGuideMegabytes": T.Integer({ minimum: 1, maximum: 2000 }),
+  // Lip repair: whether a talking clip offers it (LatentSync — its face weights are for non-commercial research), and
+  // the steps and guidance it redraws the mouth with.
+  "clips.lipRepair": T.Boolean(),
+  "clips.lipSteps": T.Integer({ minimum: 1, maximum: 50 }),
+  "clips.lipGuidance": T.Number({ minimum: 1, maximum: 3 }),
   // Voices: the speech model a line is spoken with (an audio.cpp model that designs a voice from words), the language
   // it speaks, and the voice a character with no Voice words gets.
   "voices.model": T.String({ minLength: 1, maxLength: 120 }),

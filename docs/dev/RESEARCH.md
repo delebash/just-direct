@@ -37,6 +37,8 @@ audio.cpp, §13 FFmpeg). Read those before researching anything here.
 
 - [docs/plans/2026-11-07-v1.md](../plans/2026-11-07-v1.md) — how v1 is built: its standards table, the two kit
   changes it needs, its decisions with their attacks, its milestones (record, 2026-11-07).
+- [docs/plans/2026-11-08-justvoice-voices.md](../plans/2026-11-08-justvoice-voices.md) — the character voices from
+  JustVoice's server: its client API as its session sent it, and JustDirect's side (2026-11-08).
 
 ### The first real run through the app (2026-11-07, this PC: RTX 2070 SUPER 8 GB, 32 GB RAM)
 
@@ -74,6 +76,14 @@ five sentences, two characters, one line. *measured*.
   no rain under it.
 - **Not run then:** clips and the export. They run on the `jd` development build (`server/src/dev_builds.js`); no
   release is needed (the user, 2026-11-07).
+
+### The first clips run (2026-11-08, the `jd` development build)
+
+- **sd-server was stopped by the kit 300 s after it started, mid-clip.** Its log ends while streaming LTX-2.3's blocks
+  (total weights 25.3 GB: the diffusion model 14.4 GB streamed to the card, Gemma 3 and the VAEs 10.9 GB in RAM), no
+  error; JustDirect's log: "fetch failed" one second later. The cause, in code: `RuntimeService.runJob` marked the kind
+  busy but never cleared the idle timer armed at the server's start (sd.cpp's idle time: 300 s, `runner/runtimes.js`).
+  Fixed in just-core e15a3f71 with a test (`tests/runtime_server.test.js`). *code*.
 
 ### Voices: what JustVoice tested, and why JustDirect's voice failed (read 2026-11-07)
 

@@ -19,7 +19,7 @@ import { createApp } from "./app.js";
 import { getDb } from "./app_state.js";
 import { filmIds } from "./database/films.js";
 import { seedWorkspace } from "./database/seed.js";
-import { sweepFilmDirs } from "./files.js";
+import { clearWork, sweepFilmDirs } from "./files.js";
 import { defaultDataDir } from "./paths.js";
 import { DEFAULT_PORT, PRODUCT, VERSION } from "./version.js";
 
@@ -37,6 +37,7 @@ export async function main(argv = process.argv.slice(2)) {
       seedWorkspace(getDb());
       // the folders of films deleted while Windows held one of their files (marked then) go now
       await sweepFilmDirs(dataDir, filmIds(getDb())).catch(() => 0);
+      await clearWork(dataDir);
       const h = host || "127.0.0.1";
       const p = port ?? DEFAULT_PORT;
       return { app, host: h, port: p, banner: `${PRODUCT} ${VERSION} server listening on http://${h}:${p}` };

@@ -53,6 +53,11 @@ export const SETTING_DEFAULTS = {
   "clips.prompt": "{action} {camera} {cards} {line} {look}",
   "clips.negative": "",
   "clips.maxGuideMegabytes": 200,
+  // Lip repair is off until turned on (the PRD: "offered, off by default, labelled non-commercial"); audio.cpp's own
+  // LatentSync defaults, 20 steps at guidance 1.5.
+  "clips.lipRepair": false,
+  "clips.lipSteps": 20,
+  "clips.lipGuidance": 1.5,
   // Voices (Settings → General): Qwen3-TTS VoiceDesign 1.7B (the voice line the talking clips were tested with), English
   // (its language names: English, Chinese, Japanese, Korean, German, French, Russian, Portuguese, Spanish, Italian), and a
   // plain voice for a character with no Voice words.

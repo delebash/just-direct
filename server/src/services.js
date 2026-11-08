@@ -37,9 +37,10 @@ export function createServices(overrides = {}) {
       );
       return Buffer.from(wav);
     },
-    /** Make music or an effect with audio feature `feature` (its preset's model): `request` audio.cpp's own (`text`,
-     *  `duration_seconds`, …) → its result (`audio`, a Base64 WAV). */
-    makeAudio: (feature, request) => runAudioFeature(feature, request),
+    /** Make music, an effect or a lip repair with audio feature `feature` (its preset's model): `request` audio.cpp's own
+     *  (`text`, `duration_seconds`, `audio_base64`, `options`, …), `opts.timeout` seconds → its result (`audio`, a Base64
+     *  WAV; LatentSync's `artifacts`). */
+    makeAudio: (feature, request, opts = {}) => runAudioFeature(feature, request, opts),
     /** Whether speech model `modelId` can speak now: throws the refusal the screens word (the speech engine not on or
      *  not installed, the model unknown or not downloaded — the AI page's Speech tab installs and downloads them). */
     voiceCheck: (modelId) => {

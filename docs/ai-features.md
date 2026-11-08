@@ -71,6 +71,20 @@ what the recording says. **Model a recorded voice is cloned with** in the same S
 A clip made after its line is spoken is drawn to that voice: the clip model hears it and moves the
 mouth with it.
 
+## Repair a talking clip's lips
+
+**Repair lips** on a talking clip ([Your films](films.md#clips)), offered once **Offer lip repair on
+talking clips** is on in **App Settings → General → Clips**. It runs on the **Lip repair** preset:
+**LatentSync 1.6** (about 2.1 GB to download) on the audio.cpp engine, which finds the face in each
+frame and redraws the mouth to the line's voice; FFmpeg then makes the frames and the voice into a
+new clip. **Lip repair steps** and **Lip repair guidance** in the same Settings group are its own
+(20 and 1.5 to start). It is slow — many minutes for a few seconds of clip — and its answer holds about
+6 seconds at 1280 × 704 at most, so a longer clip is refused.
+
+Licence: LatentSync itself is Apache-2.0, but its package includes InsightFace's face detection and
+landmark models, which are for non-commercial research only — which is why it's off until you turn
+it on, and why a film made with a repaired clip can't be sold.
+
 ## Make music and sound effects
 
 **Make it** on a film's Cut tab ([Your films](films.md#music-and-sound-effects)). Music runs on the

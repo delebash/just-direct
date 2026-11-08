@@ -119,6 +119,16 @@ export const DEFAULT_ENGINE_PRESETS = [
     params: { placement: "auto" },
     position: 8,
   },
+  // Lip repair: LatentSync on the runtime's lip-sync provider, where the runtime places it.
+  {
+    id: "p_lips",
+    name: "Lip repair",
+    provider_id: "local-audiocpp-lipsync",
+    model: "latentsync-1.6",
+    kind: "lipsync",
+    params: { placement: "auto" },
+    position: 9,
+  },
 ];
 
 export const DEFAULT_FEATURE_PRESETS = {
@@ -129,6 +139,7 @@ export const DEFAULT_FEATURE_PRESETS = {
   "frames.paint": "p_frames",
   "frames.check": "p_check",
   "clips.make": "p_clips",
+  "clips.lips": "p_lips",
   "sounds.music": "p_music",
   "sounds.effect": "p_effects",
   "sounds.song": "p_songs",
@@ -478,6 +489,33 @@ export const ACE_STEP_SONGS = {
   minRamMb: 0,
   refSpeed: {},
   spec: { family: "ace_step", task: "gen", sessionOptions: { "ace_step.mem_saver": "true" } },
+};
+// Lip repair: LatentSync 1.6 at Q8 (its U-Net; the rest F16), one GGUF holding the U-Net, Whisper Tiny, the SD VAE, the
+// SCRFD face detector, the 106-point landmark model and the face mask (its card, read 2026-11-08); size and LFS hash from
+// the Hugging Face API at this revision, matching the copy on this PC. Licence: LatentSync's Apache-2.0, but the card:
+// "This package contains InsightFace face detection and landmark weights restricted to non-commercial research"
+// (github.com/deepinsight/insightface#license). Run with its memory saver; its memory on the card is the measurement on a
+// large card (9,144 MiB, the kit's RESEARCH) until the kit measures a load here.
+export const LATENTSYNC = {
+  runtime: "audiocpp",
+  id: "latentsync-1.6",
+  name: "LatentSync 1.6 (lip repair)",
+  kind: "lipsync",
+  license: "Non-commercial research (InsightFace's face weights) · Apache-2.0 (LatentSync)",
+  files: [
+    {
+      slot: "model",
+      repo: "audio-cpp/LatentSync-1.6-GGUF",
+      revision: "937b95aa98518dff8728541a8a38b94985d90dd1",
+      path: "latentsync-1.6-q8_0-f16.gguf",
+      sha256: "a1bf72c22ab9fe24202f4d4ecff7e9d8076957b111844dd256d5b90e8c53e4a0",
+      bytes: 2097768128,
+    },
+  ],
+  peakVramMb: 9144,
+  minRamMb: 0,
+  refSpeed: {},
+  spec: { family: "latentsync", task: "gen", sessionOptions: { "latentsync.mem_saver": "true" } },
 };
 export const STABLE_AUDIO_EFFECTS = {
   runtime: "audiocpp",

@@ -99,6 +99,15 @@ be made (say, set to follow drawn paths with none drawn) is named and the others
 Each clip you make is kept: watch them side by side, **Use this one** to put another in the film,
 **Delete** to remove one.
 
+**Repair lips.** A talking clip whose mouth doesn't quite follow its line can have its mouth redrawn to
+the line's voice — a new clip, put in the film, the old one kept. This is off until you turn on
+**Offer lip repair on talking clips** in **App Settings → General → Clips**, because its face models are
+for non-commercial research only: a film made with a repaired clip can't be sold. Once it's on, each
+talking clip shows **Repair lips**. It takes many minutes on an 8 GB card, handles clips up to about
+6 seconds at 1280 × 704, and needs FFmpeg (installed from the AI page). For example: shot 6's clip
+has Mara's lips a beat behind "This is the last crossing, for good." — **Repair lips** on it, and the
+new clip, marked **Lips repaired**, plays with her mouth on the words.
+
 ### Voices
 
 A shot with a line has a **microphone** button: **Speak shot 2's line** says the line in its speaker's

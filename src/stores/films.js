@@ -307,6 +307,18 @@ export const useFilmsStore = defineStore("films", {
         await this.loadShots().catch(() => {});
       }
     },
+    /** Repair a talking clip's lips (a server job): LatentSync redraws its mouth to the line's voice — a new clip, chosen. */
+    async repairLips(shot, clip, label) {
+      this.clipping = { ...this.clipping, [shot.id]: true };
+      try {
+        const done = await runServerJob({ start: () => post(`/v1/clips/${enc(clip.id)}/lips`, {}), feature: "clips.lips", label, meta: { shotId: shot.id } });
+        return done ?? null;
+      } finally {
+        const { [shot.id]: _, ...rest } = this.clipping;
+        this.clipping = rest;
+        await this.loadShots().catch(() => {});
+      }
+    },
     async chooseClip(shot, clipId) {
       const saved = await post(`/v1/shots/${enc(shot.id)}/clip`, { clipId });
       this.shots = this.shots.map((s) => (s.id === saved.id ? saved : s));

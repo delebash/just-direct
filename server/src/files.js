@@ -10,7 +10,10 @@
 //   <dataDir>/films/<filmId>/sounds/<id>.wav      spoken lines, music, effects
 //   <dataDir>/films/<filmId>/guides/<shotId>/     a shot's guide frames (drawn paths, a guide video's frames)
 //   <dataDir>/exports/<filmId>/<name>.mp4         the film, exported
+//   <dataDir>/work/<id>/                          one job's scratch files (a guide video's frames, lip repair's raw
+//                                                 frames), removed after it and at every start; never in the backup
 
+import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
@@ -42,6 +45,19 @@ export function filmFile(dataDir, filmId, part, name) {
   return path.join(filmDir(dataDir, filmId), part, path.basename(String(name)));
 }
 export const exportDir = (dataDir, filmId) => path.join(exportsRoot(dataDir), safeName(filmId));
+export const workRoot = (dataDir) => path.join(dataDir, "work");
+
+/** A new scratch folder for one job, inside the data folder (a lip repair's frames run to hundreds of MB). */
+export function newWorkDir(dataDir) {
+  const dir = path.join(workRoot(dataDir), randomUUID());
+  mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+/** At start: what a job that never finished left in the scratch folder goes. */
+export async function clearWork(dataDir) {
+  await rm(workRoot(dataDir), { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }).catch(() => {});
+}
 
 export function ensureFilmDirs(dataDir, filmId) {
   for (const part of FILM_PARTS) mkdirSync(path.join(filmDir(dataDir, filmId), part), { recursive: true });

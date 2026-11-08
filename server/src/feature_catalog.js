@@ -65,6 +65,15 @@ export const FEATURE_CATALOG = [
     group: "Clips",
     kind: "video",
   }),
+  // Lip repair (POST /v1/clips/:id/lips, a job): LatentSync redraws a talking clip's mouth to its line's voice — offered
+  // only when Settings → Clips turns it on (its face weights are for non-commercial research).
+  FeatureCatalogEntry({
+    key: "clips.lips",
+    label: "Repair a talking clip's lips",
+    hint: "Redraws the mouth in a talking clip to match its line's voice, as a new clip — Repair lips on a talking clip, once it's turned on in Settings. Its face models are for non-commercial research only. Many minutes a clip.",
+    group: "Clips",
+    kind: "lipsync",
+  }),
   // The film's music and sound effects (POST /v1/films/:id/sounds, a job): Stable Audio 3 on the kit's audio.cpp
   // runtime, placed in the cut. A line's voice has no feature: the voice names its model (Settings — the kit's way).
   FeatureCatalogEntry({

@@ -8,13 +8,14 @@
 //   POST   /v1/films/:id/clips      FilmClipsIn → 202 job (kind clips-film): every shot without a clip (or every shot)
 //   POST   /v1/shots/:id/clip       ChooseClip → Shot | 404 | 422
 //   DELETE /v1/clips/:id            → 204 | 404 — the shot's choice moves to its newest other clip
+//   POST   /v1/clips/:id/lips       → 202 job (kind lips): a talking clip's mouth redrawn to its line's voice by LatentSync,
+//                                   a new clip, chosen | 404 | 409 (turned off, not talking, no voice, no FFmpeg, too long)
 //   POST   /v1/shots/:id/guide      multipart `file` (a video) → Shot (its guide's frame count) | 409 no FFmpeg | 415
 //   DELETE /v1/shots/:id/guide      → Shot
 
 import { randomInt, randomUUID } from "node:crypto";
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { readFile, rm } from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { Hono, input, uploadLimit } from "@delebash/core/platform";
 import { ApiError, notFound, RequestValidationError } from "@delebash/core/platform/errors";
@@ -22,7 +23,7 @@ import { getLogger } from "@delebash/core/platform/log";
 import { ffmpegExe, runFfmpeg } from "@delebash/core/runner/ffmpeg";
 import sharp from "sharp";
 import { getDb, getState } from "../app_state.js";
-import { clipPrompt, fitGuide, frameCount, half, LONG_TAKE_HIRES, modeOf, pathFrames, wavSeconds } from "../clips.js";
+import { clipPrompt, fitGuide, frameCount, half, LONG_TAKE_HIRES, lipClipArgs, lipFramesMax, modeOf, pathFrames, wavSeconds } from "../clips.js";
 import * as clips from "../database/clips.js";
 import * as films from "../database/films.js";
 import * as frames from "../database/frames.js";
@@ -30,7 +31,7 @@ import { SETTING_DEFAULTS } from "../database/seed.js";
 import { getSetting } from "../database/settings.js";
 import * as shots from "../database/shots.js";
 import * as sounds from "../database/sounds.js";
-import { fileName, filmDir, filmFile, removeFile, writeWhole } from "../files.js";
+import { fileName, filmDir, filmFile, newWorkDir, removeFile, writeWhole } from "../files.js";
 import { IdParams } from "../schemas/films.js";
 import { ChooseClip, FilmClipsIn } from "../schemas/clips.js";
 import { SECONDS_MAX } from "../schemas/shots.js";
@@ -223,6 +224,75 @@ export function router() {
     return c.body(null, 204);
   });
 
+  // lip repair: LatentSync redraws a talking clip's mouth to its line's voice; its frames and that voice made into a new
+  // clip by the kit's FFmpeg, chosen for the shot (the old one kept). Offered only when Settings → Clips turns it on.
+  app.post("/v1/clips/:id/lips", input({ params: IdParams }), (c) => {
+    const clip = clips.getClip(getDb(), c.req.valid("param").id);
+    const shot = clip ? shots.getShot(getDb(), clip.shotId) : null;
+    const clipName = fileName(clip?.file, "webm");
+    if (!shot || !clipName) throw notFound("There is no such clip.");
+    const film = mustFilm(shot.filmId);
+    if (!setting("clips.lipRepair")) throw new ApiError(409, "lips-off", "Lip repair is off", "Turn on Offer lip repair on talking clips in Settings → General, under Clips.");
+    if (!clip.recipe?.talking) throw new ApiError(409, "not-talking", "This clip has no voice to match", "Lip repair redraws a talking clip's mouth to its line: speak the shot's line, then make its clip.");
+    const voiceName = fileName(sounds.lineOf(getDb(), shot.id)?.file, "wav");
+    if (!voiceName) throw new ApiError(409, "no-line", "The shot's line has no voice", "Speak the shot's line first.");
+    if (!ffmpegExe()) throw new ApiError(409, "engine-not-installed", "FFmpeg isn't installed", "Install FFmpeg on the AI page's FFmpeg tab — the repaired clip is made with it.");
+    const { width, height, frames, fps } = clip.recipe;
+    const most = lipFramesMax(width, height);
+    if (frames > most) {
+      throw new ApiError(409, "too-long", "This clip is too long to repair", `Lip repair takes up to ${(most / fps).toFixed(1)} s of a ${width}×${height} clip; this one is ${(frames / fps).toFixed(1)} s.`);
+    }
+    const job = getState().jobs.start(
+      { kind: "lips", key: clip.id, label: film.title, failTitle: "The lips weren't repaired", clientId: clientOf(c) },
+      async ({ signal, progress, update }) => {
+        update({ filmId: film.id, shotId: shot.id, clipId: clip.id });
+        progress(0.02, "repairing");
+        const { dataDir } = getState();
+        const voice = filmFile(dataDir, film.id, "sounds", voiceName);
+        const seed = randomInt(2147483647);
+        const request = {
+          audio_base64: (await readFile(voice)).toString("base64"),
+          options: {
+            reference_video_file: filmFile(dataDir, film.id, "clips", clipName),
+            fps,
+            num_inference_steps: setting("clips.lipSteps"),
+            guidance_scale: setting("clips.lipGuidance"),
+            seed,
+          },
+        };
+        // many minutes a clip on an 8 GB card (about 100 s a second of clip on a large one, the kit's RESEARCH): the
+        // engine is given three hours before the request is called failed
+        const result = await getState().services.makeAudio("clips.lips", request, { timeout: 3 * 3600 });
+        signal.throwIfAborted();
+        const art = (result?.artifacts ?? []).find((a) => a?.meta?.format === "rgb24" && a?.payload);
+        if (!art) throw new ApiError(502, "no-frames", "The repaired frames came back empty", "Try again.");
+        const size = { width: Number(art.meta.width), height: Number(art.meta.height), frames: Number(art.meta.frames), fps: Number(art.meta.fps) || fps };
+        const work = newWorkDir(dataDir);
+        try {
+          const raw = path.join(work, "frames.rgb");
+          writeFileSync(raw, Buffer.from(String(art.payload), "base64"));
+          progress(0.95, "joining");
+          const id = randomUUID();
+          const file = `${id}.webm`;
+          const out = path.join(work, file);
+          await runFfmpeg(lipClipArgs({ raw, ...size, voice }, out), { signal });
+          await writeWhole(filmFile(dataDir, film.id, "clips", file), await readFile(out));
+          if (!shots.getShot(getDb(), shot.id)) {
+            await removeFile(filmFile(dataDir, film.id, "clips", file));
+            throw notFound(`There is no shot with the id ${shot.id}.`);
+          }
+          const made = clips.addClip(getDb(), { id, shotId: shot.id, file, seed, seconds: size.frames / size.fps, recipe: { ...clip.recipe, ...size, mode: "lips", repairedFrom: clip.id } });
+          shots.updateShot(getDb(), shot.id, { clipId: made.id });
+          log.info(`shot ${shot.id}: its clip's lips repaired, ${size.frames} frames`);
+          return { clip: clipOut(made, shots.getShot(getDb(), shot.id)), shot: shotOut(shots.getShot(getDb(), shot.id)) };
+        } finally {
+          rmSync(work, { recursive: true, force: true });
+        }
+      },
+    );
+    return c.json(job, 202);
+  });
+
   // a guide video: its frames read at the film's size and the clips' frame rate by the kit's FFmpeg, kept as PNGs
   const maxGuideBytes = () => setting("clips.maxGuideMegabytes") * 1024 * 1024;
   app.post("/v1/shots/:id/guide", uploadLimit(() => maxGuideBytes() + 64 * 1024, { slug: "file-too-large", title: "File too large" }), input({ params: IdParams }), async (c) => {
@@ -237,7 +307,7 @@ export function router() {
     }
     const file = form.file;
     if (!(file instanceof Blob)) throw new RequestValidationError([{ loc: ["body", "file"], msg: "Field required", type: "missing" }]);
-    const work = mkdtempSync(path.join(os.tmpdir(), "jd-guide-"));
+    const work = newWorkDir(getState().dataDir);
     try {
       const src = path.join(work, "in.video");
       writeFileSync(src, Buffer.from(await file.arrayBuffer()));

@@ -213,7 +213,8 @@
       "one": "One pass",
       "long": "Long take",
       "paths": "Led by drawn paths",
-      "guide": "Led by a guide video"
+      "guide": "Led by a guide video",
+      "lips": "Lips repaired"
     },
     "modeHints": {
       "auto": "One pass for up to 5 seconds, a long take past that; a shot whose line has a voice is drawn to it.",
@@ -243,6 +244,11 @@
     "use": "Use this one",
     "facts": "{s} s · {mode}",
     "talking": "drawn to its voice",
+    "lips": {
+      "action": "Repair lips",
+      "hint": "Redraws the mouth to match the line's voice, as a new clip (LatentSync — its face models are for non-commercial research only). Many minutes a clip on an 8 GB card.",
+      "task": "Lips for shot {n}"
+    },
     "delete": {
       "action": "Delete",
       "title": "Delete this clip?",
@@ -445,9 +451,12 @@
         "clip": "A shot's clip"
       },
       "clipsTitle": "Clips",
-      "clipsHint": "The clips' frame rate (every clip tested was made at 24), and the largest guide video a shot takes.",
+      "clipsHint": "The clips' frame rate (every clip tested was made at 24), the largest guide video a shot takes, and lip repair: off until you turn it on, because its face models (LatentSync's, from InsightFace) are for non-commercial research only — a film made with it can't be sold.",
       "clipFps": "Frames a second",
       "clipGuideMegabytes": "Largest guide video (MB)",
+      "clipLipRepair": "Offer lip repair on talking clips",
+      "clipLipSteps": "Lip repair steps",
+      "clipLipGuidance": "Lip repair guidance",
       "framesTitle": "First frames",
       "framesHint": "How many first frames a shot gets each time, how many of its cards' pictures go with them (who speaks first, then the other characters, the place, the props) and how small (smaller is faster and looks as good), and whether a vision model checks them and keeps the best.",
       "frameCandidates": "Frames a shot gets",
