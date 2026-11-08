@@ -72,9 +72,9 @@ STATE:  Claude's rec: release the fork's `jd` (upstream 5f8c19f merged; its Linu
         kit on it and run clips on the installed build. The green jd-1068-4400f6d isn't pinned as it is: its Linux
         builds moved to Ubuntu 26.04 and need glibc 2.43 (measured), which would cut off Ubuntu 24.04 LTS users.
 WHY:    a packaged JustDirect runs the kit's pinned sd.cpp, not a development build — its clips need our `jd` build
-HERE:   2026-11-08: jd brought up to date again (upstream's 6 commits to 3d315c4, merged as 3dba814, pushed). The
-        release run started 2026-11-08 15:11 UTC (github.com/delebash/stable-diffusion.cpp/actions/runs/42493526732);
-        then the rows measured, the kit pinned after the family release's tags, and clips run on the packaged app.
+HERE:   2026-11-08: jd brought up to date again (upstream's 6 commits to 3d315c4, merged as 3dba814, pushed) and
+        released as jd-1078-3dba814 (18:00 UTC, every job of run 42493526732 green). Next: the rows measured, the kit
+        pinned after the family release's tags, and clips run on the packaged app.
 GO:     the user, 2026-11-08: "create repo yo should do this stuff yourself i gave you auth to do anything stop asking
         me just fucking stop"; then "6 your rec, finish this app so it is ready for release dont sto until it is all
         done"
