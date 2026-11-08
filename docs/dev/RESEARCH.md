@@ -85,6 +85,22 @@ five sentences, two characters, one line. *measured*.
   busy but never cleared the idle timer armed at the server's start (sd.cpp's idle time: 300 s, `runner/runtimes.js`).
   Fixed in just-core e15a3f71 with a test (`tests/runtime_server.test.js`). *code*.
 
+### The voices round trip through JustVoice's server (2026-11-08, 06:43–06:47 UTC)
+
+Run by `real-run-clips.js --part voices` (the scratchpad) against JustVoice e23e09a8 on its development audio.cpp
+build, its database on "Best voices you can sell" (design `qwen3-vd`, clone `voxcpm2`). JustDirect's own models were
+off the card; JustVoice's router held Gemma 4 26B-A4B beside its speech models (7,363 of 8,192 MiB used at the start).
+Files in `E:\Dev\Web\test-just-direct\real-run-2026-11-07\`. *measured*.
+
+- **Mara's voice, one call** (`POST /v1/cards/:id/voice` → JustVoice `POST /v1/character-voices`): 211 s. JustVoice's
+  language model wrote "Female, in her sixties, with a weathered, resonant, and medium-low pitch. She speaks with a
+  steady, rhythmic pace and a calm, authoritative manner that suggests years of sea life."; designed on Qwen3-TTS
+  VoiceDesign, kept on VoxCPM2 (both commercial "Yes"). The audition `voice-Mara-audition.wav`: 4.32 s, 24 kHz mono,
+  mean −19.9 dB, peak −3.3 dB.
+- **The film's lines as one batch** (`POST /v1/films/:id/lines` → `POST /v1/audio/speech/batch`, `release: true`): 40 s
+  for the one line, fetched by its `url`, the batch deleted after. `line-0387b546-justvoice.wav`: 3.36 s, 48 kHz mono,
+  mean −25.2 dB, peak −4.6 dB. Not heard yet — the listening guide asks the user.
+
 ### Voices: what JustVoice tested, and why JustDirect's voice failed (read 2026-11-07)
 
 Read in JustVoice's code and docs (E:\Dev\Web\JustVioce). *code* / *read*.
