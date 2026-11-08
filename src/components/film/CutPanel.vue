@@ -338,7 +338,9 @@ const saveLabel = computed(() => (canSaveNatively() ? t("cut.export.save") : t("
 .cut-timeline__sound { position: absolute; top: 2px; bottom: 2px; border-radius: 3px; background: var(--muted); opacity: 0.7; }
 .cut-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-width: 980px; }
 .cut-row { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--surface); }
-.cut-row--out { opacity: 0.75; }
+/* a shot left out of the cut: its border dashed and its picture dimmed, never its words or its button (WCAG 1.4.3) */
+.cut-row--out { border-style: dashed; }
+.cut-row--out .cut-row__frame { opacity: 0.6; }
 .cut-row__n { font-weight: 700; min-width: 24px; color: var(--muted); padding-top: 1px; }
 .cut-row__frame { width: 120px; flex: 0 0 120px; border-radius: 6px; overflow: hidden; }
 .cut-row__noframe { display: grid; place-items: center; width: 100%; background: var(--surface-2); color: var(--muted); }
