@@ -58,3 +58,15 @@ five sentences, two characters, one line. *measured*.
   its speaker. Whether through /v1/ai/run, streamed, or straight to llama-server, the reply was the same.
 - **Card pictures (FLUX.2 klein 4B):** 6–15 s each on a loaded engine; full-length characters on grey as asked, the
   board's "STILL HERE" lettered right.
+- **First frames (klein, up to three card pictures as references, 1280×704):** 36 frames (3 a shot) in 30 min —
+  about 45 s each; the check (Qwen3-VL 8B, loaded beside 1.2 GB another program held — the arbiter let it run over
+  its budget) took under a minute for all 36. Every shot's chosen frame: no card missing, no stranger; nine of twelve
+  scored 10, the others 8–9 (a floating object, stray lettering on the bow, a hand). Mara and Teo keep their faces,
+  hair and clothes from their cards through all twelve; the pier and the light hold. The check flags lettering on
+  the bow and the board, which this story asks for.
+- **Voices (Qwen3-TTS VoiceDesign 1.7B):** the line, 2.6–2.7 s, spoken in 13 s. The planner had written the voices as
+  `(sixties, "", "")` (fixed: a plain sentence asked for, weak ones dropped, the card's description used instead).
+  Not yet heard by a person.
+- **Music and effects (Stable Audio 3, mem_saver):** 20 s of music in 21 s and a 5 s hammer effect in 18 s, each
+  with its model's load. Not yet heard by a person.
+- **Not run:** clips and the export — they need our sd.cpp release in the kit's pin (building).

@@ -37,7 +37,8 @@ const SURFACES = (film) => [
   { name: "film-cards", hash: `#/films/${film.id}/cards` },
   { name: "film-shots", hash: `#/films/${film.id}/shots`, ready: ".shot-row" },
   { name: "film-cut", hash: `#/films/${film.id}/cut`, ready: ".cut-row" },
-  { name: "ai", hash: "#/ai" },
+  // the engines' tabs come once the server has checked each engine
+  { name: "ai", hash: "#/ai", ready: '[role="tab"]:has-text("Images")' },
   { name: "settings-general", hash: "#/settings/general" },
   { name: "settings-appearance", hash: "#/settings/appearance" },
   { name: "settings-backups", hash: "#/settings/backups" },

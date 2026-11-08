@@ -138,6 +138,13 @@ test("a film and its card are made through the window, saved by the server, and 
     [["character", "Mara"]],
   );
 
+  // the Cut tab: no shots yet, and the way to them; the tab is in the address
+  await page.locator('[role="tab"]', { hasText: "Cut" }).click();
+  await page.locator(".ui-empty", { hasText: "Nothing to cut yet" }).waitFor();
+  assert.match(await page.evaluate(() => location.hash), /\/cut$/);
+  await page.locator(".ui-empty button", { hasText: "Go to the shots" }).click();
+  await page.locator('[role="tab"][aria-selected="true"]', { hasText: "Shots" }).waitFor();
+
   // a second film: no offer again
   await d.navigate("#/");
   await page.locator(".pane-actions button", { hasText: "New film" }).click();
