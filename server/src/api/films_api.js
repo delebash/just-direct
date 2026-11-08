@@ -16,13 +16,21 @@
 //   POST   /v1/cards/:id/picture      multipart `file` (PNG, JPEG or WebP) → Card | 404 | 413 | 415 | 422
 //   DELETE /v1/cards/:id/picture      → Card | 404
 //   POST   /v1/cards/:id/paint        PaintIn → 202 job (kind card-paint): the picture painted by the AI, the card back
+//   GET    /v1/cards/:id/voice-sample → the WAV | 404
+//   POST   /v1/cards/:id/voice-sample multipart `file` (any audio FFmpeg reads), optional `text` (what it says) → Card |
+//                                     404 | 409 (not a character, no FFmpeg) | 413 | 415
+//   DELETE /v1/cards/:id/voice-sample → Card | 404
 
 import { randomInt } from "node:crypto";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { Hono, input, uploadLimit } from "@delebash/core/platform";
 import { ApiError, notFound, RequestValidationError } from "@delebash/core/platform/errors";
 import { getLogger } from "@delebash/core/platform/log";
 import { checkIfMatch, etagOf } from "@delebash/core/platform/versions";
+import { ffmpegReadiness, runFfmpeg } from "@delebash/core/runner/ffmpeg";
 import sharp from "sharp";
 import { getDb, getState } from "../app_state.js";
 import * as films from "../database/films.js";
@@ -48,7 +56,11 @@ const versioned = (row) => ({ ...row, version: etagOf(row) });
  *  is a new address and never a cached old one). */
 export function cardOut(card) {
   const v = versioned(card);
-  return { ...v, pictureUrl: card.picture ? `/v1/cards/${card.id}/picture?v=${encodeURIComponent(card.picture)}` : null };
+  return {
+    ...v,
+    pictureUrl: card.picture ? `/v1/cards/${card.id}/picture?v=${encodeURIComponent(card.picture)}` : null,
+    voiceSampleUrl: card.voiceSample ? `/v1/cards/${card.id}/voice-sample?v=${encodeURIComponent(card.voiceSample)}` : null,
+  };
 }
 
 export function mustFilm(id, ifMatch = undefined) {
@@ -198,9 +210,77 @@ export function router() {
     // it leaves the shots that named it (their card list, place or speaker)
     dropCardFromShots(getDb(), card.filmId, id);
     if (!films.deleteCard(getDb(), id)) throw notFound(`There is no card with the id ${id}.`);
-    const old = fileName(card.picture, "png");
-    if (old) await removeFile(filmFile(getState().dataDir, card.filmId, "cards", old));
+    for (const name of [fileName(card.picture, "png"), fileName(card.voiceSample, "wav")]) {
+      if (name) await removeFile(filmFile(getState().dataDir, card.filmId, "cards", name));
+    }
     return c.body(null, 204);
+  });
+
+  // ── a character's voice from a recording ──
+  app.get("/v1/cards/:id/voice-sample", input({ params: IdParams }), async (c) => {
+    const card = mustCard(c.req.valid("param").id);
+    const name = fileName(card.voiceSample, "wav");
+    if (!name) throw notFound("This card has no voice recording.");
+    let bytes;
+    try {
+      bytes = await readFile(filmFile(getState().dataDir, card.filmId, "cards", name));
+    } catch {
+      throw notFound("This card's voice recording is missing.");
+    }
+    return c.body(bytes, 200, { "content-type": "audio/wav", "cache-control": "private, max-age=31536000, immutable" });
+  });
+
+  const maxSampleBytes = () => setting("voices.maxSampleMegabytes") * 1024 * 1024;
+  app.post(
+    "/v1/cards/:id/voice-sample",
+    uploadLimit(() => maxSampleBytes() + 64 * 1024, { slug: "file-too-large", title: "File too large" }),
+    input({ params: IdParams }),
+    async (c) => {
+      const card = mustCard(c.req.valid("param").id);
+      if (card.kind !== "character") throw new ApiError(409, "not-a-character", "Only a character speaks", "A voice recording goes on a character's card.");
+      if (!ffmpegReadiness().ready) throw new ApiError(409, "engine-not-installed", "FFmpeg isn't installed", "Install FFmpeg on the AI page's FFmpeg tab — the recording is read with it.");
+      let form;
+      try {
+        form = await c.req.parseBody();
+      } catch {
+        form = {};
+      }
+      const file = form.file;
+      if (!(file instanceof Blob)) throw refuseFile("Field required", "missing");
+      if (file.size > maxSampleBytes()) throw new ApiError(413, "file-too-large", "File too large", `The recording is over ${setting("voices.maxSampleMegabytes")} MB.`);
+      const text = String(form.text ?? "").trim().slice(0, 1000);
+      // FFmpeg reads whatever it is (WAV, MP3, M4A, the window's own recording) into the voice model's 24 kHz mono, at
+      // most the setting's seconds; the old recording goes once the new one is in place
+      const work = mkdtempSync(path.join(os.tmpdir(), "jd-voice-"));
+      const name = `${card.id}-voice-${Date.now().toString(36)}${randomInt(1000).toString(36)}.wav`;
+      try {
+        const src = path.join(work, "in");
+        writeFileSync(src, Buffer.from(await file.arrayBuffer()));
+        const out = path.join(work, "out.wav");
+        try {
+          await runFfmpeg(["-v", "error", "-y", "-i", src, "-vn", "-ac", "1", "-ar", "24000", "-t", String(setting("voices.sampleSeconds")), "-c:a", "pcm_s16le", out]);
+        } catch {
+          throw new ApiError(415, "not-audio", "Not a recording FFmpeg can read", "Use a WAV, MP3 or M4A recording.");
+        }
+        await writeWhole(filmFile(getState().dataDir, card.filmId, "cards", name), await readFile(out));
+      } finally {
+        rmSync(work, { recursive: true, force: true });
+      }
+      const before = mustCard(card.id);
+      const after = films.updateCard(getDb(), card.id, { voiceSample: name, voiceSampleText: text });
+      const old = fileName(before.voiceSample, "wav");
+      if (old && old !== name) await removeFile(filmFile(getState().dataDir, card.filmId, "cards", old));
+      log.debug(`card ${card.id}: a voice recording`);
+      return c.json(cardOut(after));
+    },
+  );
+
+  app.delete("/v1/cards/:id/voice-sample", input({ params: IdParams }), async (c) => {
+    const card = mustCard(c.req.valid("param").id);
+    const old = fileName(card.voiceSample, "wav");
+    const after = films.updateCard(getDb(), card.id, { voiceSample: null, voiceSampleText: "" });
+    if (old) await removeFile(filmFile(getState().dataDir, card.filmId, "cards", old));
+    return c.json(cardOut(after));
   });
 
   app.get("/v1/cards/:id/picture", input({ params: IdParams }), async (c) => {

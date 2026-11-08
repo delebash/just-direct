@@ -68,6 +68,7 @@ import {
   FLUX2_KLEIN,
   LTX_23,
   MODEL_CATALOG,
+  QWEN3_VOICE_CLONE,
   QWEN3_VOICE_DESIGN,
   STABLE_AUDIO_EFFECTS,
   STABLE_AUDIO_MUSIC,
@@ -136,7 +137,7 @@ const llmArgs = (db, dataDir) => ({
   // audio.cpp speaks the lines and makes the music and effects; FFmpeg (the kit's tool runtime) reads a guide video's
   // frames and joins the film.
   runtimes: ["sdcpp", "audiocpp", "ffmpeg"],
-  runtimeModels: [FLUX2_KLEIN, LTX_23, QWEN3_VOICE_DESIGN, STABLE_AUDIO_MUSIC, STABLE_AUDIO_EFFECTS, ACE_STEP_SONGS],
+  runtimeModels: [FLUX2_KLEIN, LTX_23, QWEN3_VOICE_DESIGN, QWEN3_VOICE_CLONE, STABLE_AUDIO_MUSIC, STABLE_AUDIO_EFFECTS, ACE_STEP_SONGS],
 });
 
 /** The Hono app, not yet listening. `dataDir` defaults to the family data-folder ladder; `services` replaces some of

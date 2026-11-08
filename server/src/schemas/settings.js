@@ -48,6 +48,10 @@ export const SETTINGS = {
   "voices.model": T.String({ minLength: 1, maxLength: 120 }),
   "voices.language": T.String({ minLength: 1, maxLength: 40 }),
   "voices.default": T.String({ minLength: 1, maxLength: 600 }),
+  // The model a voice recording is cloned with, the longest part of a recording kept, the largest recording file.
+  "voices.cloneModel": T.String({ minLength: 1, maxLength: 120 }),
+  "voices.sampleSeconds": T.Integer({ minimum: 3, maximum: 60 }),
+  "voices.maxSampleMegabytes": T.Integer({ minimum: 1, maximum: 500 }),
   // Music and effects: a new piece's length, and the steps it is made in.
   "sounds.musicSeconds": T.Integer({ minimum: 1, maximum: 60 }),
   "sounds.effectSeconds": T.Integer({ minimum: 1, maximum: 60 }),

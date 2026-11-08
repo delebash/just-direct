@@ -2,11 +2,12 @@
 // A shot's line spoken in its character's voice, and the film's music and effects — fake voices and fake music (the
 // real ones are the kit's audio.cpp runtime): the voice words sent, the line kept as the shot's (the old one gone), the
 // whole film's lines, refusals said at once; music and effects made, placed, moved, deleted with their files.
-import { readdirSync } from "node:fs";
+import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { beforeEach, describe, expect, test } from "vitest";
 import { createApp } from "../src/app.js";
 import { getDb, getState } from "../src/app_state.js";
+import { updateCard } from "../src/database/films.js";
 import { seedWorkspace } from "../src/database/seed.js";
 import { filmDir } from "../src/files.js";
 import { testClient, tmpDir, useHermeticKit } from "./helpers.js";
@@ -99,6 +100,26 @@ describe("a line spoken", () => {
     const silent = (await client.post(`/v1/films/${film.id}/shots`, { json: { action: "The lake." } })).json();
     const r = await settle((await client.post(`/v1/shots/${silent.id}/line`, { json: {} })).json());
     expect(r.error.title).toBe("The shot has no line");
+  });
+
+  test("a character with a voice recording is cloned from it: the cloning model, the recording, its words or none", async () => {
+    const { film, mara, shot } = await scene();
+    const checked = [];
+    getState().services.voiceCheck = (model) => checked.push(model);
+    // a recording on her card, with what it says (the store's own fields; the upload route has its own test)
+    mkdirSync(path.join(filmDir(dataDir, film.id), "cards"), { recursive: true });
+    writeFileSync(path.join(filmDir(dataDir, film.id), "cards", "mara-voice.wav"), wav(3));
+    updateCard(getDb(), mara.id, { voiceSample: "mara-voice.wav", voiceSampleText: "I've run this ferry for forty years." });
+    await settle((await client.post(`/v1/shots/${shot.id}/line`, { json: {} })).json());
+    expect(checked).toEqual(["qwen3-base-1.7b-q8", "qwen3-base-1.7b-q8"]);
+    expect(spoken[0]).toMatchObject({ model: "qwen3-base-1.7b-q8", input: "This is the last crossing.", reference_text: "I've run this ferry for forty years." });
+    expect(spoken[0].voice_ref).toBe(path.join(filmDir(dataDir, film.id), "cards", "mara-voice.wav"));
+    expect(spoken[0].instructions).toBeUndefined();
+    // the words not known: her speaker's sound alone
+    updateCard(getDb(), mara.id, { voiceSampleText: "" });
+    await settle((await client.post(`/v1/shots/${shot.id}/line`, { json: {} })).json());
+    expect(spoken[1].options).toEqual({ x_vector_only_mode: true });
+    expect(spoken[1].reference_text).toBeUndefined();
   });
 
   test("a voice model that can't speak yet is refused at once, before any job", async () => {

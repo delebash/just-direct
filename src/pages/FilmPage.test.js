@@ -17,7 +17,16 @@ import { i18n } from "../i18n/index.js";
 import FilmPage from "./FilmPage.vue";
 
 const reported = [];
-vi.mock("@delebash/ui", async (importOriginal) => ({ ...(await importOriginal()), reportError: (e) => reported.push(e) }));
+// the microphone: a stand-in recorder whose recording is a few bytes
+const mic = { started: 0 };
+vi.mock("@delebash/ui", async (importOriginal) => ({
+  ...(await importOriginal()),
+  reportError: (e) => reported.push(e),
+  recordMicrophone: async () => {
+    mic.started++;
+    return { stop: async () => new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" }) };
+  },
+}));
 
 const QUASAR_COMPONENTS = Object.fromEntries(Object.entries(quasar).filter(([k, v]) => /^Q[A-Z]/.test(k) && v?.name));
 
@@ -80,6 +89,18 @@ function fakeFetch(input, init = {}) {
   }
   if (p === "/v1/ai/resolved-route") return Promise.resolve(json(server.route));
   if (p.endsWith("/readiness")) return Promise.resolve(json({ ready: true, need: "", model: "sa3", modelState: { name: "Stable Audio 3 Medium", license: "Stability AI Community License" } }));
+  if (/^\/v1\/cards\/c\d+\/voice-sample$/.test(p) && (method === "POST" || method === "DELETE")) {
+    const id = p.split("/")[3];
+    const on = method === "POST";
+    const text = on && init.body instanceof FormData ? String(init.body.get("text") ?? "") : "";
+    server.cards = server.cards.map((c) => (c.id === id ? { ...c, voiceSample: on ? "v.wav" : null, voiceSampleText: text, voiceSampleUrl: on ? `/v1/cards/${id}/voice-sample?v=v.wav` : null, version: `"${method}"` } : c));
+    return Promise.resolve(json(server.cards.find((c) => c.id === id)));
+  }
+  if (/^\/v1\/cards\/c\d+$/.test(p) && method === "PATCH") {
+    const id = p.split("/")[3];
+    server.cards = server.cards.map((c) => (c.id === id ? { ...c, ...body, version: '"patched"' } : c));
+    return Promise.resolve(json(server.cards.find((c) => c.id === id)));
+  }
   if (/^\/v1\/cards\/c\d+\/paint$/.test(p) && method === "POST") return Promise.resolve(json({ id: "job-paint", state: "running", progress: 0 }, 202));
   if (p === "/v1/jobs/job-paint") {
     server.cards = server.cards.map((c) => ({ ...c, picture: "c1-1.png", pictureUrl: "/v1/cards/c1/picture?v=c1-1.png", version: '"p"' }));
@@ -175,6 +196,31 @@ test("Cards: a character added from its kind's button", async () => {
   await settle();
   expect(server.calls.some((c) => c[0] === "POST" && c[1] === "/v1/cards/c1/paint")).toBe(true);
   expect(byText(".card-tile button", "Paint again")).toBeTruthy();
+});
+
+test("Cards: a character's voice recorded here, kept, its words saved with the card, then taken off", async () => {
+  server.cards = [{ id: "c1", filmId: "f1", kind: "character", name: "Mara", description: "", voice: "", voiceSample: null, voiceSampleText: "", voiceSampleUrl: null, picture: null, pictureUrl: null, position: 0, version: '"c"' }];
+  await mountPage("/films/f1/cards");
+  await click(document.querySelector('[aria-label="Edit Mara"]'));
+  expect(text()).toContain("Voice from a recording");
+  expect(document.querySelector('audio[aria-label="Mara\'s voice recording"]')).toBeNull();
+  await click(byText(".card-dialog__sample button", "Record"));
+  expect(mic.started).toBe(1);
+  await click(byText(".card-dialog__sample button", "Stop and keep"));
+  const sent = server.calls.find((c) => c[0] === "POST" && c[1] === "/v1/cards/c1/voice-sample");
+  expect(sent).toBeTruthy();
+  expect(document.querySelector('audio[aria-label="Mara\'s voice recording"]')?.getAttribute("src")).toContain("/v1/cards/c1/voice-sample");
+  // what it says, saved with the card's own Save
+  await type(document.getElementById("card-sample-text"), "I've run this ferry for forty years.");
+  await click(byText(".form__actions button", "Save"));
+  expect(server.calls.find((c) => c[0] === "PATCH" && c[1] === "/v1/cards/c1")?.[2]).toEqual({ voiceSampleText: "I've run this ferry for forty years." });
+  // taken off (the dialog Save closed has gone first)
+  await new Promise((r) => setTimeout(r, 450));
+  await flushPromises();
+  await click(document.querySelector('[aria-label="Edit Mara"]'));
+  await click(byText(".card-dialog__sample button", "Take off"));
+  expect(server.calls.some((c) => c[0] === "DELETE" && c[1] === "/v1/cards/c1/voice-sample")).toBe(true);
+  expect(document.querySelector('audio[aria-label="Mara\'s voice recording"]')).toBeNull();
 });
 
 test("Shots: no story, no plan; with one, Plan the shots runs as a job and shows the shots", async () => {

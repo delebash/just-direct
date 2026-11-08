@@ -37,9 +37,10 @@ const clientOf = (c) => c.req.header("x-client-id") || null;
 
 export const soundOut = (s) => ({ ...s, audioUrl: `/v1/sounds/${s.id}/audio` });
 
-/** The voice model, refused with what is missing when it can't speak yet (services.js `voiceCheck`). */
-function voiceReady() {
-  const model = setting("voices.model");
+/** The voice model — the cloning one for a speaker with a voice recording, else the voice design one — refused with
+ *  what is missing when it can't speak yet (services.js `voiceCheck`). */
+function voiceReady(speaker = null) {
+  const model = setting(speaker?.voiceSample ? "voices.cloneModel" : "voices.model");
   getState().services.voiceCheck(model);
   return model;
 }
@@ -60,9 +61,19 @@ async function speakLine(film, shot, { signal }) {
   const db = getDb();
   if (!shot.line.trim()) throw new ApiError(409, "no-line", "The shot has no line", "Write the words spoken in the shot first.");
   const speaker = shot.speakerId ? films.getCard(db, shot.speakerId) : null;
-  const model = voiceReady();
-  const instructions = voiceWords(speaker, setting("voices.default"));
-  const wav = await getState().services.speak(model, { input: shot.line.trim(), language: setting("voices.language"), seed: randomInt(2147483647), instructions }, { signal });
+  const model = voiceReady(speaker);
+  const request = { input: shot.line.trim(), language: setting("voices.language"), seed: randomInt(2147483647) };
+  const sample = fileName(speaker?.voiceSample, "wav");
+  if (sample) {
+    // cloned from the character's recording (Qwen3-TTS Base, the request JustVoice's clone sends): the recording, and
+    // what it says to follow it word by word — or, not knowing the words, its speaker's sound alone
+    request.voice_ref = filmFile(getState().dataDir, film.id, "cards", sample);
+    if (speaker.voiceSampleText.trim()) request.reference_text = speaker.voiceSampleText.trim();
+    else request.options = { x_vector_only_mode: true };
+  } else {
+    request.instructions = voiceWords(speaker, setting("voices.default"));
+  }
+  const wav = await getState().services.speak(model, request, { signal });
   signal?.throwIfAborted();
   const id = randomUUID();
   const file = `${id}.wav`;
@@ -88,7 +99,8 @@ export function router() {
   app.post("/v1/shots/:id/line", input({ params: IdParams }), (c) => {
     const shot = mustShot(c.req.valid("param").id);
     const film = mustFilm(shot.filmId);
-    voiceReady(); // refused at once when it can't run, not after the job starts
+    // refused at once when it can't run, not after the job starts
+    voiceReady(shot.speakerId ? films.getCard(getDb(), shot.speakerId) : null);
     const job = getState().jobs.start(
       { kind: "line", key: shot.id, label: film.title, failTitle: "The line wasn't spoken", clientId: clientOf(c) },
       async ({ signal, progress, update }) => {

@@ -20,7 +20,10 @@ runDesktopApp({
   // Shown in the tray and dialogs, and the `product` the server answers in GET /v1/health
   // (server/src/version.js PRODUCT): a listener on the port is stopped only when it is this app's.
   productName: "JustDirect",
-  port: 17500, // the family port registry: JW 17495 · JV 17494 · docgen 8742 · template 17500
+  port: 17500, // the family port registry: JW 17495 · JV 17494 · docgen 8742 · template 17490 · JustDirect 17500
+  // The microphone, for recording a character's voice to clone (CardDialog); the shell denies every other web
+  // permission beyond the clipboard.
+  permissions: ["media"],
   // A server of this app found on its port is asked to stop through its own route first (the
   // kit's platform/shutdown_api.js, mounted in server/src/app.js), killed only past the shell's wait.
   shutdownPath: "/v1/shutdown",

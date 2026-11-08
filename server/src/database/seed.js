@@ -59,6 +59,11 @@ export const SETTING_DEFAULTS = {
   "voices.model": "qwen3-vd-1.7b-q8",
   "voices.language": "English",
   "voices.default": "A natural, clear adult voice, calm and unhurried.",
+  // A character with a voice recording is cloned from it by Qwen3-TTS Base (JustVoice's cloning model), from at most
+  // this many seconds of it (a few clean seconds are what it needs), from a file of at most this size.
+  "voices.cloneModel": "qwen3-base-1.7b-q8",
+  "voices.sampleSeconds": 20,
+  "voices.maxSampleMegabytes": 50,
   // Music and effects (Settings → General): 30 s of music and 6 s of an effect, 8 steps (the tested recipe).
   "sounds.musicSeconds": 30,
   "sounds.effectSeconds": 6,

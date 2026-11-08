@@ -371,6 +371,17 @@ export const useFilmsStore = defineStore("films", {
     async removePicture(card) {
       return this._put(await del(`/v1/cards/${enc(card.id)}/picture`));
     },
+    /** A character's voice from a recording (a file, or the window's own recording — any audio; the server's FFmpeg
+     *  reads it), with what it says (`text`, may be ""). */
+    async uploadVoiceSample(card, blob, fileName, text = "") {
+      const form = new FormData();
+      form.append("file", blob, fileName);
+      form.append("text", text);
+      return this._put(await postForm(`/v1/cards/${enc(card.id)}/voice-sample`, form));
+    },
+    async removeVoiceSample(card) {
+      return this._put(await del(`/v1/cards/${enc(card.id)}/voice-sample`));
+    },
     /** The AI paints the card's picture (a server job on the AI tasks strip); the card comes back with it. */
     async paintPicture(card, label) {
       this.painting = { ...this.painting, [card.id]: true };

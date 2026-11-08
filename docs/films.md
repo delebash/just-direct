@@ -110,6 +110,14 @@ with the language the lines are in). Speaking again replaces the line spoken bef
 **Speak lines** in the toolbar speaks every line that has a speaker and no voice yet, one after
 another, on the **AI tasks** strip.
 
+**A voice from a recording.** A character's card can carry a recording of the voice they should have:
+open the card, and under **Voice from a recording** press **From a file…** (WAV, MP3, M4A — any recording)
+or **Record**, speak a few clear sentences, and **Stop and keep**. Their lines are then spoken in that voice
+instead of one made from words. Write **What the recording says** if you know the exact words — the voice
+follows the recording more closely — and **Save**. **Take off** goes back to the voice made from words.
+Only the first 20 seconds are used (**App Settings → General → Voices**), and reading a recording needs
+FFmpeg. Use a voice you have the right to use.
+
 Speak a line **before** making its shot's clip: the clip is then drawn to that voice — the mouth moves
 with it, and the clip runs at least as long as the line (up to 13 seconds). If you change a line's
 words after it was spoken, the shot shows **Words changed**: speak it again, then make the clip again.

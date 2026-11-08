@@ -139,6 +139,16 @@ export const MIGRATIONS = [
       ALTER TABLE sounds ADD COLUMN lyrics TEXT NOT NULL DEFAULT '';
     `,
   },
+  {
+    version: 4,
+    name: "a character's voice from a recording",
+    up: `
+      -- A recording of the voice a character speaks with (a WAV in the film's cards/ folder, 24 kHz mono), cloned by
+      -- Speak in place of a voice designed from words; NULL for none. What the recording says, '' when it isn't known.
+      ALTER TABLE cards ADD COLUMN voice_sample TEXT;
+      ALTER TABLE cards ADD COLUMN voice_sample_text TEXT NOT NULL DEFAULT '';
+    `,
+  },
 ];
 
 /**

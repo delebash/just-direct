@@ -64,6 +64,10 @@ makes a voice from words: the **Voice** written on the speaking character's card
 voice in **App Settings → General → Voices**. The engine and the model are installed on the AI page's
 **Speech** tab; which model speaks is **Voice model** in the same Settings group.
 
+A character whose card carries a voice recording is spoken by **Qwen3-TTS Base 1.7B** (Apache-2.0,
+about 2.7 GB) instead, which clones the recording's voice — following it word by word when the card says
+what the recording says. **Model a recorded voice is cloned with** in the same Settings group names it.
+
 A clip made after its line is spoken is drawn to that voice: the clip model hears it and moves the
 mouth with it.
 

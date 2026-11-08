@@ -4,22 +4,26 @@
 // character the voice it speaks with (the words the voice model designs it from). Its picture: painted by the AI (the
 // panel's Paint, a server job), taken from a file (PNG, JPEG or WebP), or taken off. The rules are the route's own
 // schemas (CardIn for a new card, CardPatch for a change); a 422 lands under its field, a change another window made
-// first (412) is said and the cards read again. Delete asks first, naming what is lost.
+// first (412) is said and the cards read again. Delete asks first, naming what is lost. A character's voice can come
+// from a recording instead of words: a file, or one recorded here with the kit's microphone recorder; Speak then
+// clones it, following what it says when that is written.
 import {
   AppModal,
   confirmDialog,
   fieldErrors,
   Icon,
+  recordMicrophone,
   reportError,
   schemaRules,
+  serverUrl,
   UiButton,
   UiField,
   UiInput,
   UiServerImage,
   UiTextarea,
 } from "@delebash/ui";
-import { CardIn } from "just-direct-server/schemas/films.js";
-import { computed, nextTick, reactive, ref } from "vue";
+import { CardIn, CardPatch } from "just-direct-server/schemas/films.js";
+import { computed, nextTick, onBeforeUnmount, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useFilmsStore } from "../../stores/films.js";
 
@@ -32,20 +36,72 @@ const emit = defineEmits(["close", "paint"]);
 const { t } = useI18n();
 const films = useFilmsStore();
 
-const FIELDS = ["name", "description", "voice"];
-const rules = schemaRules(CardIn);
+const FIELDS = ["name", "description", "voice", "voiceSampleText"];
+const rules = { ...schemaRules(CardIn), voiceSampleText: schemaRules(CardPatch).voiceSampleText };
 const kind = computed(() => props.card?.kind ?? props.kind);
 const isNew = computed(() => !props.card);
 // the card as the store has it now (its picture changes while the dialog is open)
 const current = computed(() => (props.card ? films.cardById(props.card.id) : null));
-const draft = reactive({ name: props.card?.name ?? "", description: props.card?.description ?? "", voice: props.card?.voice ?? "" });
+const draft = reactive({
+  name: props.card?.name ?? "",
+  description: props.card?.description ?? "",
+  voice: props.card?.voice ?? "",
+  voiceSampleText: props.card?.voiceSampleText ?? "",
+});
 const serverErrors = ref({});
 const saving = ref(false);
 const busy = ref(false);
 const modal = ref(null);
 const picker = ref(null);
 
-const changes = () => Object.fromEntries(FIELDS.filter((k) => (k !== "voice" || kind.value === "character") && draft[k] !== (current.value?.[k] ?? "")).map((k) => [k, draft[k]]));
+// the voice fields are a character's; what a recording says, only once it has one
+const counts = (k) => (k !== "voice" && k !== "voiceSampleText") || (kind.value === "character" && (k === "voice" || !!current.value?.voiceSample));
+const changes = () => Object.fromEntries(FIELDS.filter((k) => counts(k) && draft[k] !== (current.value?.[k] ?? "")).map((k) => [k, draft[k]]));
+
+// ── the voice from a recording ──
+const voicePicker = ref(null);
+const recording = ref(null); // the microphone's recorder while it records
+async function sendSample(blob, name) {
+  busy.value = true;
+  try {
+    const card = await films.uploadVoiceSample(current.value, blob, name, draft.voiceSampleText.trim());
+    draft.voiceSampleText = card.voiceSampleText;
+  } catch (e) {
+    reportError(e);
+  } finally {
+    busy.value = false;
+  }
+}
+const onVoiceFile = (file) => file && sendSample(file, file.name);
+async function record() {
+  if (recording.value) {
+    const rec = recording.value;
+    recording.value = null;
+    try {
+      await sendSample(await rec.stop(), "recording.webm");
+    } catch (e) {
+      reportError(e);
+    }
+    return;
+  }
+  try {
+    recording.value = await recordMicrophone();
+  } catch (e) {
+    reportError(e);
+  }
+}
+onBeforeUnmount(() => recording.value?.stop().catch(() => {}));
+async function removeSample() {
+  busy.value = true;
+  try {
+    await films.removeVoiceSample(current.value);
+    draft.voiceSampleText = "";
+  } catch (e) {
+    reportError(e);
+  } finally {
+    busy.value = false;
+  }
+}
 
 async function save() {
   saving.value = true;
@@ -148,6 +204,27 @@ async function remove() {
             :rules="rules.voice" :error="!!serverErrors.voice" :error-message="serverErrors.voice"
           />
         </UiField>
+        <section v-if="kind === 'character'" class="card-dialog__sample" :aria-label="t('cards.sample.title')">
+          <h3 class="card-dialog__sample-title">{{ t("cards.sample.title") }}</h3>
+          <p class="hint">{{ current ? t("cards.sample.hint") : t("cards.sample.afterAdd") }}</p>
+          <template v-if="current">
+            <audio v-if="current.voiceSampleUrl" controls preload="none" crossorigin="anonymous" :src="serverUrl(current.voiceSampleUrl)" :aria-label="t('cards.sample.play', { name: current.name })" />
+            <div class="card-dialog__sample-actions">
+              <UiButton intent="secondary" size="small" :disabled="busy || !!recording" :label="current.voiceSampleUrl ? t('cards.sample.replaceFile') : t('cards.sample.fromFile')" @click="voicePicker?.pickFiles()" />
+              <UiButton :intent="recording ? 'danger' : 'secondary'" size="small" :disabled="busy" :label="recording ? t('cards.sample.stop') : t('cards.sample.record')" @click="record">
+                <template #icon><Icon :name="recording ? 'Stop' : 'Mic'" :size="14" /></template>
+              </UiButton>
+              <UiButton v-if="current.voiceSampleUrl" intent="ghost" size="small" :disabled="busy || !!recording" :label="t('cards.sample.remove')" @click="removeSample" />
+            </div>
+            <UiField :label="t('cards.sample.words')" :hint="t('cards.sample.wordsHint')" layout="block" for="card-sample-text">
+              <UiTextarea
+                id="card-sample-text" v-model="draft.voiceSampleText" width="prose" :rows="2" lazy-rules
+                :rules="rules.voiceSampleText" :error="!!serverErrors.voiceSampleText" :error-message="serverErrors.voiceSampleText"
+              />
+            </UiField>
+            <q-file ref="voicePicker" class="card-dialog__file" :model-value="null" accept="audio/*" :aria-label="t('cards.sample.fromFile')" @update:model-value="onVoiceFile" />
+          </template>
+        </section>
         <div class="form__actions">
           <UiButton v-if="!isNew" intent="danger-outline" :label="t('cards.delete.action')" @click="remove">
             <template #icon><Icon name="Trash" :size="14" /></template>
@@ -184,5 +261,10 @@ async function remove() {
 .card-dialog__picture-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .card-dialog__file { display: none; }
 .card-dialog__later { flex: 0 0 220px; }
+.card-dialog__sample { display: flex; flex-direction: column; gap: 6px; }
+.card-dialog__sample-title { font-size: 13px; margin: 4px 0 0; }
+.card-dialog__sample .hint { margin: 0; max-width: 60ch; }
+.card-dialog__sample audio { height: 32px; width: 280px; max-width: 100%; }
+.card-dialog__sample-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .form__spacer { flex: 1; }
 </style>

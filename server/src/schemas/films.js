@@ -56,11 +56,16 @@ export const CardIn = strictObject({
   voice: opt(Voice, ""),
 });
 
-/** A change to a card (PATCH /v1/cards/:id). */
+/** What a voice recording says, for the voice model to follow it word by word ('' when it isn't known). */
+export const SAMPLE_TEXT_MAX = 1000;
+const SampleText = T.String({ maxLength: SAMPLE_TEXT_MAX });
+
+/** A change to a card (PATCH /v1/cards/:id); its voice recording's words with it. */
 export const CardPatch = strictObject({
   name: opt(Name),
   description: opt(Description),
   voice: opt(Voice),
+  voiceSampleText: opt(SampleText),
 });
 
 /** Paint a card's picture (POST /v1/cards/:id/paint): a seed to repeat one, else a new one. */

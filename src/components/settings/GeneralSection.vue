@@ -78,6 +78,9 @@ const GROUPS = [
       { key: "voices.model", id: "setting-voice-model", label: "settings.general.voiceModel", type: "line" },
       { key: "voices.language", id: "setting-voice-language", label: "settings.general.voiceLanguage", type: "line" },
       { key: "voices.default", id: "setting-voice-default", label: "settings.general.voiceDefault", type: "text" },
+      { key: "voices.cloneModel", id: "setting-voice-clone-model", label: "settings.general.voiceCloneModel", type: "line" },
+      { key: "voices.sampleSeconds", id: "setting-voice-sample-seconds", label: "settings.general.voiceSampleSeconds" },
+      { key: "voices.maxSampleMegabytes", id: "setting-voice-sample-megabytes", label: "settings.general.voiceSampleMegabytes" },
     ],
   },
   // music and sound effects: their lengths when none is asked, and the steps each is made in
