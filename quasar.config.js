@@ -163,8 +163,12 @@ export default defineConfig(() => {
           '!**/node_modules/better-sqlite3/{deps,src,build/Release/obj,build/Release/obj.target,build/deps}/**',
           '!**/node_modules/better-sqlite3/build/Release/*.{pdb,iobj,ipdb,lib,exp}'
         ],
-        // native modules can't load from inside the asar archive (the server itself runs from it)
-        asarUnpack: [ '**/*.node' ],
+        // native modules can't load from inside the asar archive (the server itself runs from it), nor can the
+        // libraries beside them: sharp's libvips is `libvips-cpp.so.<n>` on Linux, which electron-builder doesn't
+        // take for a library, so it stayed packed and the Linux server never started (the release dry run of
+        // 2026-11-08). sharp's own Electron guidance (sharp.pixelplumbing.com/install#electron-builder), as
+        // house-paint's quasar.config.js
+        asarUnpack: [ '**/*.node', '**/node_modules/sharp/**/*', '**/node_modules/@img/**/*' ],
         // the headless launcher — the app's own exe run as Node on its server package (§Q.3): the .cmd
         // beside the Windows exe, the shell script beside the Linux one and in the Mac app's Resources (its
         // bundle's root takes no file a signature doesn't seal); the exe never shares the launcher's name
