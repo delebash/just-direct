@@ -18,8 +18,9 @@ A film's page has its work in tabs.
 
 **Make the film** at the top of a film's page does every step the film still lacks, one after another:
 it plans the shots from the story (only when there are none yet), paints the first frames of every
-shot without one (the cards' pictures first), makes the clips of every shot without one, and exports
-the film. It never redoes or overwrites what you've made or changed, so you can work on the film by
+shot without one (the cards' pictures first), speaks every line not yet spoken in its character's
+voice from **JustVoice** (if JustVoice isn't running, it says so and goes on — a talking clip then
+speaks its line itself), makes the clips of every shot without one, and exports the film. It never redoes or overwrites what you've made or changed, so you can work on the film by
 hand before, between and after — and if you stop it on the **AI tasks** strip, **Make the film** again
 carries on where it stopped. Music and sound effects are yours to add on the Cut tab.
 
