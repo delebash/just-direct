@@ -27,9 +27,20 @@ give the second one its own `--data-dir` (a folder that already exists — one t
 finish — the app restarts on the new folder. If the move stops ("The data couldn't be copied to …" — a FAT32
 drive takes no file over 4 GB), nothing changed: the data stays where it was.
 
-**"Suggest a title" fails.** No AI is set up yet: open **AI Settings** and run Quick Setup, or add
-an online provider and make it the default. The **AI tasks** panel keeps the failed request with
-its reason and **Retry**.
+**Plan the shots fails: "No model is set".** No language model is set up yet: open **AI Settings** and run
+Quick Setup (on an 8 GB graphics card it picks Gemma 4 26B-A4B, the model the planner was tested with), or add
+an online provider and make it the default. The **AI tasks** panel keeps the failed request with its reason
+and **Retry**.
+
+**A feature says its engine isn't installed or its model isn't downloaded.** The banner where the feature is
+used offers both, with their sizes; the AI page's tabs (**Images**, **Speech**, **FFmpeg**) do the same. Speak
+says what it needs in its message instead: install audio.cpp and download the voice model on the **Speech** tab.
+
+**Export the film: "FFmpeg isn't installed".** The film is joined with FFmpeg: install it on the AI page's
+**FFmpeg** tab, or name your own FFmpeg there.
+
+**The first frames weren't checked.** The vision model (Qwen3-VL 8B) isn't set up: the frames are painted and
+the first one used. Download it on the AI page to have the best of each set chosen for you.
 
 **A model won't load.** Its bar on AI Settings shows why. Usually the model needs more memory than
 the computer has free — pick a smaller one, or unload another model first. **Settings → Logs**
