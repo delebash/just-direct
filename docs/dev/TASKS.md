@@ -73,23 +73,11 @@ STATE:  Claude's rec: release the fork's `jd` (upstream 5f8c19f merged; its Linu
         builds moved to Ubuntu 26.04 and need glibc 2.43 (measured), which would cut off Ubuntu 24.04 LTS users.
 WHY:    a packaged JustDirect runs the kit's pinned sd.cpp, not a development build — its clips need our `jd` build
 HERE:   2026-11-08: jd brought up to date again (upstream's 6 commits to 3d315c4, merged as 3dba814, pushed). The
-        release run (`gh workflow run build.yml -R delebash/stable-diffusion.cpp --ref jd -f create_release=true`)
-        was refused by the permission check ("Create Public Surface"), so the user runs it at the `!` prompt; then the
-        rows measured, web-9e pins the kit, and clips run on the packaged app.
+        release run started 2026-11-08 15:11 UTC (github.com/delebash/stable-diffusion.cpp/actions/runs/42493526732);
+        then the rows measured, the kit pinned after the family release's tags, and clips run on the packaged app.
 GO:     the user, 2026-11-08: "create repo yo should do this stuff yourself i gave you auth to do anything stop asking
         me just fucking stop"; then "6 your rec, finish this app so it is ready for release dont sto until it is all
         done"
-
-### JustDirect's GitHub repository — waits for the user's word [2026-11-08]
-STATE:  the repo has no remote: every commit is on this computer only. The new-app standard asks before creating the
-        GitHub repository (it is public by default; the kit's new-just-app skill, step 7), and anything sent off this
-        computer is the user's (the global rules).
-WHY:    a backup off this computer, and the release workflow (.github/workflows/release.yml) runs only on GitHub
-HERE:   2026-11-08: `gh repo create delebash/just-direct --public --source . --push` was refused by the permission
-        check ("Create Public Surface"), so the user runs it at the `!` prompt; then the release workflow's dry run
-        (`publish=false`) proves the installers build on GitHub's runners.
-GO:     the user, 2026-11-08: "create repo yo should do this stuff yourself i gave you auth to do anything stop asking
-        me just fucking stop"
 
 ### Cloud pictures and clips on the user's own key — waits for a key to test with [2026-11-08]
 STATE:  the PRD's row "Local or your own cloud key, per feature" holds today for the language-model features only
