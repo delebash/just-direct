@@ -165,13 +165,16 @@ describe("music and effects", () => {
     const { film } = await scene();
     const music = await settle((await client.post(`/v1/films/${film.id}/sounds`, { json: { kind: "music", prompt: "a slow piano and cello cue, rain", start: 2 } })).json());
     expect(made[0]).toMatchObject({ feature: "sounds.music", text: "a slow piano and cello cue, rain", duration_seconds: 30, num_inference_steps: 8, guidance_scale: 1 });
-    expect(music.result).toMatchObject({ kind: "music", start: 2, volume: 0.6, seconds: 30 });
+    expect(music.result).toMatchObject({ kind: "music", start: 2, volume: 0.6, seconds: 30, fadeIn: 0, fadeOut: 2 });
     const fx = await settle((await client.post(`/v1/films/${film.id}/sounds`, { json: { kind: "effect", prompt: "a ship's horn", seconds: 4, start: 9.5 } })).json());
     expect(made[1]).toMatchObject({ feature: "sounds.effect", duration_seconds: 4 });
     expect(made[1].guidance_scale).toBeUndefined();
-    expect(fx.result).toMatchObject({ kind: "effect", volume: 1 });
+    expect(fx.result).toMatchObject({ kind: "effect", volume: 1, fadeIn: 0, fadeOut: 0 });
     const moved = await client.patch(`/v1/sounds/${music.result.id}`, { json: { start: 12, volume: 0.3 } });
-    expect(moved.json()).toMatchObject({ start: 12, volume: 0.3 });
+    expect(moved.json()).toMatchObject({ start: 12, volume: 0.3, fadeOut: 2 });
+    // its fades, in seconds; past the longest sound is refused under its field
+    expect((await client.patch(`/v1/sounds/${music.result.id}`, { json: { fadeIn: 10, fadeOut: 0 } })).json()).toMatchObject({ fadeIn: 10, fadeOut: 0, start: 12 });
+    expect((await client.patch(`/v1/sounds/${music.result.id}`, { json: { fadeIn: 61 } })).statusCode).toBe(422);
     expect((await client.get(`/v1/films/${film.id}/sounds`)).json().items.map((s) => s.kind)).toEqual(["effect", "music"]);
     expect((await client.delete(`/v1/sounds/${fx.result.id}`)).statusCode).toBe(204);
     expect(readdirSync(path.join(filmDir(dataDir, film.id), "sounds"))).toEqual([music.result.file]);

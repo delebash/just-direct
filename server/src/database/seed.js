@@ -73,6 +73,8 @@ export const SETTING_DEFAULTS = {
   "sounds.musicSeconds": 30,
   "sounds.effectSeconds": 6,
   "sounds.steps": 8,
+  // New music fades out over its last 2 s (or the film's, when the film ends first): a cue never stops dead.
+  "sounds.musicFadeOut": 2,
   // How often a window looks for what other windows changed on this server, in seconds (Settings → General — the
   // kit's GET /v1/sync/rev `pollSeconds`).
   "windows.checkSeconds": 3,

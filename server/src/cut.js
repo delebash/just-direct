@@ -36,7 +36,8 @@ export function silentPieceArgs(piece, size, out) {
 
 /**
  * The join: `pieces` `[{file, length, transition}]` in order (a piece's `transition` is how it goes into the next),
- * `sounds` `[{file, start, volume}]` laid over → FFmpeg's arguments to write `out`, and the film's length.
+ * `sounds` `[{file, start, volume, seconds, fadeIn, fadeOut}]` laid over → FFmpeg's arguments to write `out`, and the
+ * film's length. A sound fades out before it stops being heard: its own end, or the film's when that comes first.
  */
 export function joinArgs(pieces, sounds, out) {
   const args = ["-v", "error", "-y"];
@@ -61,12 +62,20 @@ export function joinArgs(pieces, sounds, out) {
     v = `[v${i}]`;
     a = `[a${i}]`;
   }
-  // the music and effects over the film's own sound, each from its start, at its volume
+  // the music and effects over the film's own sound, each from its start, at its volume, with its fades
   if (sounds.length) {
     const mixed = [a];
     sounds.forEach((s, k) => {
-      const at = Math.round(Math.max(0, s.start) * 1000);
-      graph.push(`[${pieces.length + k}:a]aresample=48000,aformat=channel_layouts=stereo,volume=${Math.max(0, Math.min(1, s.volume)).toFixed(3)},adelay=${at}|${at}[s${k}]`);
+      const start = Math.max(0, s.start);
+      const at = Math.round(start * 1000);
+      const heard = Math.max(0, Math.min(Number(s.seconds) || Number.POSITIVE_INFINITY, length - start));
+      const chain = ["aresample=48000", "aformat=channel_layouts=stereo", `volume=${Math.max(0, Math.min(1, s.volume)).toFixed(3)}`];
+      const fadeIn = Math.min(Math.max(0, Number(s.fadeIn) || 0), heard);
+      const fadeOut = Math.min(Math.max(0, Number(s.fadeOut) || 0), heard);
+      if (fadeIn > 0) chain.push(`afade=t=in:st=0:d=${fadeIn.toFixed(3)}`);
+      if (fadeOut > 0) chain.push(`afade=t=out:st=${(heard - fadeOut).toFixed(3)}:d=${fadeOut.toFixed(3)}`);
+      chain.push(`adelay=${at}|${at}`);
+      graph.push(`[${pieces.length + k}:a]${chain.join(",")}[s${k}]`);
       mixed.push(`[s${k}]`);
     });
     graph.push(`${mixed.join("")}amix=inputs=${mixed.length}:duration=first:normalize=0[mix]`);

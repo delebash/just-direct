@@ -160,7 +160,19 @@ woman's voice"), and shows as **Song** in the list. **Length** is in seconds (em
 for music, 6 for an effect — **App Settings → General → Music and sound effects**), **Starts at** is
 where in the film it begins. It runs on the **AI tasks** strip; you can make several at once.
 
-Each one is listed with a player: change where it **Starts at** and its **Volume**, or delete it. The
+**One sound per effect.** The effects model makes one sound well, but it doesn't layer sounds or count
+them: "a hammer on wood, three strikes, rain under it" tends to give a hammer and no rain. Make the
+layers as effects of their own and lay them together: "steady rain on a tin roof" from 0 s for the
+length of the shot, and "a hammer striking wood, steady, close" over it — made longer, or placed twice,
+for more strikes.
+
+Each one is listed with a player: change where it **Starts at**, its **Volume**, how many seconds it
+takes to **Fade in** from silence and to **Fade out** to silence, or delete it. A fade out ends where the
+sound stops being heard — its own end, or the film's if the film ends first — so a cue running past the
+last shot still ends smoothly. New music fades out over 2 seconds (**App Settings → General → Music
+and sound effects**); an effect plays as made. For example, to make a quiet cue rise under the last
+shots, give it a **Fade in** of 10 seconds. The fades are heard in the exported film; the player plays
+each sound as it was made. The
 line under the form names the model it is made with and its licence — Stable Audio 3, free for
 commercial use while a business earns under US$1 million a year.
 

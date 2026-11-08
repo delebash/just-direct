@@ -136,6 +136,11 @@ function setStart(sound, value) {
   if (value == null || !Number.isFinite(Number(value))) return;
   later(`${sound.id}:start`, () => films.saveSound(sound, { start: Math.max(0, Number(value)) }));
 }
+// a fade in or out, in seconds (heard in the export: the window plays each sound as made)
+function setFade(sound, which, value) {
+  if (value == null || !Number.isFinite(Number(value))) return;
+  later(`${sound.id}:${which}`, () => films.saveSound(sound, { [which]: Math.min(60, Math.max(0, Number(value))) }));
+}
 // a volume while its slider is dragged: saved when it is let go
 const dragged = reactive({});
 async function setVolume(sound, volume) {
@@ -297,6 +302,12 @@ const saveLabel = computed(() => (canSaveNatively() ? t("cut.export.save") : t("
               :id="`volume-${x.id}`" :model-value="dragged[x.id] ?? x.volume" :min="0" :max="1" :step="0.05" width="short"
               @update:model-value="(v) => (dragged[x.id] = v)" @change="(v) => setVolume(x, v)"
             />
+          </UiField>
+          <UiField :label="t('cut.sounds.fadeIn')" layout="block" :for="`fade-in-${x.id}`">
+            <UiNumber :id="`fade-in-${x.id}`" :model-value="x.fadeIn" :min="0" :max="60" :step="0.5" width="num" @update:model-value="(v) => setFade(x, 'fadeIn', v)" />
+          </UiField>
+          <UiField :label="t('cut.sounds.fadeOut')" layout="block" :for="`fade-out-${x.id}`">
+            <UiNumber :id="`fade-out-${x.id}`" :model-value="x.fadeOut" :min="0" :max="60" :step="0.5" width="num" @update:model-value="(v) => setFade(x, 'fadeOut', v)" />
           </UiField>
           <span class="muted">{{ t("cut.sounds.length", { s: seconds(x.seconds) }) }}</span>
           <UiButton intent="ghost" size="icon" :aria-label="t('cut.sounds.delete.action', { what: x.prompt })" :title="t('cut.sounds.delete.action', { what: x.prompt })" @click="removeSound(x)">

@@ -181,7 +181,24 @@ export function router() {
         const id = randomUUID();
         const file = `${id}.wav`;
         await writeWhole(filmFile(getState().dataDir, film.id, "sounds", file), wav);
-        return soundOut(sounds.addSound(getDb(), { id, filmId: film.id, shotId: null, kind: body.kind, prompt: body.prompt, lyrics, file, seconds: made, start: body.start ?? 0, volume: body.volume ?? (body.kind === "music" ? 0.6 : 1) }));
+        const music = body.kind === "music";
+        return soundOut(
+          sounds.addSound(getDb(), {
+            id,
+            filmId: film.id,
+            shotId: null,
+            kind: body.kind,
+            prompt: body.prompt,
+            lyrics,
+            file,
+            seconds: made,
+            start: body.start ?? 0,
+            volume: body.volume ?? (music ? 0.6 : 1),
+            // music fades out by default (Settings → Sounds), so a cue never stops dead; an effect plays as made
+            fadeIn: body.fadeIn ?? 0,
+            fadeOut: body.fadeOut ?? (music ? setting("sounds.musicFadeOut") : 0),
+          }),
+        );
       },
     );
     return c.json(job, 202);

@@ -48,6 +48,17 @@ describe("the arguments", () => {
     expect(graph).toContain("amix=inputs=2:duration=first:normalize=0[mix]");
     expect(args.slice(args.indexOf("-map"), args.indexOf("-map") + 4)).toEqual(["-map", "[v3]", "-map", "[mix]"]);
   });
+  test("a sound's fades: in from its start; out before it stops being heard — its end, or the film's first", () => {
+    const pieces = [{ file: "a.mp4", length: 10, transition: "cut" }];
+    const laid = [
+      { file: "m.wav", start: 4, volume: 1, seconds: 30, fadeIn: 3, fadeOut: 2 }, // heard 6 s: out from 4 to 6
+      { file: "e.wav", start: 1, volume: 1, seconds: 3, fadeIn: 0, fadeOut: 5 }, // a fade longer than the sound: all of it
+    ];
+    const { args } = joinArgs(pieces, laid, "film.mp4");
+    const graph = args[args.indexOf("-filter_complex") + 1];
+    expect(graph).toContain("[1:a]aresample=48000,aformat=channel_layouts=stereo,volume=1.000,afade=t=in:st=0:d=3.000,afade=t=out:st=4.000:d=2.000,adelay=4000|4000[s0]");
+    expect(graph).toContain("[2:a]aresample=48000,aformat=channel_layouts=stereo,volume=1.000,afade=t=out:st=0.000:d=3.000,adelay=1000|1000[s1]");
+  });
   test("one piece and nothing laid over: no graph, its own streams", () => {
     const { args } = joinArgs([{ file: "a.mp4", length: 4, transition: "cut" }], [], "film.mp4");
     expect(args).not.toContain("-filter_complex");

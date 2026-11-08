@@ -98,7 +98,14 @@ export function router() {
           const laid = sounds
             .listSounds(db, film.id)
             .filter((x) => x.kind !== "line")
-            .map((x) => ({ file: filmFile(dataDir, film.id, "sounds", fileName(x.file, "wav")), start: x.start, volume: x.volume }));
+            .map((x) => ({
+              file: filmFile(dataDir, film.id, "sounds", fileName(x.file, "wav")),
+              start: x.start,
+              volume: x.volume,
+              seconds: x.seconds,
+              fadeIn: x.fadeIn,
+              fadeOut: x.fadeOut,
+            }));
           const name = `${slug(film.title)}-${Date.now().toString(36)}.mp4`;
           const { args, length } = joinArgs(pieces, laid, path.join(out, name));
           await runFfmpeg(args, { signal, timeoutMs: 60 * 60_000 });

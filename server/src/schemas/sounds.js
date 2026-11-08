@@ -11,6 +11,8 @@ export const LYRICS_MAX = 4000;
 export const SOUND_SECONDS_MAX = 60;
 const Start = T.Number({ minimum: 0, maximum: 3600 });
 const Volume = T.Number({ minimum: 0, maximum: 1 });
+/** Seconds of a fade in or out — up to the longest sound made. */
+const Fade = T.Number({ minimum: 0, maximum: SOUND_SECONDS_MAX });
 
 /** Music or an effect (POST /v1/films/:id/sounds): what it is, how long, where in the cut it starts, how loud; music
  *  with `lyrics` is a song, sung. */
@@ -21,7 +23,9 @@ export const SoundIn = strictObject({
   seconds: opt(T.Integer({ minimum: 1, maximum: SOUND_SECONDS_MAX })),
   start: opt(Start),
   volume: opt(Volume),
+  fadeIn: opt(Fade),
+  fadeOut: opt(Fade),
 });
 
-/** A sound moved or made louder or quieter (PATCH /v1/sounds/:id). */
-export const SoundPatch = strictObject({ start: opt(Start), volume: opt(Volume) });
+/** A sound moved, made louder or quieter, or faded in or out (PATCH /v1/sounds/:id). */
+export const SoundPatch = strictObject({ start: opt(Start), volume: opt(Volume), fadeIn: opt(Fade), fadeOut: opt(Fade) });

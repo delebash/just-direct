@@ -149,6 +149,16 @@ export const MIGRATIONS = [
       ALTER TABLE cards ADD COLUMN voice_sample_text TEXT NOT NULL DEFAULT '';
     `,
   },
+  {
+    version: 5,
+    name: "a sound's fades",
+    up: `
+      -- Seconds a piece of music or an effect fades in from silence at its start, and out to silence before it stops
+      -- being heard (its end, or the film's when that comes first); 0 for none.
+      ALTER TABLE sounds ADD COLUMN fade_in REAL NOT NULL DEFAULT 0;
+      ALTER TABLE sounds ADD COLUMN fade_out REAL NOT NULL DEFAULT 0;
+    `,
+  },
 ];
 
 /**

@@ -150,6 +150,8 @@
       "secondsDefault": "Default",
       "start": "Starts at (s)",
       "volume": "Volume",
+      "fadeIn": "Fade in (s)",
+      "fadeOut": "Fade out (s)",
       "make": "Make it",
       "makingMore": "Making… make another",
       "musicFeature": "Making music",
@@ -472,10 +474,11 @@
       "voiceSampleSeconds": "Seconds of a recording used",
       "voiceSampleMegabytes": "Largest recording file (MB)",
       "soundsTitle": "Music and sound effects",
-      "soundsHint": "How long a piece of music or a sound effect is when you don't say, and the steps each is made in (more steps take longer; 8 is what was tested).",
+      "soundsHint": "How long a piece of music or a sound effect is when you don't say, the steps each is made in (more steps take longer; 8 is what was tested), and how many seconds new music fades out over so it never stops dead (each sound's own fades are on the Cut tab).",
       "musicSeconds": "Music length (s)",
       "effectSeconds": "Sound effect length (s)",
-      "soundSteps": "Steps"
+      "soundSteps": "Steps",
+      "musicFadeOut": "New music fades out over (s)"
     },
     "appearanceHint": "How the app looks — applied at once and kept by the app.",
     "accentNote": "The default, 166°, is green.",

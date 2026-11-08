@@ -57,10 +57,11 @@ export const SETTINGS = {
   "voices.cloneModel": T.String({ minLength: 1, maxLength: 120 }),
   "voices.sampleSeconds": T.Integer({ minimum: 3, maximum: 60 }),
   "voices.maxSampleMegabytes": T.Integer({ minimum: 1, maximum: 500 }),
-  // Music and effects: a new piece's length, and the steps it is made in.
+  // Music and effects: a new piece's length, the steps it is made in, and the seconds new music fades out over.
   "sounds.musicSeconds": T.Integer({ minimum: 1, maximum: 60 }),
   "sounds.effectSeconds": T.Integer({ minimum: 1, maximum: 60 }),
   "sounds.steps": T.Integer({ minimum: 1, maximum: 100 }),
+  "sounds.musicFadeOut": T.Number({ minimum: 0, maximum: 60 }),
   // How often a window looks for what other windows changed on this server, in seconds.
   "windows.checkSeconds": T.Integer({ minimum: 1, maximum: 60 }),
 };

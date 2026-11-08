@@ -48,6 +48,7 @@ const TODAY = {
   "sounds.musicSeconds": "624b60c58c9d8bfb",
   "sounds.effectSeconds": "e7f6c011776e8db7",
   "sounds.steps": "2c624232cdd22177",
+  "sounds.musicFadeOut": "d4735e3a265e16ee",
   "windows.checkSeconds": "4e07408562bedb8b",
 };
 

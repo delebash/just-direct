@@ -95,6 +95,7 @@ const GROUPS = [
       { key: "sounds.musicSeconds", id: "setting-music-seconds", label: "settings.general.musicSeconds" },
       { key: "sounds.effectSeconds", id: "setting-effect-seconds", label: "settings.general.effectSeconds" },
       { key: "sounds.steps", id: "setting-sound-steps", label: "settings.general.soundSteps" },
+      { key: "sounds.musicFadeOut", id: "setting-music-fade", label: "settings.general.musicFadeOut", step: 0.5 },
     ],
   },
   // the words each kind of card's picture is painted from
