@@ -98,22 +98,27 @@ async function remove(film) {
         :action-label="t('films.new.button')" @action="creating = true"
       />
       <ul v-else-if="films.loaded" class="films__grid" role="list">
-        <li v-for="f in films.items" :key="f.id" class="film-card">
-          <button type="button" class="film-card__open" :aria-label="t('films.open', { title: f.title })" @click="open(f)">
-            <span class="film-card__frame" :class="`film-card__frame--${shapeOf(f)}`" aria-hidden="true">
-              <Icon name="Film" :size="22" />
-            </span>
-            <span class="film-card__title">{{ f.title }}</span>
-            <span class="film-card__meta muted">
-              {{ t("films.counts", { cards: f.cardCount, shots: f.shotCount }) }} · {{ relativeTime(f.updatedAt) }}
-            </span>
-          </button>
-          <UiMenu class="film-card__more" trigger-class="ui-btn ui-btn--ghost ui-btn--icon" :label="t('films.more', { title: f.title })" align="end">
-            <template #trigger>⋯</template>
-            <UiMenuItem @select="remove(f)">
-              <Icon name="Trash" :size="14" /> {{ t("films.delete.action") }}
-            </UiMenuItem>
-          </UiMenu>
+        <!-- house-paint's card (its HomePage): Quasar's q-card, its picture the link that opens it — a name of its own
+             and no words to differ from it (WCAG 2.5.3), Enter as well as a click -->
+        <li v-for="f in films.items" :key="f.id">
+          <q-card flat bordered class="film-card">
+            <div
+              class="film-card__frame" :class="`film-card__frame--${shapeOf(f)}`" role="link" tabindex="0"
+              :aria-label="t('films.open', { title: f.title })" @click="open(f)" @keydown.enter="open(f)"
+            >
+              <Icon name="Film" :size="22" aria-hidden="true" />
+            </div>
+            <q-card-section class="film-card__meta">
+              <div class="film-card__title">{{ f.title }}</div>
+              <div class="muted">{{ t("films.counts", { cards: f.cardCount, shots: f.shotCount }) }} · {{ relativeTime(f.updatedAt) }}</div>
+            </q-card-section>
+            <UiMenu class="film-card__more" trigger-class="ui-btn ui-btn--ghost ui-btn--icon" :label="t('films.more', { title: f.title })" align="end">
+              <template #trigger>⋯</template>
+              <UiMenuItem @select="remove(f)">
+                <Icon name="Trash" :size="14" /> {{ t("films.delete.action") }}
+              </UiMenuItem>
+            </UiMenu>
+          </q-card>
         </li>
       </ul>
       <q-inner-loading :showing="firstLoad" :label="t('kit.common.loading')" />
@@ -126,13 +131,15 @@ async function remove(film) {
 <style scoped>
 .films { position: relative; min-height: 120px; }
 .films__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
-.film-card { position: relative; border: 1px solid var(--border); border-radius: var(--radius-md, 8px); background: var(--surface); }
-.film-card__open { all: unset; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 12px; cursor: pointer; border-radius: inherit; }
-.film-card__open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.film-card__open:hover { background: var(--surface-hover, var(--surface-2)); }
-.film-card__frame { display: grid; place-items: center; background: var(--surface-2); color: var(--muted); border-radius: 6px; aspect-ratio: 16 / 9; }
+.film-card { position: relative; height: 100%; }
+.film-card__frame {
+  display: grid; place-items: center; background: var(--surface-2); color: var(--muted); aspect-ratio: 16 / 9; cursor: pointer;
+  border-top-left-radius: inherit; border-top-right-radius: inherit;
+}
+.film-card__frame:hover { background: var(--surface-hover, var(--surface-2)); }
+.film-card__frame:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .film-card__frame--tall { aspect-ratio: 16 / 9; }
-.film-card__title { font-weight: 600; overflow-wrap: anywhere; padding-right: 28px; }
-.film-card__meta { font-size: 12.5px; }
-.film-card__more { position: absolute; right: 6px; bottom: 30px; }
+.film-card__meta { padding: var(--sp-2) var(--sp-3) var(--sp-3); padding-right: 40px; font-size: var(--fs-small); }
+.film-card__title { font-size: var(--fs-body); font-weight: 600; overflow-wrap: anywhere; }
+.film-card__more { position: absolute; right: 6px; bottom: 10px; }
 </style>

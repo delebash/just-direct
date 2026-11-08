@@ -40,14 +40,16 @@ async function paint(card) {
       <EmptyState v-if="!films.cardsOf(kind).length" compact icon="Image" :message="t(`cards.empty.${kind}`)" />
       <ul v-else class="cards-grid" role="list">
         <li v-for="card in films.cardsOf(kind)" :key="card.id" class="card-tile">
+          <!-- the picture opens the card (house-paint's card shape): the button has a name of its own and no words to
+               differ from it (WCAG 2.5.3); the name and the words beside it are plain text -->
           <button type="button" class="card-tile__open" :aria-label="t('cards.edit', { name: card.name })" @click="editing = card">
-            <UiServerImage v-if="card.pictureUrl" :path="card.pictureUrl" :ratio="ratio(kind)" fit="cover" class="card-tile__picture" :alt="card.name" />
+            <UiServerImage v-if="card.pictureUrl" :path="card.pictureUrl" :ratio="ratio(kind)" fit="cover" class="card-tile__picture" alt="" />
             <span v-else class="card-tile__picture card-tile__picture--none" :style="{ aspectRatio: ratio(kind) }" aria-hidden="true">
               <Icon name="Image" :size="22" />
             </span>
-            <span class="card-tile__name">{{ card.name }}</span>
-            <span v-if="card.description" class="card-tile__words muted">{{ card.description }}</span>
           </button>
+          <span class="card-tile__name">{{ card.name }}</span>
+          <span v-if="card.description" class="card-tile__words muted">{{ card.description }}</span>
           <UiButton
             class="card-tile__paint" intent="secondary" size="small" focusable-when-disabled :disabled="!!films.painting[card.id]"
             :label="films.painting[card.id] ? t('cards.painting') : card.pictureUrl ? t('cards.paintAgain') : t('cards.paint')"

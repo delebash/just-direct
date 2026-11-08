@@ -4,7 +4,7 @@
 // The films screen mounted for real — Quasar installed as the app installs it and the kit's UI wired by installLlmUi
 // (app-structure §18) — against a stand-in server answering /v1/films and /v1/settings the way the real one does: the
 // states of §17 (loading, empty, failed with Retry, the list), New film's form of §15 (the schema's rules, a 422 under
-// its field, the shape sent as its size) and a delete that asks first.
+// its field, the shape sent as its size), a film opened from its card, and a delete that asks first.
 import { _resolveDialog, installLlmUi, LlmUiHosts } from "@delebash/ui";
 import { QUASAR_TEST_OPTIONS } from "@delebash/ui/quasar/install.js";
 import { DOMWrapper, flushPromises, mount } from "@vue/test-utils";
@@ -133,6 +133,23 @@ test("New film: the title's rule, the shape sent as its size, the film opened", 
   const posted = server.calls.find((c) => c[0] === "POST" && c[1] === "/v1/films");
   expect(posted[2]).toMatchObject({ title: "The Last Ferry", width: 704, height: 1280 });
   expect(router.currentRoute.value.path).toBe("/films/f1");
+});
+
+test("a film opens from its card's picture — a click, or Enter on it — its name the film's", async () => {
+  server.films = [
+    { id: "f1", title: "The Last Ferry", width: 1280, height: 704, cardCount: 3, shotCount: 12, updatedAt: at(), version: '"v"' },
+    { id: "f2", title: "The Last Light", width: 1280, height: 704, cardCount: 8, shotCount: 3, updatedAt: at(), version: '"v"' },
+  ];
+  await mountPage();
+  const link = document.querySelector('[role="link"][aria-label="Open “The Last Ferry”"]');
+  expect(link.getAttribute("tabindex")).toBe("0");
+  await click(link);
+  expect(router.currentRoute.value.path).toBe("/films/f1");
+  await new DOMWrapper(document.querySelector('[role="link"][aria-label="Open “The Last Light”"]')).trigger("keydown", { key: "Enter" });
+  await flushPromises();
+  expect(router.currentRoute.value.path).toBe("/films/f2");
+  // no raw button on the page: the card is Quasar's, its menu the kit's
+  expect(document.querySelectorAll(".film-card button:not(.ui-btn)")).toHaveLength(0);
 });
 
 test("a delete asks first, naming what is lost", async () => {
