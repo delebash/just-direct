@@ -53,6 +53,16 @@ export const SETTING_DEFAULTS = {
   "clips.prompt": "{action} {camera} {cards} {line} {look}",
   "clips.negative": "",
   "clips.maxGuideMegabytes": 200,
+  // Voices (Settings → General): Qwen3-TTS VoiceDesign 1.7B (the voice line the talking clips were tested with), English
+  // (its language names: English, Chinese, Japanese, Korean, German, French, Russian, Portuguese, Spanish, Italian), and a
+  // plain voice for a character with no Voice words.
+  "voices.model": "qwen3-vd-1.7b-q8",
+  "voices.language": "English",
+  "voices.default": "A natural, clear adult voice, calm and unhurried.",
+  // Music and effects (Settings → General): 30 s of music and 6 s of an effect, 8 steps (the tested recipe).
+  "sounds.musicSeconds": 30,
+  "sounds.effectSeconds": 6,
+  "sounds.steps": 8,
   // How often a window looks for what other windows changed on this server, in seconds (Settings → General — the
   // kit's GET /v1/sync/rev `pollSeconds`).
   "windows.checkSeconds": 3,

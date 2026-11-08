@@ -65,4 +65,20 @@ export const FEATURE_CATALOG = [
     group: "Clips",
     kind: "video",
   }),
+  // The film's music and sound effects (POST /v1/films/:id/sounds, a job): Stable Audio 3 on the kit's audio.cpp
+  // runtime, placed in the cut. A line's voice has no feature: the voice names its model (Settings — the kit's way).
+  FeatureCatalogEntry({
+    key: "sounds.music",
+    label: "Make music",
+    hint: "Makes a piece of score from a description — “a slow piano and cello cue, rain, melancholy” — placed in the film's cut. Seconds on an 8 GB card.",
+    group: "Sound",
+    kind: "music",
+  }),
+  FeatureCatalogEntry({
+    key: "sounds.effect",
+    label: "Make a sound effect",
+    hint: "Makes a sound effect from a description — “two steel swords clash, sharp ringing” — placed in the film's cut.",
+    group: "Sound",
+    kind: "sfx",
+  }),
 ];

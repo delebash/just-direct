@@ -36,6 +36,12 @@ const TODAY = {
   "clips.prompt": "2111f1cebac53983",
   "clips.negative": "12ae32cb1ec02d01",
   "clips.maxGuideMegabytes": "27badc983df1780b",
+  "voices.model": "1a0c2685dc06d25a",
+  "voices.language": "32889a931b08ba01",
+  "voices.default": "eb2da8c009cade96",
+  "sounds.musicSeconds": "624b60c58c9d8bfb",
+  "sounds.effectSeconds": "e7f6c011776e8db7",
+  "sounds.steps": "2c624232cdd22177",
   "windows.checkSeconds": "4e07408562bedb8b",
 };
 

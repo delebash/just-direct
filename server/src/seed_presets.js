@@ -88,6 +88,25 @@ export const DEFAULT_ENGINE_PRESETS = [
     params: { steps: 8, cfg: 1, strength: 1, sampler: "euler" },
     position: 5,
   },
+  // Music and sound effects: Stable Audio 3 on the kit's audio.cpp runtime, where the runtime places it.
+  {
+    id: "p_music",
+    name: "Music",
+    provider_id: "local-audiocpp-music",
+    model: "stable-audio-3-medium",
+    kind: "music",
+    params: { placement: "auto" },
+    position: 6,
+  },
+  {
+    id: "p_effects",
+    name: "Sound effects",
+    provider_id: "local-audiocpp-sfx",
+    model: "stable-audio-3-small-sfx",
+    kind: "sfx",
+    params: { placement: "auto" },
+    position: 7,
+  },
 ];
 
 export const DEFAULT_FEATURE_PRESETS = {
@@ -98,6 +117,8 @@ export const DEFAULT_FEATURE_PRESETS = {
   "frames.paint": "p_frames",
   "frames.check": "p_check",
   "clips.make": "p_clips",
+  "sounds.music": "p_music",
+  "sounds.effect": "p_effects",
 };
 
 export const DEFAULT_PRESET_ID = "p_general";
@@ -359,4 +380,61 @@ export const LTX_23 = {
       vaeTiling: { enabled: true, tile_size_w: 384, tile_size_h: 384, target_overlap: 0.125 },
     },
   },
+};
+
+// ── Voices, music and sound effects, for the kit's audio.cpp runtime. The voice model is Qwen3-TTS VoiceDesign 1.7B,
+// which speaks in a voice designed from words (a character card's Voice) — JustVoice's row for it, the same pinned file
+// (its kit_models.js rowOf, read 2026-11-07), Apache-2.0; audio.cpp's estimate of its memory on the card. Music and
+// effects are Stable Audio 3 Medium and Small SFX at Q8 (feasibility §J.3.1: 30 s of score in 4–4.5 s, 10 s of effects
+// in 2 s on 8 GB; the user's review: the score "use as is", the effects "use with edits"), from audio.cpp's own GGUF
+// repository pinned at 73ce4162 (sizes and LFS hashes from the Hugging Face API, 2026-11-07, matching the downloaded
+// copies' sizes); licence the Stability AI Community License — free for commercial use under US$1M a year in revenue.
+// Both run with audio.cpp's memory saver on, as tested. Their memory on the card is an estimate (the file and room to
+// work: audio.cpp's catalog gives none and the tests didn't capture it) until the kit measures a load.
+export const QWEN3_VOICE_DESIGN = {
+  runtime: "audiocpp",
+  id: "qwen3-vd-1.7b-q8",
+  name: "Qwen3-TTS VoiceDesign 1.7B",
+  kind: "tts",
+  license: "Apache-2.0",
+  files: [
+    {
+      slot: "model",
+      repo: "audio-cpp/audio.cpp-gguf",
+      revision: "661a224e9d9adbd49c01626f85e426f5f425d771",
+      path: "Qwen3-TTS-12Hz-1.7B-VoiceDesign-GGUF/qwen3-tts-12hz-1.7b-voicedesign-q8_0.gguf",
+      sha256: "1bcef9a8c021072fca40e00498e00af9091fbe6d3ae4f87567cfee885d6c7554",
+      bytes: 2816988960,
+    },
+  ],
+  peakVramMb: 8192,
+  minRamMb: 0,
+  refSpeed: {},
+  spec: { family: "qwen3_tts", task: "vdes" },
+};
+const AUDIOCPP_GGUF = { repo: "audio-cpp/audio.cpp-gguf", revision: "73ce4162f6cce370dd533c6782b772135c1b2a8e" };
+const STABLE_AUDIO_SPEC = { family: "stable_audio", task: "gen", sessionOptions: { "stable_audio.mem_saver": "true" } };
+export const STABLE_AUDIO_MUSIC = {
+  runtime: "audiocpp",
+  id: "stable-audio-3-medium",
+  name: "Stable Audio 3 Medium (music)",
+  kind: "music",
+  license: "Stability AI Community License",
+  files: [{ slot: "model", ...AUDIOCPP_GGUF, path: "Stable-Audio-3-Medium-GGUF/stable-audio-3-medium-q8_0.gguf", sha256: "d239eba564bd049b6fc0b103ee51cf179dc1a836ac7904c0d50088c6d45018a3", bytes: 3582601408 }],
+  peakVramMb: 6144,
+  minRamMb: 0,
+  refSpeed: {},
+  spec: STABLE_AUDIO_SPEC,
+};
+export const STABLE_AUDIO_EFFECTS = {
+  runtime: "audiocpp",
+  id: "stable-audio-3-small-sfx",
+  name: "Stable Audio 3 Small SFX (sound effects)",
+  kind: "sfx",
+  license: "Stability AI Community License",
+  files: [{ slot: "model", ...AUDIOCPP_GGUF, path: "Stable-Audio-3-Small-SFX-GGUF/stable-audio-3-small-sfx-q8_0.gguf", sha256: "bfe435d2c5841868a7025433929ee250e51e491be369a279f341221539c71841", bytes: 1683576512 }],
+  peakVramMb: 3072,
+  minRamMb: 0,
+  refSpeed: {},
+  spec: STABLE_AUDIO_SPEC,
 };

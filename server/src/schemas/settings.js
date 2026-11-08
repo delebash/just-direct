@@ -43,6 +43,15 @@ export const SETTINGS = {
   "clips.prompt": T.String({ minLength: 1, maxLength: 600 }),
   "clips.negative": T.String({ maxLength: 600 }),
   "clips.maxGuideMegabytes": T.Integer({ minimum: 1, maximum: 2000 }),
+  // Voices: the speech model a line is spoken with (an audio.cpp model that designs a voice from words), the language
+  // it speaks, and the voice a character with no Voice words gets.
+  "voices.model": T.String({ minLength: 1, maxLength: 120 }),
+  "voices.language": T.String({ minLength: 1, maxLength: 40 }),
+  "voices.default": T.String({ minLength: 1, maxLength: 600 }),
+  // Music and effects: a new piece's length, and the steps it is made in.
+  "sounds.musicSeconds": T.Integer({ minimum: 1, maximum: 60 }),
+  "sounds.effectSeconds": T.Integer({ minimum: 1, maximum: 60 }),
+  "sounds.steps": T.Integer({ minimum: 1, maximum: 100 }),
   // How often a window looks for what other windows changed on this server, in seconds.
   "windows.checkSeconds": T.Integer({ minimum: 1, maximum: 60 }),
 };
