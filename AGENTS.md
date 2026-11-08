@@ -8,9 +8,10 @@ film — while you can take over any step by hand and the AI carries on from you
 A family app: the desktop app on the kit's shell, its own Node server (Hono) with a SQLite database,
 the AI stack, the standard chrome (title bar, AI tasks, Help, Settings, backups, logs), help pages
 and tests at every level. Its engines are the kit's: stable-diffusion.cpp (our `jd` build) for
-pictures and clips, llama.cpp for planning and the first-frame check, audio.cpp for voices, music and
-effects, FFmpeg for the cut. Plain JavaScript, `"type": "module"` everywhere; Vue SFCs; Quasar's
-components under the kit's (`@delebash/ui`).
+pictures and clips, llama.cpp for planning and the first-frame check, audio.cpp for music, effects and
+lip repair, FFmpeg for the cut, the kit's mocap runtime for motion capture. The characters' voices are
+JustVoice's, the family's voice app, through its server's client API (`server/src/justvoice.js`). Plain
+JavaScript, `"type": "module"` everywhere; Vue SFCs; Quasar's components under the kit's (`@delebash/ui`).
 
 `README.md` lists the layout and every difference from Quasar's default; `docs/dev/PRD.md` is what
 the app is for.
