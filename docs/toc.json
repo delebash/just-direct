@@ -16,6 +16,7 @@
   {
     "group": "Reference",
     "items": [
+      { "slug": "settings", "title": "App Settings" },
       { "slug": "troubleshooting", "title": "Troubleshooting" },
       { "slug": "whats-new", "title": "What's new" }
     ]

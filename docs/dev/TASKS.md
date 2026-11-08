@@ -53,6 +53,16 @@ HERE:   JustDirect's own speech path is as committed; nothing is built on it unt
 GO:     none yet — the go to finish the app doesn't cover changing the user's round E decision
 PLAN:   docs/plans/2026-11-07-v1.md "The voice decision"
 
+### Cloud pictures and clips on the user's own key — waits for a key to test with [2026-11-08]
+STATE:  the PRD's row "Local or your own cloud key, per feature" holds today for the language-model features only
+        (planning, the first-frame check: the kit's providers). The kit's picture and clip features have one adapter,
+        local-sdcpp (just-core packages/core/src/llm/image_dispatch.js IMAGE_ADAPTERS, VIDEO_ADAPTERS). A cloud adapter
+        (a picture or video API on the user's key) is a kit gap, and building it untested would be a guess: it needs
+        the user's key and their choice of provider — accounts and credentials are the user's (the global rules).
+WHY:    a stronger model than this PC runs, for someone who pays for it
+HERE:   nothing built; the help names only the local models for pictures and clips (docs/ai-features.md)
+GO:     none yet — needs the user's provider and key
+
 ### Lip repair (LatentSync) on our audio.cpp development build [2026-11-07]
 STATE:  the PRD: "Lip repair (LatentSync) is offered, off by default, labelled non-commercial". It runs on our audio.cpp
         development build, as every engine may (the user, 2026-11-07: "you dont need a real release … we use dev code
