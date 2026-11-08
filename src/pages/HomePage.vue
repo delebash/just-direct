@@ -108,7 +108,8 @@ async function remove(film) {
               {{ t("films.counts", { cards: f.cardCount, shots: f.shotCount }) }} · {{ relativeTime(f.updatedAt) }}
             </span>
           </button>
-          <UiMenu class="film-card__more" :label="t('films.more', { title: f.title })" align="end">
+          <UiMenu class="film-card__more" trigger-class="ui-btn ui-btn--ghost ui-btn--icon" :label="t('films.more', { title: f.title })" align="end">
+            <template #trigger>⋯</template>
             <UiMenuItem @select="remove(f)">
               <Icon name="Trash" :size="14" /> {{ t("films.delete.action") }}
             </UiMenuItem>

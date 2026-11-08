@@ -105,12 +105,6 @@
     "toShots": "Make it on the Shots tab",
     "trimIn": "Trim start (s)",
     "trimOut": "Trim end (s)",
-    "intoNext": "Into the next shot",
-    "transitions": {
-      "cut": "Cut",
-      "dissolve": "Dissolve",
-      "fade": "Fade through black"
-    },
     "timeline": {
       "label": "The film's timeline: {n} shots, {s} s",
       "piece": "Shot {n} · {s} s"

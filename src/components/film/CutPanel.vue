@@ -20,7 +20,8 @@ const TRANSITION_SECONDS = 0.5;
 const SHORTEST = 0.5;
 
 const ratio = computed(() => films.film.width / films.film.height);
-const TRANSITIONS = computed(() => ["cut", "dissolve", "fade"].map((v) => ({ value: v, label: t(`cut.transitions.${v}`) })));
+// the shot editor's own words for them
+const TRANSITIONS = computed(() => ["cut", "dissolve", "fade"].map((v) => ({ value: v, label: t(`shots.transitions.${v}`) })));
 
 /** A shot's piece of the film: its clip's length less its trims — null without a clip. */
 function pieceOf(s) {
@@ -236,7 +237,7 @@ const saveLabel = computed(() => (canSaveNatively() ? t("cut.export.save") : t("
             <UiField :label="t('cut.trimOut')" layout="block" :for="`trim-out-${s.id}`">
               <UiNumber :id="`trim-out-${s.id}`" :model-value="s.trimOut" :min="0" :max="Math.max(0, s.clipSeconds - SHORTEST)" :step="0.1" width="num" @update:model-value="(v) => setTrim(s, 'trimOut', v)" />
             </UiField>
-            <UiField v-if="i < films.shots.length - 1" :label="t('cut.intoNext')" layout="block" :for="`transition-${s.id}`">
+            <UiField v-if="i < films.shots.length - 1" :label="t('shots.fields.transition')" layout="block" :for="`transition-${s.id}`">
               <UiSelect :id="`transition-${s.id}`" :model-value="s.transition" :options="TRANSITIONS" width="fit" @update:model-value="(v) => setTransition(s, v)" />
             </UiField>
           </div>
@@ -256,7 +257,7 @@ const saveLabel = computed(() => (canSaveNatively() ? t("cut.export.save") : t("
       <LuEngineNeeded :key="feature" :feature="feature" :label="form.kind === 'music' ? t('cut.sounds.musicFeature') : t('cut.sounds.effectFeature')" />
       <form class="cut-sound-form" @submit.prevent="makeSound">
         <UiSegmented v-model="form.kind" :options="KINDS" :aria-label="t('cut.sounds.kind')" />
-        <UiField :label="t('cut.sounds.prompt')" layout="block" for="sound-prompt">
+        <UiField class="cut-sound-form__prompt" :label="t('cut.sounds.prompt')" layout="block" for="sound-prompt">
           <UiInput id="sound-prompt" v-model="form.prompt" width="prose" :placeholder="form.kind === 'music' ? t('cut.sounds.musicPlaceholder') : t('cut.sounds.effectPlaceholder')" />
         </UiField>
         <UiField :label="t('cut.sounds.seconds')" layout="block" for="sound-seconds">
@@ -327,6 +328,8 @@ const saveLabel = computed(() => (canSaveNatively() ? t("cut.export.save") : t("
 .cut-row__edit { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
 .cut-row__move { display: flex; gap: 2px; }
 .cut-sound-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; max-width: 980px; }
+/* a description is prose: about 60 characters wide, never squeezed by the row */
+.cut-sound-form__prompt { flex: 0 1 60ch; min-width: min(60ch, 100%); }
 .cut-sounds { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-width: 980px; }
 .cut-sound { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--surface); }
 .cut-sound__body { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 4px; }

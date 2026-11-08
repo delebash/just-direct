@@ -125,7 +125,7 @@ For each shot:
 - **Trim start** and **Trim end** take seconds off either end of its clip — to start on the action, or
   to cut before a stray last moment. Every shot keeps at least half a second.
 - **Into the next shot** is how it joins the next one: a **Cut** (straight to the next), a
-  **Dissolve** (the two blend over half a second) or a **Fade through black**. The planner picks one;
+  **Dissolve** (the two blend over half a second) or a **Fade** (through black). The planner picks one;
   changing it marks the shot **Changed by you**, so a later **Carry it forward** leaves it alone.
 - **↑ ↓** move it earlier or later — the same order as the Shots tab.
 
