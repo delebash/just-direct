@@ -19,10 +19,20 @@ const PAGES = [
   { nav: "Films", url: /#\/$/ },
 ];
 
+// a film's four tabs, on a film with a character and a shot with a line (made through the API, no AI)
+const TABS = ["story", "cards", "shots", "cut"];
+
 const d = new Driver();
 let page;
+let filmId;
 
 before(async () => {
+  await d.startServer();
+  const post = (p, body) => d.api(p, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const film = await post("/films", { title: "Checked", story: "Mara runs the last ferry." });
+  const mara = await post(`/films/${film.id}/cards`, { kind: "character", name: "Mara", description: "grey braid, yellow coat", voice: "a low, calm voice" });
+  await post(`/films/${film.id}/shots`, { action: "Mara looks out.", cardIds: [mara.id], line: "The last crossing.", speakerId: mara.id });
+  filmId = film.id;
   await d.launch();
   page = d.page;
   await page.waitForSelector(".shell", { timeout: 30_000 });
@@ -60,6 +70,12 @@ for (const scheme of ["light", "dark"]) {
       await page.locator(".pane-h1").first().waitFor();
       assert.equal(await page.evaluate(() => document.documentElement.getAttribute("data-theme")), scheme);
       assert.deepEqual(await violations(), [], `${p.nav}, ${scheme}`);
+    }
+    for (const tab of TABS) {
+      await d.navigate(`#/films/${filmId}/${tab}`);
+      await page.locator('[role="tab"][aria-selected="true"]').waitFor();
+      await page.waitForLoadState("networkidle").catch(() => {});
+      assert.deepEqual(await violations(), [], `the film's ${tab} tab, ${scheme}`);
     }
   });
 }
