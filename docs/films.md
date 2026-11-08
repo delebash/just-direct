@@ -73,6 +73,29 @@ many are painted, how many card pictures go with each, and whether they're check
 Settings → General → First frames**; the words they are painted from are under **The words pictures
 are painted from**.
 
+### Clips
+
+**▶** on a shot opens its clip. **Make the clip** turns the shot's first frame into a moving clip
+with its sound — several minutes a clip on an 8 GB graphics card, on the **AI tasks** strip. **Make
+clips** in the toolbar makes one for every shot that has none, one after another; a shot that can't
+be made (say, set to follow drawn paths with none drawn) is named and the others go on.
+
+**How the clip is made:**
+
+- **The app's pick** — one pass for a shot up to 5 seconds, a long take past that; a shot whose
+  line has been spoken in its character's voice is drawn to that voice, the mouth following it.
+- **One pass** — the whole clip at the film's size: the sharpest, up to about 5 seconds.
+- **Long take** — made at half size and then sharpened to the film's size: up to 13 seconds.
+- **Led by drawn paths** — draw on the first frame where things should go: click to place a few
+  points for one path, **New path** for the next. A car follows its route, a blade its arc, the
+  camera its push. The path is smoothed between the points and spread over the clip.
+- **Led by a guide video** — a video from a 3D tool (depth, pose or edges) gives the shapes and
+  the motion, and the first frame gives the look. **Add a guide video…** reads its frames (MP4, WebM
+  or MOV, up to 200 MB) — this needs FFmpeg, installed from the AI page.
+
+Each clip you make is kept: watch them side by side, **Use this one** to put another in the film,
+**Delete** to remove one.
+
 ## Deleting a film
 
 On **Films**, a film's **⋯** menu has **Delete film**. It asks first: the film and everything in it —

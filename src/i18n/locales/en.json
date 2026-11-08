@@ -108,6 +108,63 @@
       "confirm": "Delete frame"
     }
   },
+  "clips": {
+    "feature": "Making a shot's clip",
+    "title": "Shot {n}'s clip",
+    "alt": "Shot {n}'s clip",
+    "open": "Shot {n}'s clip",
+    "hasClip": "Clip",
+    "how": "How the clip is made",
+    "modes": {
+      "auto": "The app's pick",
+      "one": "One pass",
+      "long": "Long take",
+      "paths": "Led by drawn paths",
+      "guide": "Led by a guide video"
+    },
+    "modeHints": {
+      "auto": "One pass for up to 5 seconds, a long take past that; a shot whose line has a voice is drawn to it.",
+      "one": "The whole clip at the film's size in one pass: the sharpest, up to about 5 seconds on an 8 GB card.",
+      "long": "Made at half size, then sharpened to the film's size: up to 13 seconds.",
+      "paths": "Draw on the first frame where things should move — a car's route, a blade's arc, the camera's push — and the clip follows.",
+      "guide": "A video from a 3D tool (depth, pose or edges) leads the shapes and the motion; the first frame gives the look."
+    },
+    "noFrame": "This shot has no first frame yet: the clip will be made from its words alone. Paint its first frames first for a clip that matches the film.",
+    "guideHas": "Guide video: {n} frames",
+    "guideNone": "No guide video yet.",
+    "guideAdd": "Add a guide video…",
+    "guideReading": "Reading…",
+    "guideRemove": "Take it off",
+    "make": "Make the clip",
+    "makeAnother": "Make another",
+    "making": "Making…",
+    "task": "Clip for shot {n}",
+    "allTask": "Clips for {title}",
+    "makeAll": "Make clips ({n})",
+    "makeAllAgain": "Make all clips again",
+    "makeAllHint": "Makes a clip for every shot that has none, from its first frame — several minutes a clip on an 8 GB card.",
+    "allDone": "{n} clips made",
+    "allFailed": "{n} shots couldn't be made — open each to see why.",
+    "none": "No clips yet.",
+    "chosen": "In the film",
+    "use": "Use this one",
+    "facts": "{s} s · {mode}",
+    "talking": "drawn to its voice",
+    "delete": {
+      "action": "Delete",
+      "title": "Delete this clip?",
+      "message": "The clip is deleted. If the film used it, it takes the shot's newest other clip. This can't be undone.",
+      "confirm": "Delete clip"
+    }
+  },
+  "paths": {
+    "canvas": "The first frame: click to add a point to the path",
+    "counts": "{tracks} paths · this one has {points} points",
+    "newTrack": "New path",
+    "undo": "Undo",
+    "clear": "Clear",
+    "hint": "Each path is where one thing goes, from its first point to its last over the clip. A few points are enough; the path is smoothed between them."
+  },
   "shots": {
     "total": "{n} shots · {s} s",
     "add": "Add a shot",
@@ -270,14 +327,19 @@
       "windowsHint": "The app open in more than one place at once — the desktop app, a browser on this server, a phone: how often each one looks for what the others changed. It shows their changes by itself.",
       "checkSeconds": "Look for other windows' changes every (seconds)",
       "promptsTitle": "The words pictures are painted from",
-      "promptsHint": "Each kind of card's picture is painted from these words: {name} is the card's name, {description} its description and {look} the film's look. A shot's first frame is painted from {size} (its framing), {action} (what happens), {cards} (each of its cards' looks) and {look}.",
+      "promptsHint": "Each kind of card's picture is painted from these words: {name} is the card's name, {description} its description and {look} the film's look. A shot's first frame is painted from {size} (its framing), {action} (what happens), {cards} (each of its cards' looks) and {look}; its clip from those and {camera} (the camera's move) and {line} (who says what).",
       "prompt": {
         "character": "A character",
         "place": "A place",
         "prop": "A prop",
         "look": "A look",
-        "frame": "A shot's first frame"
+        "frame": "A shot's first frame",
+        "clip": "A shot's clip"
       },
+      "clipsTitle": "Clips",
+      "clipsHint": "The clips' frame rate (every clip tested was made at 24), and the largest guide video a shot takes.",
+      "clipFps": "Frames a second",
+      "clipGuideMegabytes": "Largest guide video (MB)",
       "framesTitle": "First frames",
       "framesHint": "How many first frames a shot gets each time, how many of its cards' pictures go with them (who speaks first, then the other characters, the place, the props) and how small (smaller is faster and looks as good), and whether a vision model checks them and keeps the best.",
       "frameCandidates": "Frames a shot gets",

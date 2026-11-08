@@ -39,6 +39,7 @@ import {
 } from "@delebash/core/platform";
 import { purePath } from "@delebash/core/platform/data_paths";
 import { getLogger } from "@delebash/core/platform/log";
+import { router as clipsRouter } from "./api/clips_api.js";
 import { router as filmsRouter } from "./api/films_api.js";
 import { router as framesRouter } from "./api/frames_api.js";
 import { router as healthRouter } from "./api/health_api.js";
@@ -62,6 +63,7 @@ import {
   DEFAULT_FEATURE_PRESETS,
   DEFAULT_PRESET_ID,
   FLUX2_KLEIN,
+  LTX_23,
   MODEL_CATALOG,
 } from "./seed_presets.js";
 import { createServices } from "./services.js";
@@ -125,8 +127,9 @@ const llmArgs = (db, dataDir) => ({
   // The kit runtimes this app turns on besides llama.cpp, and the models it brings for them (the kit's
   // docs/plans/2026-10-24-engines-the-llama-way.md): stable-diffusion.cpp paints the cards' pictures and the shots'
   // first frames and makes the clips; the kit installs, downloads, rates and runs them, the AI page shows them.
-  runtimes: ["sdcpp"],
-  runtimeModels: [FLUX2_KLEIN],
+  // FFmpeg (the kit's tool runtime) reads a guide video's frames and joins the film.
+  runtimes: ["sdcpp", "ffmpeg"],
+  runtimeModels: [FLUX2_KLEIN, LTX_23],
 });
 
 /** The Hono app, not yet listening. `dataDir` defaults to the family data-folder ladder; `services` replaces some of
@@ -206,6 +209,7 @@ export async function createApp(dataDir = null, { services = {} } = {}) {
   app.route("/", filmsRouter());
   app.route("/", shotsRouter());
   app.route("/", framesRouter());
+  app.route("/", clipsRouter());
 
   // 8. The built UI, served for the headless path — a browser at this address is the whole app
   // (the kit's serveUi: a write there 405, hashed files kept, the rest revalidated). Every /v1 route

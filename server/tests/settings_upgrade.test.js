@@ -32,6 +32,10 @@ const TODAY = {
   "frames.referencePixels": "54faea9b3eeffce2",
   "frames.check": "b5bea41b6c623f7c",
   "frames.prompt": "fb613ab9128df2c0",
+  "clips.fps": "c2356069e9d1e79c",
+  "clips.prompt": "2111f1cebac53983",
+  "clips.negative": "12ae32cb1ec02d01",
+  "clips.maxGuideMegabytes": "27badc983df1780b",
   "windows.checkSeconds": "4e07408562bedb8b",
 };
 

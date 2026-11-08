@@ -77,6 +77,17 @@ export const DEFAULT_ENGINE_PRESETS = [
     position: 4,
     think: false,
   },
+  // A shot's clip: LTX-2.3 distilled on the kit's sd.cpp runtime, its video provider — 8 steps, guidance 1 (the
+  // distilled model's own; its timesteps are the row's), strength 1 from the first frame. Every clip a new seed.
+  {
+    id: "p_clips",
+    name: "Clips",
+    provider_id: "local-sdcpp-video",
+    model: "ltx-2.3-22b-distilled",
+    kind: "video",
+    params: { steps: 8, cfg: 1, strength: 1, sampler: "euler" },
+    position: 5,
+  },
 ];
 
 export const DEFAULT_FEATURE_PRESETS = {
@@ -86,6 +97,7 @@ export const DEFAULT_FEATURE_PRESETS = {
   "plan.revise": "p_plan",
   "frames.paint": "p_frames",
   "frames.check": "p_check",
+  "clips.make": "p_clips",
 };
 
 export const DEFAULT_PRESET_ID = "p_general";
@@ -308,4 +320,43 @@ export const FLUX2_KLEIN = {
   peakVramMb: 7200,
   minRamMb: 15 * 1024,
   refSpeed: { cuda12: 30, cpu: 900 },
+};
+
+// ── The clip model, for the kit's stable-diffusion.cpp runtime (kind video): LTX-2.3 22B distilled 1.1 at Q4_K_M with
+// its parts — Gemma 3 12B as the text encoder, the text connectors, the video and audio VAEs — LTX's x2 spatial
+// upscaler for the long take's second stage, and Lightricks' two guide LoRAs, Union Control (depth, pose, edges) and
+// Motion Track Control (drawn paths), both at half-size references (ref0.5). The files and hashes are the ones the
+// proof clips ran on (E:\Dev\Web\test-just-direct\rows.js; the LoRAs read from the Hugging Face API 2026-11-07, their
+// sizes matching the downloaded copies). Licences: LTX-2.3 and its LoRAs the LTX-2 Community License (commercial use
+// free under US$10M a year in revenue; no rights claimed in output); Gemma 3 the Gemma Terms of Use (commercial use
+// allowed, no revenue limit, bound to Google's prohibited-use policy). The way it runs on 8 GB (`spec`): Gemma on the
+// processor, the weights streamed from the drive, the distilled model's 8 timesteps, VAE tiling (feasibility §J.3,
+// kit-video2.js); its peak on the card 7.3 GB.
+const LTX_REPO = { repo: "unsloth/LTX-2.3-GGUF", revision: "96e8ed4925ead3db9ff4d0084f165ef6a74f28d0" };
+export const LTX_23 = {
+  runtime: "sdcpp",
+  id: "ltx-2.3-22b-distilled",
+  name: "LTX-2.3 22B distilled (video with sound)",
+  kind: "video",
+  license: "LTX-2 Community License · Gemma Terms of Use",
+  files: [
+    { slot: "diffusion_model", ...LTX_REPO, path: "distilled-1.1/ltx-2.3-22b-distilled-1.1-Q4_K_M.gguf", sha256: "5d09efdc0b8ec2054c44a05366cd7c6634ffa333b379b1f8baf018a78974b73d", bytes: 14194441248 },
+    { slot: "llm", repo: "unsloth/gemma-3-12b-it-GGUF", revision: "d15e4c7dc21dc55d56bf8549db57a71ad8a2a35d", path: "gemma-3-12b-it-Q4_K_M.gguf", sha256: "15b8fd9d8672cd4240c178c217ca781409291f34e353d2e913b29c7602ceb3ff", bytes: 7300778336 },
+    { slot: "embeddings_connectors", ...LTX_REPO, path: "text_encoders/ltx-2.3-22b-distilled_embeddings_connectors.safetensors", sha256: "c61cbb396e2a8175d8b2da51f0fdac885a4ccd22c9f64dafa5aa2c455dc8a507", bytes: 2312144712 },
+    { slot: "vae", ...LTX_REPO, path: "vae/ltx-2.3-22b-distilled_video_vae.safetensors", sha256: "e68d6d8f8a42942ac9b862cc315beb3bc30805a8876c7ad63ba5bf7a2b8e168a", bytes: 1452256522 },
+    { slot: "audio_vae", ...LTX_REPO, path: "vae/ltx-2.3-22b-distilled_audio_vae.safetensors", sha256: "3cd6a6eb8cb28f5ecc12f1f3126952b2a3d2b0b42ad3270e63cefafafe0d9b57", bytes: 364853140 },
+    { slot: "upscaler", repo: "Lightricks/LTX-2.3", revision: "c1521179de480464f366a98a9d9b2acc4cc097b9", path: "ltx-2.3-spatial-upscaler-x2-1.1.safetensors", sha256: "5f416311fa8172b65af67530758964708d29a317b830d689a51143b7f91913ed", bytes: 995743560 },
+    { slot: "lora_union", repo: "Lightricks/LTX-2.3-22b-IC-LoRA-Union-Control", revision: "20a580c8606c06a0988d40375a61309e0fe5893d", path: "ltx-2.3-22b-ic-lora-union-control-ref0.5.safetensors", sha256: "a1b888a87f661d27f08b394ae559e8e1050be33900bcc36a5cdf659e48f88d18", bytes: 654465352 },
+    { slot: "lora_motion", repo: "Lightricks/LTX-2.3-22b-IC-LoRA-Motion-Track-Control", revision: "022bf183b6da565fd2e2800e135ba0b46db57d32", path: "ltx-2.3-22b-ic-lora-motion-track-control-ref0.5.safetensors", sha256: "e279807ee3aa3db1ce60188d665ff83342860367dcd6bac19f8bd5a99a9e1dca", bytes: 327309314 },
+  ],
+  peakVramMb: 7300,
+  minRamMb: 20 * 1024,
+  spec: {
+    backend: "te=cpu",
+    paramsBackend: "diffusion=disk,te=disk",
+    params: {
+      sigmas: [1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0],
+      vaeTiling: { enabled: true, tile_size_w: 384, tile_size_h: 384, target_overlap: 0.125 },
+    },
+  },
 };

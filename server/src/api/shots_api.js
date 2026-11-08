@@ -11,16 +11,19 @@
 //   POST   /v1/films/:id/plan           PlanIn → 202 job (kind plan): new cards and the shots | 409 no-story · shots-exist
 //   POST   /v1/shots/:id/carry          CarryIn → 202 job (kind carry): the later shots revised | 409 nothing-to-carry
 
+import { rm } from "node:fs/promises";
 import { Hono, input } from "@delebash/core/platform";
 import { ApiError, notFound, RequestValidationError } from "@delebash/core/platform/errors";
 import { getLogger } from "@delebash/core/platform/log";
 import { checkIfMatch, etagOf } from "@delebash/core/platform/versions";
 import { getDb, getState } from "../app_state.js";
 import * as films from "../database/films.js";
+import { clipFiles } from "../database/clips.js";
 import { frameFiles } from "../database/frames.js";
 import { SETTING_DEFAULTS } from "../database/seed.js";
 import { getSetting } from "../database/settings.js";
 import * as shots from "../database/shots.js";
+import { soundFiles } from "../database/sounds.js";
 import {
   ACTIONS,
   cardRefs,
@@ -37,7 +40,7 @@ import {
 } from "../planner.js";
 import { IdParams } from "../schemas/films.js";
 import { CarryIn, PlanIn, ShotIn, ShotOrder, ShotPatch } from "../schemas/shots.js";
-import { fileName, filmFile, removeFile } from "../files.js";
+import { fileName, filmFile, removeFile, safeName } from "../files.js";
 import { mustFilm } from "./films_api.js";
 
 const log = getLogger("just_direct.shots");
@@ -64,12 +67,22 @@ function checkCards(filmId, body) {
   if (body.speakerId && cards.get(body.speakerId)?.kind !== "character") throw bad("speakerId", "Who speaks must be one of the film's characters.");
 }
 
-/** The files the work on `shotIds` made (their first frames), as [part, name] — read before the shots go. */
-const workFiles = (shotIds) => frameFiles(getDb(), shotIds).map((n) => ["frames", n]);
+/** The files the work on `shotIds` made (first frames, clips, lines, guide frames), as [part, name] — read before the
+ *  shots go. */
+const workFiles = (shotIds) => [
+  ...frameFiles(getDb(), shotIds).map((n) => ["frames", n]),
+  ...clipFiles(getDb(), shotIds).map((n) => ["clips", n]),
+  ...soundFiles(getDb(), shotIds).map((n) => ["sounds", n]),
+  ...shotIds.map((id) => ["guides", id]),
+];
 /** Remove a film's work files (a stray one left is harmless). */
 async function removeWork(filmId, files) {
   for (const [part, name] of files) {
-    const ok = fileName(name, part === "clips" ? "mp4" : part === "sounds" ? "wav" : "png");
+    if (part === "guides") {
+      await rm(filmFile(getState().dataDir, filmId, "guides", safeName(name)), { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }).catch(() => {});
+      continue;
+    }
+    const ok = fileName(name, part === "clips" ? "webm" : part === "sounds" ? "wav" : "png");
     if (ok) await removeFile(filmFile(getState().dataDir, filmId, part, ok));
   }
 }

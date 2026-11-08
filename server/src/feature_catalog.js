@@ -56,4 +56,13 @@ export const FEATURE_CATALOG = [
     hint: "Looks at each first frame painted for a shot — is everyone and everything there, anyone who shouldn't be, stray lettering, a distorted hand — and keeps the best one. Needs a model that can see pictures.",
     group: "First frames",
   }),
+  // A shot's clip (POST /v1/shots/:id/clips, POST /v1/films/:id/clips — jobs; clips.js): LTX-2.3 from the shot's chosen
+  // first frame — one pass, a long take, a talking shot with its voice, drawn paths or a guide video.
+  FeatureCatalogEntry({
+    key: "clips.make",
+    label: "Make a shot's clip",
+    hint: "Turns a shot's first frame into a moving clip with its sound — one pass, a long take up to 13 seconds, a talking shot drawn to its voice, or led by drawn paths or a guide video. Several minutes a clip on an 8 GB card.",
+    group: "Clips",
+    kind: "video",
+  }),
 ];

@@ -11,5 +11,7 @@
   shots by hand too.
 - **First frames**: each shot's first frame painted with its cards' pictures, several at a time,
   checked by a vision model and the best one used; compare them and choose by hand.
+- **Clips**: each shot's first frame made into a clip with its sound — one pass, a long take up to
+  13 seconds, drawn to the character's voice, led by paths you draw on the frame or by a guide video.
 - **More than one window**: the app open in several places at once shows each one's changes in the
   others by itself (**Settings → General → Other windows**).

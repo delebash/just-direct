@@ -58,6 +58,16 @@ const GROUPS = [
       { key: "frames.check", id: "setting-frame-check", label: "settings.general.frameCheck", type: "toggle" },
     ],
   },
+  // clips: the frame rate and the largest guide video
+  {
+    id: "clips",
+    title: "settings.general.clipsTitle",
+    hint: "settings.general.clipsHint",
+    fields: [
+      { key: "clips.fps", id: "setting-clip-fps", label: "settings.general.clipFps" },
+      { key: "clips.maxGuideMegabytes", id: "setting-clip-guide", label: "settings.general.clipGuideMegabytes" },
+    ],
+  },
   // the words each kind of card's picture is painted from
   {
     id: "prompts",
@@ -67,6 +77,7 @@ const GROUPS = [
     fields: [
       ...["character", "place", "prop", "look"].map((k) => ({ key: `cards.prompt.${k}`, id: `setting-prompt-${k}`, label: `settings.general.prompt.${k}`, type: "text" })),
       { key: "frames.prompt", id: "setting-prompt-frame", label: "settings.general.prompt.frame", type: "text" },
+      { key: "clips.prompt", id: "setting-prompt-clip", label: "settings.general.prompt.clip", type: "text" },
     ],
   },
   // how often a window looks for what other windows changed on the server (the kit's watchOtherWindows)
@@ -124,7 +135,7 @@ async function save(group) {
 <template>
   <section v-for="group in GROUPS" :key="group.id" class="card">
     <h2>{{ t(group.title) }}</h2>
-    <p class="hint">{{ t(group.hint, { name: "{name}", description: "{description}", look: "{look}", size: "{size}", action: "{action}", cards: "{cards}" }) }}</p>
+    <p class="hint">{{ t(group.hint, { name: "{name}", description: "{description}", look: "{look}", size: "{size}", action: "{action}", cards: "{cards}", camera: "{camera}", line: "{line}" }) }}</p>
     <q-form class="form" greedy @submit="save(group)" @keydown.enter.capture="(e) => !group.text && (enterFrom = e.target)">
       <div :class="group.text ? 'form' : 'form__row'">
         <UiField v-for="f in group.fields" :key="f.key" :label="t(f.label)" layout="block" :for="f.id">

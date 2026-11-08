@@ -8,6 +8,7 @@ import { confirmDialog, EmptyState, Icon, LuEngineNeeded, pushToast, reportError
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useFilmsStore } from "../../stores/films.js";
+import ClipsDialog from "./ClipsDialog.vue";
 import FramesDialog from "./FramesDialog.vue";
 import ShotDialog from "./ShotDialog.vue";
 
@@ -20,8 +21,18 @@ const editing = ref(false);
 // the shot changed by hand that can be carried forward, and the user's note on it
 const changed = ref(null);
 const note = ref("");
-// the shot whose first frames are open
+// the shot whose first frames are open, the shot whose clips are open
 const framesOf = ref(null);
+const clipsOf = ref(null);
+const missingClips = computed(() => films.shots.filter((s) => !s.clipId).length);
+async function makeAllClips() {
+  try {
+    const r = await films.makeAllClips(t("clips.allTask", { title: films.film.title }), { all: !missingClips.value });
+    if (r) pushToast({ kind: r.failed.length ? "warning" : "success", title: t("clips.allDone", { n: r.made }), description: r.failed.length ? t("clips.allFailed", { n: r.failed.length }) : undefined });
+  } catch (e) {
+    if (e?.name !== "AbortError") reportError(e);
+  }
+}
 const ratio = computed(() => films.film.width / films.film.height);
 const missingFrames = computed(() => films.shots.filter((s) => !s.frameId).length);
 
@@ -135,10 +146,18 @@ async function move(shot, by) {
       >
         <template #icon><Icon name="Image" :size="14" /></template>
       </UiButton>
+      <UiButton
+        v-if="films.shots.length" intent="secondary" focusable-when-disabled :disabled="films.clippingFilm"
+        :label="films.clippingFilm ? t('clips.making') : missingClips ? t('clips.makeAll', { n: missingClips }) : t('clips.makeAllAgain')"
+        :title="t('clips.makeAllHint')" @click="makeAllClips"
+      >
+        <template #icon><Icon name="Play" :size="14" /></template>
+      </UiButton>
       <span v-if="films.shots.length" class="muted">{{ t("shots.total", { n: films.shots.length, s: films.shots.reduce((a, s) => a + s.seconds, 0) }) }}</span>
     </div>
 
     <LuEngineNeeded v-if="films.shots.length" feature="frames.paint" :label="t('frames.feature')" />
+    <LuEngineNeeded v-if="films.shots.some((s) => s.frameId)" feature="clips.make" :label="t('clips.feature')" />
 
     <UiBanner v-if="changed" intent="info" class="shots-panel__carry">
       <span>{{ t("shots.carry.offer", { n: changed.position + 1 }) }}</span>
@@ -167,6 +186,7 @@ async function move(shot, by) {
             <span v-if="s.camera" class="muted">· {{ s.camera }}</span>
             <span class="muted">· {{ t("shots.seconds", { s: s.seconds }) }}</span>
             <UiTag v-if="s.edited" intent="secondary" :value="t('shots.editedTag')" :title="t('shots.editedHint')" />
+            <UiTag v-if="s.clipId" intent="success" :value="t('clips.hasClip')" />
           </div>
           <p class="shot-row__action">{{ s.action || t("shots.noAction") }}</p>
           <p v-if="s.line" class="shot-row__line">
@@ -180,6 +200,9 @@ async function move(shot, by) {
             :aria-label="t('frames.paintOne', { n: i + 1 })" :title="films.framing[s.id] ? t('frames.painting') : t('frames.paintOne', { n: i + 1 })" @click="paintFrames(s)"
           >
             <template #icon><Icon name="Sparkle" :size="14" /></template>
+          </UiButton>
+          <UiButton intent="ghost" size="icon" :aria-label="t('clips.open', { n: i + 1 })" :title="films.clipping[s.id] ? t('clips.making') : t('clips.open', { n: i + 1 })" @click="clipsOf = s">
+            <template #icon><Icon name="Play" :size="14" /></template>
           </UiButton>
           <UiButton intent="ghost" size="icon" :disabled="i === 0" :aria-label="t('shots.moveUp', { n: i + 1 })" :title="t('shots.moveUp', { n: i + 1 })" @click="move(s, -1)">
             <template #icon><Icon name="ArrowUp" :size="14" /></template>
@@ -199,6 +222,7 @@ async function move(shot, by) {
 
     <ShotDialog v-if="editing !== false" :shot="editing" @saved="onSaved" @close="editing = false" />
     <FramesDialog v-if="framesOf" :shot="framesOf" @close="framesOf = null" />
+    <ClipsDialog v-if="clipsOf" :shot="clipsOf" @close="clipsOf = null" />
   </div>
 </template>
 

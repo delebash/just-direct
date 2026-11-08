@@ -43,6 +43,19 @@ download with its vision part), on the **First-frame check** preset, and the one
 shot is used. In testing it agreed with a person's eye on 16 of 16 frames. Without that model set up,
 the frames are painted but not checked, and the app says so; the first one is used.
 
+## Make a shot's clip
+
+**Make the clip** on a shot ([Your films](films.md)) runs on the **Clips** preset: **LTX-2.3** (22B,
+distilled, about 27 GB to download with its parts), which makes the picture and the sound together,
+on the stable-diffusion.cpp engine. On an 8 GB card a 4-second clip at 1280 × 704 takes about seven
+minutes; the model's weights stream from the drive, so it needs about 20 GB of the computer's memory
+and room on the drive. Two of Lightricks' add-ons come with it: **Union Control**, which follows a
+guide video, and **Motion Track Control**, which follows drawn paths.
+
+Licences: LTX-2.3 and its add-ons are under the LTX-2 Community License — free for commercial use
+for anyone under US$10 million a year in revenue, with no rights claimed in what you make. Its text
+part, Gemma 3, is under Google's Gemma Terms of Use, which allow commercial use.
+
 ## Changing what a feature runs on
 
 Select the feature under **Routing by feature**: its preset can be pointed at another model, and its

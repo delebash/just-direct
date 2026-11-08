@@ -46,6 +46,13 @@ export const SETTING_DEFAULTS = {
   "frames.referencePixels": 262144,
   "frames.check": true,
   "frames.prompt": "{size} {action} {cards} {look}",
+  // Clips (Settings → General): 24 frames a second (every proof clip); the words: what happens, the camera's move,
+  // each card's look, the line, the film's look — the action research found LTX follows a move it is told in words; no
+  // words to avoid (the distilled model runs at guidance 1, where they do nothing); guide videos up to 200 MB.
+  "clips.fps": 24,
+  "clips.prompt": "{action} {camera} {cards} {line} {look}",
+  "clips.negative": "",
+  "clips.maxGuideMegabytes": 200,
   // How often a window looks for what other windows changed on this server, in seconds (Settings → General — the
   // kit's GET /v1/sync/rev `pollSeconds`).
   "windows.checkSeconds": 3,

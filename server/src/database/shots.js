@@ -8,8 +8,10 @@ import { touchFilm } from "./films.js";
 
 const now = () => new Date().toISOString();
 
-const COLUMNS =
+// what a new shot is written with (the clip's mode, paths and guide take their defaults); what a shot is read with
+const INSERT_COLUMNS =
   "id, film_id, position, place_id, card_ids, size, camera, action, line, speaker_id, seconds, transition, edited, frame_id, clip_id, trim_in, trim_out, created_at, updated_at";
+const COLUMNS = `${INSERT_COLUMNS}, mode, paths, guide_frames`;
 
 /** The fields a shot's content is made of — a change to one is a hand edit (`edited`), which a revision keeps. */
 export const CONTENT_FIELDS = Object.freeze(["placeId", "cardIds", "size", "camera", "action", "line", "speakerId", "seconds", "transition"]);
@@ -28,7 +30,24 @@ const FIELD_COLUMNS = {
   clipId: "clip_id",
   trimIn: "trim_in",
   trimOut: "trim_out",
+  mode: "mode",
+  paths: "paths",
+  guideFrames: "guide_frames",
 };
+
+/** The drawn paths as kept: tracks of {x, y} points in 0..1, anything else dropped. */
+function parsePaths(text) {
+  try {
+    const v = JSON.parse(text || "[]");
+    if (!Array.isArray(v)) return [];
+    return v
+      .filter(Array.isArray)
+      .map((track) => track.filter((p) => Number.isFinite(p?.x) && Number.isFinite(p?.y)).map((p) => ({ x: p.x, y: p.y })))
+      .filter((track) => track.length);
+  } catch {
+    return [];
+  }
+}
 
 function parseIds(text) {
   try {
@@ -59,12 +78,15 @@ function fromRow(row) {
     clipId: row.clip_id ?? null,
     trimIn: row.trim_in,
     trimOut: row.trim_out,
+    mode: row.mode ?? "auto",
+    paths: parsePaths(row.paths),
+    guideFrames: row.guide_frames ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
-const toColumn = (key, value) => (key === "cardIds" ? JSON.stringify([...new Set(value ?? [])]) : value);
+const toColumn = (key, value) => (key === "cardIds" ? JSON.stringify([...new Set(value ?? [])]) : key === "paths" ? JSON.stringify(value ?? []) : value);
 
 /** A film's shots in film order. */
 export function listShots(db, filmId) {
@@ -85,7 +107,7 @@ export function createShot(db, filmId, shot, { after = null, edited = true } = {
     const pos = i <= 0 ? shots.length : i;
     // the ones after it move down one
     for (const s of shots.slice(pos)) db.run("UPDATE shots SET position = ? WHERE id = ?", [s.position + 1, s.id]);
-    db.run(`INSERT INTO shots (${COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 0, ?, ?)`, [
+    db.run(`INSERT INTO shots (${INSERT_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 0, ?, ?)`, [
       id,
       filmId,
       pos,
@@ -161,7 +183,7 @@ export function replaceShots(db, filmId, shots) {
   db.tx(() => {
     db.run("DELETE FROM shots WHERE film_id = ?", [filmId]);
     shots.forEach((s, i) => {
-      db.run(`INSERT INTO shots (${COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL, 0, 0, ?, ?)`, [
+      db.run(`INSERT INTO shots (${INSERT_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL, 0, 0, ?, ?)`, [
         randomUUID(),
         filmId,
         i,

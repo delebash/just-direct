@@ -117,6 +117,20 @@ export const MIGRATIONS = [
       CREATE INDEX sounds_by_film ON sounds (film_id, kind);
     `,
   },
+  {
+    version: 2,
+    name: "a shot's clip: how it is made, its drawn paths, its guide video",
+    up: `
+      -- How the shot's clip is made: auto (the app picks: talking, one pass or a long take from its length and line),
+      -- one (one pass at the film's size), long (half size, then the upscale pass), paths (the drawn paths lead where
+      -- things and the camera go), guide (a guide video leads the shapes and motion).
+      ALTER TABLE shots ADD COLUMN mode TEXT NOT NULL DEFAULT 'auto' CHECK (mode IN ('auto', 'one', 'long', 'paths', 'guide'));
+      -- The drawn paths: a list of tracks, each a list of control points {x, y} in 0..1 of the frame (JSON, read whole).
+      ALTER TABLE shots ADD COLUMN paths TEXT NOT NULL DEFAULT '[]';
+      -- The guide video's frame count (its PNG frames are in the film's guides/<shotId>/ folder), 0 for none.
+      ALTER TABLE shots ADD COLUMN guide_frames INTEGER NOT NULL DEFAULT 0;
+    `,
+  },
 ];
 
 /**

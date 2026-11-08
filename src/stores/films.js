@@ -34,6 +34,9 @@ export const useFilmsStore = defineStore("films", {
     // shots whose first frames are being painted: id → true; the whole film's
     framing: {},
     framingFilm: false,
+    // shots whose clip is being made: id → true; the whole film's
+    clipping: {},
+    clippingFilm: false,
   }),
   getters: {
     cardsOf: (state) => (kind) => state.cards.filter((c) => c.kind === kind),
@@ -168,6 +171,61 @@ export const useFilmsStore = defineStore("films", {
     async deleteFrame(frame) {
       await del(`/v1/frames/${enc(frame.id)}`);
       await this.loadShots();
+    },
+    /** A shot's clips, the newest first. */
+    async clipsOf(shot) {
+      return (await get(`/v1/shots/${enc(shot.id)}/clips`)).items;
+    },
+    /** Make a shot's clip (a server job): from its chosen first frame, the way its mode says; the clip is chosen. */
+    async makeClip(shot, label) {
+      this.clipping = { ...this.clipping, [shot.id]: true };
+      try {
+        const done = await runServerJob({ start: () => post(`/v1/shots/${enc(shot.id)}/clips`, {}), feature: "clips.make", label, meta: { shotId: shot.id } });
+        return done?.result ?? null;
+      } finally {
+        const { [shot.id]: _, ...rest } = this.clipping;
+        this.clipping = rest;
+        await this.loadShots().catch(() => {});
+      }
+    },
+    /** Make the clips of every shot that has none, or of every shot (a server job). */
+    async makeAllClips(label, { all = false } = {}) {
+      this.clippingFilm = true;
+      try {
+        const done = await runServerJob({
+          start: () => post(`/v1/films/${enc(this.film.id)}/clips`, { all }),
+          feature: "clips.make",
+          label,
+          meta: { filmId: this.film.id },
+          describe: (job, pct) => (job.data?.at ? `${job.data.at}/${job.data.shots} · ${pct}%` : `${pct}%`),
+        });
+        return done?.result ?? null;
+      } finally {
+        this.clippingFilm = false;
+        await this.loadShots().catch(() => {});
+      }
+    },
+    async chooseClip(shot, clipId) {
+      const saved = await post(`/v1/shots/${enc(shot.id)}/clip`, { clipId });
+      this.shots = this.shots.map((s) => (s.id === saved.id ? saved : s));
+      return saved;
+    },
+    async deleteClip(clip) {
+      await del(`/v1/clips/${enc(clip.id)}`);
+      await this.loadShots();
+    },
+    /** A guide video for a shot (its frames read by the server's FFmpeg); the shot's clip is then led by it. */
+    async uploadGuide(shot, file) {
+      const form = new FormData();
+      form.append("file", file, file.name);
+      const saved = await postForm(`/v1/shots/${enc(shot.id)}/guide`, form);
+      this.shots = this.shots.map((s) => (s.id === saved.id ? saved : s));
+      return saved;
+    },
+    async removeGuide(shot) {
+      const saved = await del(`/v1/shots/${enc(shot.id)}/guide`);
+      this.shots = this.shots.map((s) => (s.id === saved.id ? saved : s));
+      return saved;
     },
     /** A hand edit to `shot` carried into the later shots nobody changed by hand (a server job). */
     async carry(shot, note, label) {

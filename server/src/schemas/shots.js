@@ -37,9 +37,17 @@ const fields = {
 /** A new shot (POST /v1/films/:id/shots): after the shot `after`, else at the end. */
 export const ShotIn = strictObject({ ...fields, after: opt(nullable(Id)) });
 
-/** A change to a shot (PATCH /v1/shots/:id): its content (a hand edit), or its cut (the trims). */
+/** How a shot's clip is made (database/schema.js migration 2). */
+export const MODES = Object.freeze(["auto", "one", "long", "paths", "guide"]);
+const Point = strictObject({ x: T.Number({ minimum: 0, maximum: 1 }), y: T.Number({ minimum: 0, maximum: 1 }) });
+/** Drawn paths: up to 8 tracks, each up to 32 control points in 0..1 of the frame. */
+export const Paths = T.Array(T.Array(Point, { minItems: 1, maxItems: 32 }), { maxItems: 8 });
+
+/** A change to a shot (PATCH /v1/shots/:id): its content (a hand edit), how its clip is made, or its cut (the trims). */
 export const ShotPatch = strictObject({
   ...fields,
+  mode: opt(T.Union(MODES.map((m) => T.Literal(m)))),
+  paths: opt(Paths),
   trimIn: opt(T.Number({ minimum: 0, maximum: SECONDS_MAX })),
   trimOut: opt(T.Number({ minimum: 0, maximum: SECONDS_MAX })),
 });

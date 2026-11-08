@@ -37,6 +37,12 @@ export const SETTINGS = {
   "frames.referencePixels": T.Integer({ minimum: 65536, maximum: 1048576 }),
   "frames.check": T.Boolean(),
   "frames.prompt": T.String({ minLength: 1, maxLength: 600 }),
+  // Clips: the frame rate, the words a clip is made from ({action}, {camera}, {size}, {cards}, {line}, {look}) and what
+  // it should avoid, and the largest guide video a shot takes, in MB.
+  "clips.fps": T.Integer({ minimum: 8, maximum: 30 }),
+  "clips.prompt": T.String({ minLength: 1, maxLength: 600 }),
+  "clips.negative": T.String({ maxLength: 600 }),
+  "clips.maxGuideMegabytes": T.Integer({ minimum: 1, maximum: 2000 }),
   // How often a window looks for what other windows changed on this server, in seconds.
   "windows.checkSeconds": T.Integer({ minimum: 1, maximum: 60 }),
 };
