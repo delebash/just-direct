@@ -5,9 +5,10 @@
 // naming what goes with them. Each shot is edited by hand in ShotDialog; after a hand edit the tab offers to carry the
 // change into the later shots nobody changed by hand (the planner's revision), with a note in the user's own words.
 // A shot's line is spoken in its speaker's voice (Speak); a clip made after it moves the mouth to that voice.
-import { confirmDialog, EmptyState, Icon, LuEngineNeeded, pushToast, reportError, serverUrl, UiBanner, UiButton, UiInput, UiServerImage, UiTag } from "@delebash/ui";
-import { computed, ref } from "vue";
+import { confirmDialog, EmptyState, Icon, LuEngineNeeded, pushToast, reportError, serverUrl, UiBanner, UiButton, UiInput, UiServerImage, UiTag, useResolvedRoute } from "@delebash/ui";
+import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
 import { useFilmsStore } from "../../stores/films.js";
 import ClipsDialog from "./ClipsDialog.vue";
 import FramesDialog from "./FramesDialog.vue";
@@ -16,6 +17,13 @@ import ShotDialog from "./ShotDialog.vue";
 const emit = defineEmits(["go"]);
 const { t } = useI18n();
 const films = useFilmsStore();
+const router = useRouter();
+
+// planning runs on the language model the user sets up: said before Plan the shots when there is none (the route a
+// run would take — the kit's resolved route; it refreshes itself after any AI setting changes)
+const { routeFor, ensureRoute } = useResolvedRoute();
+onMounted(() => ensureRoute("plan.shots", "plan.shots"));
+const noPlanner = computed(() => routeFor("plan.shots", "plan.shots")?.configured === false);
 
 // the shot being edited: false closed, null a new one, or the shot
 const editing = ref(false);
@@ -189,6 +197,12 @@ async function move(shot, by) {
       <span v-if="films.shots.length" class="muted">{{ t("shots.total", { n: films.shots.length, s: films.shots.reduce((a, s) => a + s.seconds, 0) }) }}</span>
     </div>
 
+    <UiBanner v-if="noPlanner && hasStory" intent="warning" class="shots-panel__noplanner">
+      {{ t("shots.plan.noModel") }}
+      <template #action>
+        <UiButton intent="secondary" size="small" :label="t('shots.plan.setUp')" @click="router.push('/ai')" />
+      </template>
+    </UiBanner>
     <LuEngineNeeded v-if="films.shots.length" feature="frames.paint" :label="t('frames.feature')" />
     <LuEngineNeeded v-if="films.shots.some((s) => s.frameId)" feature="clips.make" :label="t('clips.feature')" />
 

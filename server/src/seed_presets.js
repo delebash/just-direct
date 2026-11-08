@@ -40,8 +40,10 @@ export const DEFAULT_ENGINE_PRESETS = [
     position: 1,
   },
   // The planner: thinking on with room to finish — the local "medium" level, 4,096 tokens (the kit's reasoning map),
-  // the budget its test passed with; the test's 1,500 ran out before the answer every time (feasibility §J.3). The
-  // model is the one the user sets up (Quick Setup picks Gemma 4 26B-A4B on 8 GB, the model tested).
+  // the budget its test passed with; the test's 1,500 ran out before the answer every time (feasibility §J.3). A
+  // thought that reaches the budget is closed and the answer still follows (the app's first real run, 2026-11-07:
+  // seven tries of the cards pass, all answered, two of them at the budget). The model is the one the user sets up
+  // (Quick Setup picks Gemma 4 26B-A4B on 8 GB, the model tested).
   {
     id: "p_plan",
     name: "Planning",

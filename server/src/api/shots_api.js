@@ -92,25 +92,17 @@ async function removeWork(filmId, files) {
 /** Run one planner pass: the action, its variables, its schema for this run → the parsed answer. */
 /** What the log may say about an answer: its size, why the model stopped, its tokens — never its words (the user's
  *  story is in them). */
-const answerFacts = (r) => `${String(r?.content ?? "").length} characters, stopped: ${r?.finish_reason || "?"}, ${r?.completion_tokens ?? "?"} tokens`;
+const answerFacts = (r) => `${String(r?.content ?? "").length} characters, stopped: ${r?.finishReason || "?"}, ${r?.completionTokens ?? "?"} tokens`;
 
-/** One planner pass: the action with its schema → the answer as an object. An answer that can't be read is asked for
- *  once more (a local model's run now and then comes back cut short or empty); a second one fails the plan. */
+/** One planner pass: the action with its schema → the answer as an object; one that can't be read fails the plan, the
+ *  log saying what it was like. */
 async function pass(action, variables, schema, { signal }) {
   const { services } = getState();
-  const ask = () => services.run({ action, variables, jsonSchema: JSON.stringify(schema), maxTokens: setting("planner.maxTokens") }, { signal });
-  let r = await ask();
-  try {
-    return parseAnswer(r?.content);
-  } catch {
-    signal?.throwIfAborted();
-    log.warning(`${action}: the answer couldn't be read (${answerFacts(r)}) — asking once more`);
-  }
-  r = await ask();
+  const r = await services.run({ action, variables, jsonSchema: JSON.stringify(schema), maxTokens: setting("planner.maxTokens") }, { signal });
   try {
     return parseAnswer(r?.content);
   } catch (e) {
-    log.warning(`${action}: the answer couldn't be read again (${answerFacts(r)})`);
+    log.warning(`${action}: the answer couldn't be read (${answerFacts(r)})`);
     throw e;
   }
 }

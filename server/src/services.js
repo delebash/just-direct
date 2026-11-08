@@ -16,9 +16,15 @@ export function createServices(overrides = {}) {
     /** Paint a picture with image feature `feature`: `request` `{prompt, width, height, refs, seed}` (PNG Buffers) →
      *  a PNG Buffer. `onProgress({fraction})`, `signal` cancels. */
     paintImage: (feature, request, opts = {}) => runImageFeature(feature, request, opts),
-    /** Run a chat action (the kit's RunRequest: `action`, `variables`, `jsonSchema`, `maxTokens`, `images`) → its
-     *  LLMResponse (`content`). `signal` cancels. */
-    run: (body, opts = {}) => runAction(stores.getPromptStore(), buildLlmConfig(), body, opts),
+    /** Run a chat action (the kit's RunRequest: `action`, `variables`, `jsonSchema`, `maxTokens`, `images`) → the
+     *  answer as the routes read it: `{content, finishReason, completionTokens}`. The kit's runAction answers its
+     *  LLMResponse (`text`, `finish_reason`, `completion_tokens`); only /v1/ai/run renames `text` to `content`, so the
+     *  names are mapped here, in one place (the app read `content` from runAction until the first real run, 2026-11-07:
+     *  every plan and every frame check failed while the fakes passed). `signal` cancels. */
+    run: async (body, opts = {}) => {
+      const r = await runAction(stores.getPromptStore(), buildLlmConfig(), body, opts);
+      return { content: r?.text ?? "", finishReason: r?.finish_reason ?? "", completionTokens: r?.completion_tokens ?? 0 };
+    },
     /** Make a clip with video feature `feature` (runVideoFeature's request: prompt, size, frames, fps, init, guide,
      *  audio, loras by slot, params) → `{bytes, fps, frames}`, the WebM with its sound. */
     makeVideo: (feature, request, opts = {}) => runVideoFeature(feature, request, opts),

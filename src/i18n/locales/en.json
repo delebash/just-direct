@@ -278,6 +278,8 @@
       "running": "Planning…",
       "hint": "The AI reads the story, adds the cards it needs, then plans every shot — a few minutes on a local model.",
       "needsStory": "Write the story first, on the Story tab.",
+      "noModel": "Planning the shots needs a language model, and none is set up yet. Quick Setup on the AI page picks one that fits this computer.",
+      "setUp": "Set up the AI",
       "task": "Planning {title}",
       "done": "{shots} shots planned · {cards} new cards",
       "againTitle": "Plan the film again?",

@@ -5,7 +5,7 @@
 // address; the Story form's save with its version; a card added on the Cards tab; Plan the shots as a server job on the
 // AI tasks strip (its result read again); a hand edit to a shot, then Carry it forward with the user's note; a line
 // spoken and played; the Cut tab's trims, transitions, export and music.
-import { installLlmUi, LlmUiHosts } from "@delebash/ui";
+import { installLlmUi, LlmUiHosts, useResolvedRoute } from "@delebash/ui";
 import { QUASAR_TEST_OPTIONS } from "@delebash/ui/quasar/install.js";
 import { DOMWrapper, flushPromises, mount } from "@vue/test-utils";
 import { createPinia } from "pinia";
@@ -25,7 +25,8 @@ let server;
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": status >= 400 ? "application/problem+json" : "application/json" } });
 
 function fakeFetch(input, init = {}) {
-  const url = new URL(String(input));
+  // the kit's AI client asks by path alone
+  const url = new URL(String(input), "http://127.0.0.1:17500");
   const method = (init.method || "GET").toUpperCase();
   const body = typeof init.body === "string" ? JSON.parse(init.body) : undefined;
   server.calls.push([method, url.pathname, body, init.headers?.["If-Match"] ?? init.headers?.["if-match"]]);
@@ -77,6 +78,7 @@ function fakeFetch(input, init = {}) {
     server.exported = { file: "the-last-ferry-1.mp4", createdAt: new Date().toISOString(), name: "The-Last-Ferry.mp4", videoUrl: "/v1/films/f1/export/video?v=the-last-ferry-1.mp4" };
     return Promise.resolve(json({ id: "job-export", state: "running", progress: 0 }, 202));
   }
+  if (p === "/v1/ai/resolved-route") return Promise.resolve(json(server.route));
   if (p.endsWith("/readiness")) return Promise.resolve(json({ ready: true, need: "", model: "sa3", modelState: { name: "Stable Audio 3 Medium", license: "Stability AI Community License" } }));
   if (p === "/v1/jobs/job-line") return Promise.resolve(json({ id: "job-line", state: "done", progress: 1, result: server.sounds.at(-1) }));
   if (p === "/v1/jobs/job-sound") return Promise.resolve(json({ id: "job-sound", state: "done", progress: 1, result: server.sounds.at(-1) }));
@@ -94,7 +96,7 @@ const sound = (s) => ({ filmId: "f1", shotId: null, start: 0, volume: 1, file: `
 let wrapper;
 let router;
 async function mountPage(path) {
-  router = createRouter({ history: createMemoryHistory(), routes: [{ path: "/films/:id/:tab?", component: FilmPage, props: true }, { path: "/", component: { render: () => null } }] });
+  router = createRouter({ history: createMemoryHistory(), routes: [{ path: "/films/:id/:tab?", component: FilmPage, props: true }, { path: "/", component: { render: () => null } }, { path: "/ai", component: { render: () => null } }] });
   router.push(path);
   await router.isReady();
   const Host = { render: () => [h(quasar.QLayout, { view: "hhh lpr fff" }, () => h(quasar.QPageContainer, () => h(RouterView))), h(LlmUiHosts)] };
@@ -127,8 +129,10 @@ const settle = async () => {
 };
 
 beforeEach(() => {
-  server = { calls: [], n: 1, film: { id: "f1", title: "The Last Ferry", story: "", look: "", width: 1280, height: 704, version: '"v1"' }, cards: [], shots: [], sounds: [], exported: null };
+  server = { calls: [], n: 1, film: { id: "f1", title: "The Last Ferry", story: "", look: "", width: 1280, height: 704, version: '"v1"' }, cards: [], shots: [], sounds: [], exported: null, route: { configured: true } };
   reported.length = 0;
+  // the kit keeps resolved routes for the session: each test asks its own server
+  useResolvedRoute().invalidateRoutes();
   vi.stubGlobal("fetch", vi.fn(fakeFetch));
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   // jsdom has no scrolling; a select's option list scrolls to its choice
@@ -173,6 +177,15 @@ test("Shots: no story, no plan; with one, Plan the shots runs as a job and shows
   expect(server.calls.some((c) => c[0] === "POST" && c[1] === "/v1/films/f1/plan")).toBe(true);
   expect(text()).toContain("Shot 2 happens.");
   expect(text()).toContain("3 shots · 12 s");
+});
+
+test("Shots: no language model set up — said before Plan the shots, with the way to the AI page", async () => {
+  server.film.story = "Mara runs the last ferry.";
+  server.route = { configured: false, detail: "No model is set." };
+  await mountPage("/films/f1/shots");
+  expect(text()).toContain("Planning the shots needs a language model");
+  await click(byText(".ui-banner button", "Set up the AI"));
+  expect(router.currentRoute.value.path).toBe("/ai");
 });
 
 test("a hand edit offers to carry it forward; the note goes with it", async () => {

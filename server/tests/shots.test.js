@@ -164,19 +164,9 @@ describe("the planner", () => {
     expect((await listShots(film.id)).map((s) => s.action)).toEqual(["The lake."]);
   });
 
-  test("an answer that can't be read is asked for once more, and the plan goes on", async () => {
+  test("an answer that isn't the plan fails the job in words; a model that fails, with its own", async () => {
     const film = await newFilm();
-    const lake = { place: "", cards: [], size: "wide", camera: "static", action: "The lake.", line: "", speaker: "", seconds: 4, transition: "cut" };
-    answers.push('{"cards": [', { cards: [] }, { shots: [lake] });
-    const done = await settle((await plan(film.id)).json());
-    expect(done.state).toBe("done");
-    expect(runs.map((r) => r.action)).toEqual(["plan.cards", "plan.cards", "plan.shots"]);
-    expect((await listShots(film.id)).map((s) => s.action)).toEqual(["The lake."]);
-  });
-
-  test("an answer that isn't the plan, twice, fails the job in words; a model that fails, with its own", async () => {
-    const film = await newFilm();
-    answers.push("I think the story is lovely!", "It really is.");
+    answers.push("I think the story is lovely!");
     const bad = await settle((await plan(film.id)).json());
     expect(bad.state).toBe("error");
     expect(bad.error.title).toBe("The plan didn't come back whole");
