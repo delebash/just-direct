@@ -138,6 +138,30 @@ async function makeClip(film, shot, { signal, progress }) {
   return clip;
 }
 
+/** The film's clips, one shot after another (a job's body — Make clips, and Make the film's clips step): every shot
+ *  without one, or every shot (`all`). One shot's refusal (no paths drawn, no guide) doesn't stop the others; the
+ *  engine's own failure does. → `{shots, made, failed}`. */
+export async function makeFilmClips(film, { all = false } = {}, { signal, progress, update }) {
+  const todo = shots.listShots(getDb(), film.id).filter((s) => all || !s.clipId);
+  update({ filmId: film.id, shots: todo.length });
+  let made = 0;
+  const failed = [];
+  for (const [i, s] of todo.entries()) {
+    const now = shots.getShot(getDb(), s.id);
+    if (!now) continue;
+    update({ at: i + 1 });
+    try {
+      await makeClip(film, now, { signal, progress: (f) => progress((i + f) / todo.length, "making") });
+      made++;
+    } catch (e) {
+      if (signal.aborted) throw e;
+      if (!(e instanceof ApiError && e.statusCode === 409)) throw e;
+      failed.push({ shotId: s.id, why: e.title });
+    }
+  }
+  return { shots: todo.length, made, failed };
+}
+
 export function router() {
   const app = new Hono();
 
@@ -179,27 +203,7 @@ export function router() {
     const { all = false } = c.req.valid("json") ?? {};
     const job = getState().jobs.start(
       { kind: "clips-film", key: film.id, label: film.title, failTitle: "The clips didn't finish", clientId: clientOf(c) },
-      async ({ signal, progress, update }) => {
-        const todo = shots.listShots(getDb(), film.id).filter((s) => all || !s.clipId);
-        update({ filmId: film.id, shots: todo.length });
-        let made = 0;
-        const failed = [];
-        for (const [i, s] of todo.entries()) {
-          const now = shots.getShot(getDb(), s.id);
-          if (!now) continue;
-          update({ at: i + 1 });
-          try {
-            await makeClip(film, now, { signal, progress: (f) => progress((i + f) / todo.length, "making") });
-            made++;
-          } catch (e) {
-            if (signal.aborted) throw e;
-            // one shot's refusal (no paths drawn, no guide) doesn't stop the others; the engine's own failure does
-            if (!(e instanceof ApiError && e.statusCode === 409)) throw e;
-            failed.push({ shotId: s.id, why: e.title });
-          }
-        }
-        return { shots: todo.length, made, failed };
-      },
+      (ctx) => makeFilmClips(film, { all }, ctx),
     );
     return c.json(job, 202);
   });

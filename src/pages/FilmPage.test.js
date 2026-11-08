@@ -111,6 +111,12 @@ function fakeFetch(input, init = {}) {
   if (p === "/v1/jobs/job-sound") return Promise.resolve(json({ id: "job-sound", state: "done", progress: 1, result: server.sounds.at(-1) }));
   if (p === "/v1/jobs/job-export") return Promise.resolve(json({ id: "job-export", state: "done", progress: 1, result: { file: server.exported.file, seconds: 7.5, shots: 2, skipped: 1 } }));
   if (p === "/v1/jobs/job-plan") return Promise.resolve(json({ id: "job-plan", state: "done", progress: 1, result: { shots: 3, cardsAdded: 2 } }));
+  // Make the film: every step it lacked, done
+  if (p === "/v1/films/f1/make" && method === "POST") return Promise.resolve(json({ id: "job-make", state: "running", progress: 0, data: { step: "frames" } }, 202));
+  if (p === "/v1/jobs/job-make") {
+    const steps = ["plan", "frames", "clips", "export"].map((step) => ({ step, done: step !== "plan" }));
+    return Promise.resolve(json({ id: "job-make", state: "done", progress: 1, result: { steps } }));
+  }
   if (p === "/v1/jobs/job-carry") return Promise.resolve(json({ id: "job-carry", state: "done", progress: 1, result: { why: "Teo keeps the coat.", changed: ["s3"] } }));
   return Promise.resolve(json({}));
 }
@@ -180,6 +186,21 @@ test("the Story tab saves what changed, with the version it read", async () => {
   const patch = server.calls.find((c) => c[0] === "PATCH");
   expect(patch[2]).toEqual({ story: "Mara runs the last ferry." });
   expect(patch[3]).toBe('"v1"');
+});
+
+test("Make the film: asked first, then one server job; what it did said; the Cut tab once it exported", async () => {
+  server.film.story = "Mara runs the last ferry.";
+  await mountPage("/films/f1/story");
+  await click(byText("button", "Make the film"));
+  expect(text()).toContain("Make the whole film?");
+  expect(server.calls.some(([m, p]) => m === "POST" && p === "/v1/films/f1/make")).toBe(false);
+  // the dialog's own button, the last one with the words
+  await click([...document.body.querySelectorAll("button")].filter((b) => b.textContent.includes("Make the film")).at(-1));
+  await settle();
+  expect(server.calls.filter(([m, p]) => m === "POST" && p === "/v1/films/f1/make")).toHaveLength(1);
+  expect(text()).toContain("The film is made: First frames, Clips, Export");
+  expect(router.currentRoute.value.params.tab).toBe("cut");
+  expect(reported).toHaveLength(0);
 });
 
 test("Cards: a character added from its kind's button", async () => {

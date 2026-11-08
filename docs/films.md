@@ -14,6 +14,21 @@ title, the words for its look and its shape:
 
 A film's page has its work in tabs.
 
+## Make the film
+
+**Make the film** at the top of a film's page does every step the film still lacks, one after another:
+it plans the shots from the story (only when there are none yet), paints the first frames of every
+shot without one (the cards' pictures first), makes the clips of every shot without one, and exports
+the film. It never redoes or overwrites what you've made or changed, so you can work on the film by
+hand before, between and after — and if you stop it on the **AI tasks** strip, **Make the film** again
+carries on where it stopped. Music and sound effects are yours to add on the Cut tab.
+
+On an 8 GB card a whole film takes hours — about seven minutes a clip. Before it starts, the app checks
+that what it needs is installed (the picture model, the clip model, FFmpeg) and names anything missing.
+For example: write a few sentences on the Story tab, press **Make the film**, and come back to a
+planned, painted and exported film on the Cut tab; then change shot 3's action, make its clip again,
+and press **Make the film** once more — only the export runs again.
+
 ## Story
 
 The title, the story and the look. The story can be a sentence, a page or a whole script. **Save**

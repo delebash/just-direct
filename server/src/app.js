@@ -41,6 +41,7 @@ import { purePath } from "@delebash/core/platform/data_paths";
 import { getLogger } from "@delebash/core/platform/log";
 import { router as clipsRouter } from "./api/clips_api.js";
 import { router as cutRouter } from "./api/cut_api.js";
+import { router as filmRunRouter } from "./api/film_run_api.js";
 import { router as filmsRouter } from "./api/films_api.js";
 import { router as framesRouter } from "./api/frames_api.js";
 import { router as healthRouter } from "./api/health_api.js";
@@ -224,6 +225,7 @@ export async function createApp(dataDir = null, { services = {} } = {}) {
   app.route("/", clipsRouter());
   app.route("/", soundsRouter());
   app.route("/", cutRouter());
+  app.route("/", filmRunRouter());
 
   // 8. The built UI, served for the headless path — a browser at this address is the whole app
   // (the kit's serveUi: a write there 405, hashed files kept, the rest revalidated). Every /v1 route

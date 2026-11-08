@@ -77,6 +77,23 @@
       "cards": "Cards",
       "shots": "Shots",
       "cut": "Cut"
+    },
+    "make": {
+      "action": "Make the film",
+      "making": "Making the film…",
+      "hint": "Does every step this film still lacks, in order: plans the shots from the story, paints their first frames, makes their clips and exports the film. Hours on an 8 GB card.",
+      "title": "Make the whole film?",
+      "message": "The app does every step this film still lacks, one after another: plans the shots from the story (only when it has none), paints the first frames, makes the clips, and exports the film. It never redoes or overwrites what you've made or changed. On an 8 GB card this takes hours — about seven minutes a clip — and you can stop it on the AI tasks strip; Make the film again carries on where it stopped. Music and sound effects are yours to add on the Cut tab.",
+      "confirm": "Make the film",
+      "task": "Making {title}",
+      "steps": {
+        "plan": "Planning",
+        "frames": "First frames",
+        "clips": "Clips",
+        "export": "Export"
+      },
+      "done": "The film is made: {steps}",
+      "nothing": "Nothing left to make — every shot has its first frame and clip."
     }
   },
   "voices": {

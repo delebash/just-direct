@@ -100,7 +100,9 @@ downloaded engines' settings).
    film** as one MP4.
 
 Every step runs on the **AI tasks** strip, so you can keep working while it does; each says in place what it
-still needs the first time. The full guide: [Your films](films.md).
+still needs the first time. Or, after step 2, press **Make the film** at the top of the film's page: the
+app does steps 3, 4, 6 and the export by itself, one after another, and leaves alone anything you've
+already made or changed. The full guide: [Your films](films.md).
 
 ## Getting around
 

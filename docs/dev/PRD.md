@@ -38,6 +38,7 @@ default route allows commercial use, its licence shown beside it (the handoff's 
 | Voices and talking | Give a character a voice (the kit's audio.cpp speech) and a shot its line; the clip's mouth is drawn to the voice (audio-to-video). Lip repair (LatentSync) is offered, off by default, labelled non-commercial | route tests · real talking clips judged good by the user (feasibility §J.3.2 item 5) |
 | Music and sound effects | A score cue or a sound effect for a shot or the film from a description (Stable Audio 3 Medium and Small SFX, ACE-Step for songs), each with its licence label | route tests · real cues ("use as is", feasibility §J.3.2 item 11) |
 | The cut | The shots in order on a simple timeline: reorder, trim, voice, music and effects tracks; export the film as MP4 (the kit's FFmpeg) | route tests · the cut page mounted · a real export played back |
+| Make the film | One button does every step the film still lacks, in order — plan, first frames, clips, export — never redoing what the user made or changed | route tests (the refusals; a story made into a film by fake engines and the real FFmpeg; a second run doing only the export) · the page mounted · a real run |
 | Local or your own cloud key, per feature | Every feature runs local and free by default; a feature can use a cloud model on the user's own key instead, routed by the kit | the kit's routing tests · the AI area in the app |
 
 ## Outside data, accounts and paid services

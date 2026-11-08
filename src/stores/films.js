@@ -47,6 +47,8 @@ export const useFilmsStore = defineStore("films", {
     // the film's latest export ({file, createdAt, name, videoUrl}) or null, and whether one is being made
     exported: null,
     exporting: false,
+    // the whole film being made (Make the film)
+    makingFilm: false,
   }),
   getters: {
     cardsOf: (state) => (kind) => state.cards.filter((c) => c.kind === kind),
@@ -305,6 +307,25 @@ export const useFilmsStore = defineStore("films", {
       } finally {
         this.clippingFilm = false;
         await this.loadShots().catch(() => {});
+      }
+    },
+    /** Make the film (a server job): every step it still lacks, in order — the plan, the first frames, the clips, the
+     *  export; each tab shows its step's work as it lands. */
+    async makeFilm(label, describeStep) {
+      this.makingFilm = true;
+      try {
+        const done = await runServerJob({
+          start: () => post(`/v1/films/${enc(this.film.id)}/make`, {}),
+          feature: "clips.make",
+          label,
+          meta: { filmId: this.film.id },
+          describe: (job, pct) => (job.data?.step ? `${describeStep(job.data.step)} · ${pct}%` : `${pct}%`),
+        });
+        return done ?? null;
+      } finally {
+        this.makingFilm = false;
+        // the plan may have added cards and shots, the frames painted card pictures, the export made a file
+        await Promise.all([this.open(this.film.id), this.loadExport()]).catch(() => {});
       }
     },
     /** Repair a talking clip's lips (a server job): LatentSync redraws its mouth to the line's voice — a new clip, chosen. */

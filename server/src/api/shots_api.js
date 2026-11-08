@@ -107,6 +107,33 @@ async function pass(action, variables, schema, { signal }) {
   }
 }
 
+/** The film planned from its story (a job's body — Plan the shots, and Make the film's first step): 1. the cards the
+ *  story needs that the film doesn't have yet; 2. the shots, from the story and every card, in place of any it had (their
+ *  files go). → `{cardsAdded, shots}`. */
+export async function planFilm(film, { signal, progress, update }) {
+  update({ filmId: film.id, phase: "cards" });
+  progress(0.02, "cards");
+  const story = mustFilm(film.id).story;
+  const have = films.listCards(getDb(), film.id);
+  const before = cardRefs(have);
+  const cardsAnswer = await pass(ACTIONS.cards, { story, cards: cardsText(have, before.byId) }, cardsSchema(), { signal });
+  signal.throwIfAborted();
+  const added = newCards(cardsAnswer, have).map((card) => films.createCard(getDb(), film.id, card));
+  update({ phase: "shots", cardsAdded: added.length });
+  progress(0.3, "shots");
+  const cards = films.listCards(getDb(), film.id);
+  const { refs, byId } = cardRefs(cards);
+  const maxShots = setting("planner.maxShots");
+  const shotsAnswer = await pass(ACTIONS.shots, { story, cards: cardsText(cards, byId), maxShots }, shotsSchema(cards, byId, maxShots), { signal });
+  signal.throwIfAborted();
+  const planned = shotsFrom(shotsAnswer, cards, refs, { wordsPerSecond: setting("planner.wordsPerSecond") });
+  const files = workFiles(shots.listShots(getDb(), film.id).map((s) => s.id));
+  const saved = shots.replaceShots(getDb(), film.id, planned);
+  await removeWork(film.id, files);
+  log.info(`film ${film.id} planned: ${saved.length} shots, ${added.length} new cards`);
+  return { cardsAdded: added.length, shots: saved.length };
+}
+
 export function router() {
   const app = new Hono();
 
@@ -166,31 +193,7 @@ export function router() {
     }
     const job = getState().jobs.start(
       { kind: "plan", key: film.id, label: film.title, failTitle: "The plan didn't finish", clientId: clientOf(c) },
-      async ({ signal, progress, update }) => {
-        update({ filmId: film.id, phase: "cards" });
-        progress(0.02, "cards");
-        // 1. the cards the story needs that the film doesn't have yet
-        const story = mustFilm(film.id).story;
-        const have = films.listCards(getDb(), film.id);
-        const before = cardRefs(have);
-        const cardsAnswer = await pass(ACTIONS.cards, { story, cards: cardsText(have, before.byId) }, cardsSchema(), { signal });
-        signal.throwIfAborted();
-        const added = newCards(cardsAnswer, have).map((card) => films.createCard(getDb(), film.id, card));
-        // 2. the shots, from the story and every card
-        update({ phase: "shots", cardsAdded: added.length });
-        progress(0.3, "shots");
-        const cards = films.listCards(getDb(), film.id);
-        const { refs, byId } = cardRefs(cards);
-        const maxShots = setting("planner.maxShots");
-        const shotsAnswer = await pass(ACTIONS.shots, { story, cards: cardsText(cards, byId), maxShots }, shotsSchema(cards, byId, maxShots), { signal });
-        signal.throwIfAborted();
-        const planned = shotsFrom(shotsAnswer, cards, refs, { wordsPerSecond: setting("planner.wordsPerSecond") });
-        const files = workFiles(shots.listShots(getDb(), film.id).map((s) => s.id));
-        const saved = shots.replaceShots(getDb(), film.id, planned);
-        await removeWork(film.id, files);
-        log.info(`film ${film.id} planned: ${saved.length} shots, ${added.length} new cards`);
-        return { cardsAdded: added.length, shots: saved.length };
-      },
+      (ctx) => planFilm(film, ctx),
     );
     return c.json(job, 202);
   });

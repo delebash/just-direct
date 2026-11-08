@@ -113,6 +113,37 @@ function chooseBest(shot, made) {
   return shots.updateShot(getDb(), shot.id, { frameId: best.frame.id });
 }
 
+/** The film's first frames (a job's body — the toolbar's first frames, and Make the film's frames step): every shot
+ *  without one, or every shot (`all`). The cards' missing pictures first (the same picture model), then every shot
+ *  painted, then every one checked: the card holds one model at a time, so the picture model and the vision model
+ *  change places twice, not twice a shot. → `{shots, cardsPainted, checked, checkSkipped}`. */
+export async function paintFilmFrames(film, { all = false } = {}, { signal, progress, update }) {
+  const count = setting("frames.candidates");
+  const todo = shots.listShots(getDb(), film.id).filter((s) => all || !s.frameId);
+  update({ filmId: film.id, shots: todo.length });
+  const cardsPainted = await paintMissingCards(film, todo, { signal, onEach: (i, n, f) => progress((0.15 * (i + f)) / n, "cards") });
+  const from = cardsPainted ? 0.15 : 0;
+  const painted = [];
+  for (const [i, s] of todo.entries()) {
+    const now = shots.getShot(getDb(), s.id);
+    if (!now) continue;
+    const made = await paintFrames(film, now, count, { signal, onEach: (k, f) => progress(from + ((0.8 - from) * (i + (k + f) / count)) / todo.length, "painting") });
+    painted.push({ shot: now, made });
+  }
+  let checked = 0;
+  let skipped = "";
+  for (const [i, p] of painted.entries()) {
+    progress(0.8 + (0.2 * i) / Math.max(1, painted.length), "checking");
+    if (!skipped) {
+      const r = await checkFrames(film, p.shot, p.made, { signal });
+      if (r.checked) checked++;
+      else skipped = r.why;
+    }
+    if (shots.getShot(getDb(), p.shot.id)) chooseBest(p.shot, p.made);
+  }
+  return { shots: painted.length, cardsPainted, checked, checkSkipped: skipped };
+}
+
 export function router() {
   const app = new Hono();
 
@@ -159,37 +190,9 @@ export function router() {
   app.post("/v1/films/:id/frames", input({ params: IdParams, body: FilmFramesIn }), (c) => {
     const film = mustFilm(c.req.valid("param").id);
     const { all = false } = c.req.valid("json") ?? {};
-    const count = setting("frames.candidates");
     const job = getState().jobs.start(
       { kind: "frames-film", key: film.id, label: film.title, failTitle: "The first frames didn't finish", clientId: clientOf(c) },
-      async ({ signal, progress, update }) => {
-        const todo = shots.listShots(getDb(), film.id).filter((s) => all || !s.frameId);
-        update({ filmId: film.id, shots: todo.length });
-        // the cards' missing pictures first (the same picture model), then every shot painted, then every one checked:
-        // the card holds one model at a time, so the picture model and the vision model change places twice, not twice
-        // a shot
-        const cardsPainted = await paintMissingCards(film, todo, { signal, onEach: (i, n, f) => progress((0.15 * (i + f)) / n, "cards") });
-        const from = cardsPainted ? 0.15 : 0;
-        const painted = [];
-        for (const [i, s] of todo.entries()) {
-          const now = shots.getShot(getDb(), s.id);
-          if (!now) continue;
-          const made = await paintFrames(film, now, count, { signal, onEach: (k, f) => progress(from + ((0.8 - from) * (i + (k + f) / count)) / todo.length, "painting") });
-          painted.push({ shot: now, made });
-        }
-        let checked = 0;
-        let skipped = "";
-        for (const [i, p] of painted.entries()) {
-          progress(0.8 + (0.2 * i) / Math.max(1, painted.length), "checking");
-          if (!skipped) {
-            const r = await checkFrames(film, p.shot, p.made, { signal });
-            if (r.checked) checked++;
-            else skipped = r.why;
-          }
-          if (shots.getShot(getDb(), p.shot.id)) chooseBest(p.shot, p.made);
-        }
-        return { shots: painted.length, cardsPainted, checked, checkSkipped: skipped };
-      },
+      (ctx) => paintFilmFrames(film, { all }, ctx),
     );
     return c.json(job, 202);
   });

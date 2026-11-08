@@ -57,66 +57,7 @@ export function router() {
     if (!ffmpegReadiness().ready) throw new ApiError(409, "engine-not-installed", "FFmpeg isn't installed", "Install FFmpeg on the AI page's FFmpeg tab — the film is joined with it.");
     const job = getState().jobs.start(
       { kind: "export", key: film.id, label: film.title, failTitle: "The film wasn't joined", clientId: clientOf(c) },
-      async ({ signal, progress, update }) => {
-        const db = getDb();
-        const { dataDir } = getState();
-        const all = shots.listShots(db, film.id);
-        const todo = all.filter((s) => s.clipId && clips.getClip(db, s.clipId));
-        update({ filmId: film.id, shots: todo.length, skipped: all.length - todo.length });
-        const out = exportDir(dataDir, film.id);
-        const work = path.join(out, "work");
-        rmSync(work, { recursive: true, force: true });
-        mkdirSync(work, { recursive: true });
-        try {
-          const size = { width: film.width, height: film.height, fps: setting("clips.fps") };
-          const pieces = [];
-          for (const [i, s] of todo.entries()) {
-            progress((0.8 * i) / todo.length, "pieces");
-            const clip = clips.getClip(db, s.clipId);
-            const line = sounds.lineOf(db, s.id);
-            const lineName = fileName(line?.file, "wav");
-            const piece = {
-              clip: filmFile(dataDir, film.id, "clips", fileName(clip.file, "webm")),
-              line: lineName ? filmFile(dataDir, film.id, "sounds", lineName) : null,
-              seconds: clip.seconds,
-              trimIn: Math.min(s.trimIn, clip.seconds - 0.5),
-              trimOut: Math.min(s.trimOut, Math.max(0, clip.seconds - s.trimIn - 0.5)),
-            };
-            const file = path.join(work, `${String(i).padStart(4, "0")}.mp4`);
-            let made = pieceArgs(piece, size, file);
-            try {
-              await runFfmpeg(made.args, { signal });
-            } catch (e) {
-              if (signal.aborted) throw e;
-              // a clip with no sound of its own: silence in its place
-              made = silentPieceArgs(piece, size, file);
-              await runFfmpeg(made.args, { signal });
-            }
-            pieces.push({ file, length: made.length, transition: s.transition });
-          }
-          progress(0.82, "joining");
-          const laid = sounds
-            .listSounds(db, film.id)
-            .filter((x) => x.kind !== "line")
-            .map((x) => ({
-              file: filmFile(dataDir, film.id, "sounds", fileName(x.file, "wav")),
-              start: x.start,
-              volume: x.volume,
-              seconds: x.seconds,
-              fadeIn: x.fadeIn,
-              fadeOut: x.fadeOut,
-            }));
-          const name = `${slug(film.title)}-${Date.now().toString(36)}.mp4`;
-          const { args, length } = joinArgs(pieces, laid, path.join(out, name));
-          await runFfmpeg(args, { signal, timeoutMs: 60 * 60_000 });
-          // the export before it goes: one per film
-          for (const n of readdirSync(out)) if (n.endsWith(".mp4") && n !== name) rmSync(path.join(out, n), { force: true });
-          log.info(`film ${film.id} exported: ${pieces.length} shots, ${length.toFixed(1)} s`);
-          return { file: name, seconds: length, shots: pieces.length, skipped: all.length - todo.length, videoUrl: `/v1/films/${film.id}/export/video?v=${encodeURIComponent(name)}` };
-        } finally {
-          rmSync(work, { recursive: true, force: true });
-        }
-      },
+      (ctx) => joinFilm(film, ctx),
     );
     return c.json(job, 202);
   });
@@ -136,4 +77,68 @@ export function router() {
   });
 
   return app;
+}
+
+/** The film joined into one MP4 (a job's body — Export the film, and Make the film's last step): every shot with a
+ *  clip, in order, with its trims, its line's voice and its transition; the music and effects laid over. The export
+ *  before it goes. → `{file, seconds, shots, skipped, videoUrl}`. */
+export async function joinFilm(film, { signal, progress, update }) {
+  const db = getDb();
+  const { dataDir } = getState();
+  const all = shots.listShots(db, film.id);
+  const todo = all.filter((s) => s.clipId && clips.getClip(db, s.clipId));
+  update({ filmId: film.id, shots: todo.length, skipped: all.length - todo.length });
+  const out = exportDir(dataDir, film.id);
+  const work = path.join(out, "work");
+  rmSync(work, { recursive: true, force: true });
+  mkdirSync(work, { recursive: true });
+  try {
+    const size = { width: film.width, height: film.height, fps: setting("clips.fps") };
+    const pieces = [];
+    for (const [i, s] of todo.entries()) {
+      progress((0.8 * i) / todo.length, "pieces");
+      const clip = clips.getClip(db, s.clipId);
+      const line = sounds.lineOf(db, s.id);
+      const lineName = fileName(line?.file, "wav");
+      const piece = {
+        clip: filmFile(dataDir, film.id, "clips", fileName(clip.file, "webm")),
+        line: lineName ? filmFile(dataDir, film.id, "sounds", lineName) : null,
+        seconds: clip.seconds,
+        trimIn: Math.min(s.trimIn, clip.seconds - 0.5),
+        trimOut: Math.min(s.trimOut, Math.max(0, clip.seconds - s.trimIn - 0.5)),
+      };
+      const file = path.join(work, `${String(i).padStart(4, "0")}.mp4`);
+      let made = pieceArgs(piece, size, file);
+      try {
+        await runFfmpeg(made.args, { signal });
+      } catch (e) {
+        if (signal.aborted) throw e;
+        // a clip with no sound of its own: silence in its place
+        made = silentPieceArgs(piece, size, file);
+        await runFfmpeg(made.args, { signal });
+      }
+      pieces.push({ file, length: made.length, transition: s.transition });
+    }
+    progress(0.82, "joining");
+    const laid = sounds
+      .listSounds(db, film.id)
+      .filter((x) => x.kind !== "line")
+      .map((x) => ({
+        file: filmFile(dataDir, film.id, "sounds", fileName(x.file, "wav")),
+        start: x.start,
+        volume: x.volume,
+        seconds: x.seconds,
+        fadeIn: x.fadeIn,
+        fadeOut: x.fadeOut,
+      }));
+    const name = `${slug(film.title)}-${Date.now().toString(36)}.mp4`;
+    const { args, length } = joinArgs(pieces, laid, path.join(out, name));
+    await runFfmpeg(args, { signal, timeoutMs: 60 * 60_000 });
+    // the export before it goes: one per film
+    for (const n of readdirSync(out)) if (n.endsWith(".mp4") && n !== name) rmSync(path.join(out, n), { force: true });
+    log.info(`film ${film.id} exported: ${pieces.length} shots, ${length.toFixed(1)} s`);
+    return { file: name, seconds: length, shots: pieces.length, skipped: all.length - todo.length, videoUrl: `/v1/films/${film.id}/export/video?v=${encodeURIComponent(name)}` };
+  } finally {
+    rmSync(work, { recursive: true, force: true });
+  }
 }

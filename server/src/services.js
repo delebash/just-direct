@@ -4,15 +4,25 @@
 // nothing here starts an engine or names a model.
 
 import { buildLlmConfig, runAction, stores } from "@delebash/core/llm";
-import { runImageFeature, runVideoFeature } from "@delebash/core/llm/image_dispatch";
+import { imageFeatureReadiness, runImageFeature, runVideoFeature, videoFeatureReadiness } from "@delebash/core/llm/image_dispatch";
 import { runAudioFeature, withSpeechModel } from "@delebash/core/llm/speech_dispatch";
 import { ApiError } from "@delebash/core/platform/errors";
 import { wavSeconds } from "@delebash/core/runner/audiocpp";
+import { ffmpegReadiness } from "@delebash/core/runner/ffmpeg";
 import { getRuntimeService } from "@delebash/core/runner/runtime_service";
 
 /** The routes' AI work; `overrides` replaces some (a test's fake painter or planner). */
 export function createServices(overrides = {}) {
   return {
+    /** What Make the film needs that isn't installed, in the words the refusal names it — `[]` when all is ready (the
+     *  kit's readiness of the first frames' and the clips' features, and FFmpeg's). */
+    filmNeeds: () => {
+      const missing = [];
+      if (!imageFeatureReadiness("frames.paint").ready) missing.push("the picture model (First frames)");
+      if (!videoFeatureReadiness("clips.make").ready) missing.push("the clip model (Clips)");
+      if (!ffmpegReadiness().ready) missing.push("FFmpeg (the export)");
+      return missing;
+    },
     /** Paint a picture with image feature `feature`: `request` `{prompt, width, height, refs, seed}` (PNG Buffers) →
      *  a PNG Buffer. `onProgress({fraction})`, `signal` cancels. */
     paintImage: (feature, request, opts = {}) => runImageFeature(feature, request, opts),
