@@ -55,11 +55,9 @@ keeps the settings it started with.
 
 | Setting | Starts at | What it changes |
 |---|---|---|
-| **Voice model** | qwen3-vd-1.7b-q8 | The model that makes a voice from words and speaks the lines. |
-| **Language the lines are in** | English | The language the lines are spoken in. |
-| **Default voice** | "A natural, clear adult voice, calm and unhurried." | The voice of a speaker whose card has no voice written. |
-| **Model a recorded voice is cloned with** | qwen3-base-1.7b-q8 | The model that speaks a character's lines in the voice of the recording on their card. |
-| **Seconds of a recording used** · **Largest recording file (MB)** | 20 · 50 | How much of a recording is used, and the largest file taken. |
+| **JustVoice's address** | http://127.0.0.1:17494 | Where JustVoice, the family's voice app, is listening — the voices come from it. Its own port on this computer to start; another computer's address if JustVoice's server runs there. |
+| **Language the lines are in** | en-US | The language the lines are spoken in, as a language tag (en-US, en-GB, fr-FR). |
+| **Seconds of a recording used** · **Largest recording file (MB)** | 20 · 50 | How much of a voice recording is sent to JustVoice, and the largest file taken. |
 
 ## Music and sound effects
 

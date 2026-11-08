@@ -48,13 +48,11 @@ export const SETTINGS = {
   "clips.lipRepair": T.Boolean(),
   "clips.lipSteps": T.Integer({ minimum: 1, maximum: 50 }),
   "clips.lipGuidance": T.Number({ minimum: 1, maximum: 3 }),
-  // Voices: the speech model a line is spoken with (an audio.cpp model that designs a voice from words), the language
-  // it speaks, and the voice a character with no Voice words gets.
-  "voices.model": T.String({ minLength: 1, maxLength: 120 }),
-  "voices.language": T.String({ minLength: 1, maxLength: 40 }),
-  "voices.default": T.String({ minLength: 1, maxLength: 600 }),
-  // The model a voice recording is cloned with, the longest part of a recording kept, the largest recording file.
-  "voices.cloneModel": T.String({ minLength: 1, maxLength: 120 }),
+  // Voices: where JustVoice's server is (the voices come from it — docs/plans/2026-11-08-justvoice-voices.md) and the
+  // language the lines are in (a language tag, as JustVoice takes it).
+  "voices.justvoiceUrl": T.String({ minLength: 1, maxLength: 200, pattern: "^https?://" }),
+  "voices.locale": T.String({ minLength: 2, maxLength: 20, pattern: "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$" }),
+  // The longest part of a voice recording kept, the largest recording file.
   "voices.sampleSeconds": T.Integer({ minimum: 3, maximum: 60 }),
   "voices.maxSampleMegabytes": T.Integer({ minimum: 1, maximum: 500 }),
   // Music and effects: a new piece's length, the steps it is made in, and the seconds new music fades out over.

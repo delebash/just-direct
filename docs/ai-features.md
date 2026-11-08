@@ -58,15 +58,16 @@ part, Gemma 3, is under Google's Gemma Terms of Use, which allow commercial use.
 
 ## Speak a shot's line
 
-**Speak** on a shot with a line, or **Speak lines** ([Your films](films.md#voices)). The line is spoken
-by **Qwen3-TTS VoiceDesign 1.7B** (Apache-2.0, about 2.8 GB to download) on the audio.cpp engine. It
-makes a voice from words: the **Voice** written on the speaking character's card, or the default
-voice in **App Settings → General → Voices**. The engine and the model are installed on the AI page's
-**Speech** tab; which model speaks is **Voice model** in the same Settings group.
+**Speak** on a shot with a line, **Speak lines**, or **Make the voice** on a character's card ([Your
+films](films.md#voices)). The voices are **JustVoice**'s: its server makes each character's voice — its
+language model writes the voice's description from the card and the story, a voice-design model makes it,
+and a cloning model speaks every line from one kept audition — and JustDirect asks for models whose
+licence lets you sell what they make (each card names them, with JustVoice's word for each). Which models
+those are is JustVoice's choice and setting; JustDirect needs JustVoice open (or its server running) at
+**App Settings → General → Voices → JustVoice's address**.
 
-A character whose card carries a voice recording is spoken by **Qwen3-TTS Base 1.7B** (Apache-2.0,
-about 2.7 GB) instead, which clones the recording's voice — following it word by word when the card says
-what the recording says. **Model a recorded voice is cloned with** in the same Settings group names it.
+A character whose card carries a voice recording is cloned from it by JustVoice instead — following it word
+by word when the card says what the recording says.
 
 A clip made after its line is spoken is drawn to that voice: the clip model hears it and moves the
 mouth with it.

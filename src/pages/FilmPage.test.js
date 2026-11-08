@@ -102,6 +102,23 @@ function fakeFetch(input, init = {}) {
     return Promise.resolve(json(server.cards.find((c) => c.id === id)));
   }
   if (/^\/v1\/cards\/c\d+\/paint$/.test(p) && method === "POST") return Promise.resolve(json({ id: "job-paint", state: "running", progress: 0 }, 202));
+  // a character's voice made in JustVoice (a job), taken off
+  if (/^\/v1\/cards\/c\d+\/voice$/.test(p) && method === "POST") return Promise.resolve(json({ id: "job-voice", state: "running", progress: 0 }, 202));
+  if (p === "/v1/jobs/job-voice") {
+    const voiceInfo = {
+      source: "made",
+      description: "Female, in her sixties, low and weathered.",
+      design: { model: "qwen3-vd", name: "Qwen3-TTS VoiceDesign", commercial: "Yes" },
+      clone: { model: "cosyvoice3", name: "CosyVoice3", commercial: "Yes" },
+      audition: "c1-audition.wav",
+    };
+    server.cards = server.cards.map((c) => ({ ...c, voiceId: "v1", voiceInfo, voiceAuditionUrl: "/v1/cards/c1/voice-audition?v=c1-audition.wav", version: '"v"' }));
+    return Promise.resolve(json({ id: "job-voice", state: "done", progress: 1, result: server.cards[0] }));
+  }
+  if (/^\/v1\/cards\/c\d+\/voice$/.test(p) && method === "DELETE") {
+    server.cards = server.cards.map((c) => ({ ...c, voiceId: null, voiceInfo: {}, voiceAuditionUrl: null, version: '"off"' }));
+    return Promise.resolve(json(server.cards[0]));
+  }
   if (p === "/v1/jobs/job-paint") {
     server.cards = server.cards.map((c) => ({ ...c, picture: "c1-1.png", pictureUrl: "/v1/cards/c1/picture?v=c1-1.png", version: '"p"' }));
     return Promise.resolve(json({ id: "job-paint", state: "done", progress: 1, result: server.cards[0] }));
@@ -115,6 +132,7 @@ function fakeFetch(input, init = {}) {
   if (p === "/v1/films/f1/make" && method === "POST") return Promise.resolve(json({ id: "job-make", state: "running", progress: 0, data: { step: "frames" } }, 202));
   if (p === "/v1/jobs/job-make") {
     const steps = ["plan", "frames", "clips", "export"].map((step) => ({ step, done: step !== "plan" }));
+    steps.splice(2, 0, { step: "voices", done: false, skipped: "justvoice-offline", address: "http://127.0.0.1:17494" });
     return Promise.resolve(json({ id: "job-make", state: "done", progress: 1, result: { steps } }));
   }
   if (p === "/v1/jobs/job-carry") return Promise.resolve(json({ id: "job-carry", state: "done", progress: 1, result: { why: "Teo keeps the coat.", changed: ["s3"] } }));
@@ -188,7 +206,7 @@ test("the Story tab saves what changed, with the version it read", async () => {
   expect(patch[3]).toBe('"v1"');
 });
 
-test("Make the film: asked first, then one server job; what it did said; the Cut tab once it exported", async () => {
+test("Make the film: asked first, then one server job; what it did said, a skipped step too; the Cut tab once it exported", async () => {
   server.film.story = "Mara runs the last ferry.";
   await mountPage("/films/f1/story");
   await click(byText("button", "Make the film"));
@@ -199,6 +217,8 @@ test("Make the film: asked first, then one server job; what it did said; the Cut
   await settle();
   expect(server.calls.filter(([m, p]) => m === "POST" && p === "/v1/films/f1/make")).toHaveLength(1);
   expect(text()).toContain("The film is made: First frames, Clips, Export");
+  // the voices step was skipped: said, with where JustVoice was looked for
+  expect(text()).toContain("JustVoice isn't answering at http://127.0.0.1:17494");
   expect(router.currentRoute.value.params.tab).toBe("cut");
   expect(reported).toHaveLength(0);
 });
@@ -217,6 +237,24 @@ test("Cards: a character added from its kind's button", async () => {
   await settle();
   expect(server.calls.some((c) => c[0] === "POST" && c[1] === "/v1/cards/c1/paint")).toBe(true);
   expect(byText(".card-tile button", "Paint again")).toBeTruthy();
+});
+
+test("Cards: a character's voice made in JustVoice — its audition, the words it was made from, its models' licences; taken off", async () => {
+  server.cards = [{ id: "c1", filmId: "f1", kind: "character", name: "Mara", description: "a ferry captain", voice: "", voiceSample: null, voiceSampleText: "", voiceSampleUrl: null, voiceId: null, voiceInfo: {}, voiceAuditionUrl: null, picture: null, pictureUrl: null, position: 0, version: '"c"' }];
+  await mountPage("/films/f1/cards");
+  await click(document.querySelector('[aria-label="Edit Mara"]'));
+  expect(text()).toContain("No voice yet.");
+  await click(byText(".card-dialog__sample button", "Make the voice"));
+  await settle();
+  expect(server.calls.filter(([m, p]) => m === "POST" && p === "/v1/cards/c1/voice")).toHaveLength(1);
+  expect(document.querySelector('audio[aria-label="Mara\'s voice, as JustVoice auditioned it"]')?.getAttribute("src")).toContain("/v1/cards/c1/voice-audition");
+  expect(text()).toContain("Made from: “Female, in her sixties, low and weathered.”");
+  expect(text()).toContain("CosyVoice3 — selling what it makes: Yes");
+  expect(byText(".card-dialog__sample button", "Make it again")).toBeTruthy();
+  await click(byText(".card-dialog__sample button", "Take it off"));
+  expect(server.calls.some(([m, p]) => m === "DELETE" && p === "/v1/cards/c1/voice")).toBe(true);
+  expect(text()).toContain("No voice yet.");
+  expect(reported).toHaveLength(0);
 });
 
 test("Cards: a character's voice recorded here, kept, its words saved with the card, then taken off", async () => {

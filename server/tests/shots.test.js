@@ -127,6 +127,9 @@ describe("the planner", () => {
     expect(schema.properties.shots.items.properties.cards.items.enum).toEqual(["mara", "teo", "hollow_pier", "brass_ticket"]);
     expect(schema.properties.shots.items.properties.place.enum).toEqual(["hollow_pier", ""]);
     expect(schema.properties.shots.items.properties.speaker.enum).toEqual(["mara", "teo", ""]);
+    // how a line is said: words, and one of JustVoice's emotion labels
+    expect(schema.properties.shots.items.properties.emotion.enum).toEqual(["", "neutral", "happy", "sad", "angry", "fearful", "whispered", "shouted", "sarcastic", "contemptuous"]);
+    expect(schema.properties.shots.items.required).toEqual(expect.arrayContaining(["delivery", "emotion"]));
 
     const cards = (await client.get(`/v1/films/${film.id}/cards`)).json().items;
     expect(cards.map((c) => [c.kind, c.name])).toEqual([
@@ -244,6 +247,12 @@ describe("the planner's repairs", () => {
     const shot = shotFrom({ place: "mara", cards: ["ghost", "noir"], speaker: "hollow_pier", size: "huge", line: "", action: "x", seconds: 99 }, cards, refs, { wordsPerSecond: 2.5 });
     expect(shot).toMatchObject({ placeId: null, speakerId: null, size: "", seconds: 13, transition: "cut" });
     expect(shot.cardIds).toEqual(["c3"]);
+  });
+  test("how a line is said comes with a line only; an emotion off JustVoice's list is none", () => {
+    const said = shotFrom({ action: "x", line: "Go.", speaker: "mara", delivery: " barely a whisper ", emotion: "whispered", seconds: 3 }, cards, refs, { wordsPerSecond: 2.5 });
+    expect(said).toMatchObject({ delivery: "barely a whisper", emotion: "whispered" });
+    expect(shotFrom({ action: "x", line: "Go.", delivery: "", emotion: "furious", seconds: 3 }, cards, refs, { wordsPerSecond: 2.5 }).emotion).toBe("");
+    expect(shotFrom({ action: "x", line: "", delivery: "loud", emotion: "angry", seconds: 3 }, cards, refs, { wordsPerSecond: 2.5 })).toMatchObject({ delivery: "", emotion: "" });
   });
   test("a look named in the words isn't added: it is a style, not something in the frame", () => {
     expect(shotFrom({ action: "A noir alley.", cards: [], seconds: 4 }, cards, refs, { wordsPerSecond: 2.5 }).cardIds).toEqual([]);

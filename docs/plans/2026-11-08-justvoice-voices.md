@@ -55,3 +55,31 @@ word may still read "Separate licence" (Breeze).
 - JustVoice not running: Speak and Make the voice say so in plain words with its address (a setting, default
   `http://127.0.0.1:17494`); a talking clip can still be made — LTX-2.3 then speaks the line itself.
 - The licence word of each voice's models is shown beside it.
+
+## Build steps (Claude's, 2026-11-08 — built against the shapes above; aligned to the fixtures when they land)
+
+Where they stand: 1–10 built and committed, unverified until the end run; the batch's per-line WAV address
+(`GET /v1/audio/speech/batch/<job>/lines/<id>.wav`, or a `url` per line) asked of JustVoice's session — the client
+takes either.
+
+Picks, each attacked: (a) a line with no speaker isn't spoken (a refusal names it: choose who says it) — the
+default-voice setting goes, since a JustVoice voice is made per character; (b) a shot gains **delivery** (words: "whispered,
+afraid") and **emotion** (one of JustVoice's nine labels) — the planner writes both, the user edits them, both go to
+JustVoice (its session: "Send both emotion and instructions"); (c) the card's audition WAV is kept in the film's cards
+folder (the film's backup holds what the user heard); (d) freeing the card before a batch is the app's own reset pair:
+`lifecycle.getService().stop()` and the kit's `stopRuntimeServers()` (data_admin.js) — models load again on next use.
+
+1. `server/src/justvoice.js` — the client: health, character voice (job), speak, batch (job), clone, delete; offline →
+   409 "JustVoice isn't running" with the address looked at.
+2. Migration 6: cards `voice_id`, `voice_info` (JSON: the models, their licences, the description JustVoice wrote, the
+   audition file); shots `delivery`, `emotion`; the old voice settings' rows deleted.
+3. Settings: `voices.model`, `voices.language`, `voices.default`, `voices.cloneModel` go; `voices.justvoiceUrl`
+   (http://127.0.0.1:17494) and `voices.locale` (en-US) come; `voices.sampleSeconds` and `voices.maxSampleMegabytes` stay.
+4. Services: `voices()` (the client at the setting's address), `freeCard()`; `speak`, `voiceCheck` and the Qwen3 rows go.
+5. Routes: `POST/DELETE /v1/cards/:id/voice`; the voice recording also cloned in JustVoice; `POST /v1/shots/:id/line`
+   one line; `POST /v1/films/:id/lines` the card freed, missing voices made, one batch.
+6. The planner writes delivery and emotion; the shot editor shows them.
+7. The card dialog: Make the voice, its audition, its models' licences; a banner when JustVoice isn't reachable.
+8. Make the film: a voices step between first frames and clips (skipped, with a note, when JustVoice isn't running).
+9. Help: films.md, ai-features.md, settings.md, getting-started, troubleshooting, what's new.
+10. Tests at every level, a fake JustVoice in JustVoice's shapes.

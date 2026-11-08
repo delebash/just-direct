@@ -81,18 +81,20 @@
     "make": {
       "action": "Make the film",
       "making": "Making the film…",
-      "hint": "Does every step this film still lacks, in order: plans the shots from the story, paints their first frames, makes their clips and exports the film. Hours on an 8 GB card.",
+      "hint": "Does every step this film still lacks, in order: plans the shots from the story, paints their first frames, speaks the lines, makes the clips and exports the film. Hours on an 8 GB card.",
       "title": "Make the whole film?",
-      "message": "The app does every step this film still lacks, one after another: plans the shots from the story (only when it has none), paints the first frames, makes the clips, and exports the film. It never redoes or overwrites what you've made or changed. On an 8 GB card this takes hours — about seven minutes a clip — and you can stop it on the AI tasks strip; Make the film again carries on where it stopped. Music and sound effects are yours to add on the Cut tab.",
+      "message": "The app does every step this film still lacks, one after another: plans the shots from the story (only when it has none), paints the first frames, speaks the lines in each character's voice (JustVoice, when it's open), makes the clips, and exports the film. It never redoes or overwrites what you've made or changed. On an 8 GB card this takes hours — about seven minutes a clip — and you can stop it on the AI tasks strip; Make the film again carries on where it stopped. Music and sound effects are yours to add on the Cut tab.",
       "confirm": "Make the film",
       "task": "Making {title}",
       "steps": {
         "plan": "Planning",
         "frames": "First frames",
+        "voices": "Voices",
         "clips": "Clips",
         "export": "Export"
       },
       "done": "The film is made: {steps}",
+      "noVoices": "The lines weren't spoken: JustVoice isn't answering at {address}, so the clips speak their lines themselves. Open JustVoice and use Speak lines, then make those clips again.",
       "nothing": "Nothing left to make — every shot has its first frame and clip."
     }
   },
@@ -100,10 +102,14 @@
     "task": "Speak shot {n}'s line",
     "allTask": "Speak the lines of {title}",
     "allDone": "{n} lines spoken",
+    "allFailed": "{n} lines couldn't be spoken — speak each again from its shot.",
     "speakOne": "Speak shot {n}'s line",
     "speakAll": "Speak lines ({n})",
     "allSpoken": "Every line spoken",
-    "speakAllHint": "Speaks every line that has a speaker and no voice yet, each in its speaker's voice (the voice on the character's card). Speak a line before its clip is made: the clip's mouth moves to that voice.",
+    "speakAllHint": "Speaks every line that has a speaker and no voice yet, each in its speaker's voice — JustVoice makes a character's voice first if they have none. Speak a line before its clip is made: the clip's mouth moves to that voice.",
+    "offline": "The voices come from JustVoice, and it isn't answering at {address}. Open JustVoice (or start its server), then check again. Clips can still be made: LTX-2.3 speaks the line itself.",
+    "checkAgain": "Check again",
+    "settings": "Its address",
     "speaking": "Speaking…",
     "play": "Shot {n}'s line, spoken",
     "staleTag": "Words changed",
@@ -343,6 +349,10 @@
       "lineHint": "The words spoken in the shot, if any.",
       "speaker": "Spoken by",
       "noSpeaker": "Someone",
+      "delivery": "How it's said",
+      "deliveryHint": "In a few words an actor could play — “quietly, holding back tears”.",
+      "emotion": "Feeling",
+      "noEmotion": "None",
       "seconds": "Seconds",
       "transition": "Into the next shot"
     },
@@ -353,6 +363,17 @@
       "medium_close_up": "Medium close-up",
       "close_up": "Close-up",
       "extreme_close_up": "Extreme close-up"
+    },
+    "emotions": {
+      "neutral": "Neutral",
+      "happy": "Happy",
+      "sad": "Sad",
+      "angry": "Angry",
+      "fearful": "Afraid",
+      "whispered": "Whispered",
+      "shouted": "Shouted",
+      "sarcastic": "Sarcastic",
+      "contemptuous": "Contemptuous"
     },
     "transitions": {
       "cut": "Cut",
@@ -404,14 +425,28 @@
         "look": "The style: the light, the colours, the film stock, the mood."
       },
       "voice": "Voice",
-      "voiceHint": "How they sound — “a low, weathered woman's voice, calm and dry”. Their lines are spoken in it."
+      "voiceHint": "How they sound — “a low, weathered woman's voice, calm and dry”. JustVoice makes their voice from this and the description."
+    },
+    "voice": {
+      "title": "Their voice",
+      "none": "No voice yet. JustVoice makes one from the description, the words above and their lines — the first time a line of theirs is spoken, or now.",
+      "make": "Make the voice",
+      "again": "Make it again",
+      "making": "Making…",
+      "remove": "Take it off",
+      "task": "{name}'s voice",
+      "play": "{name}'s voice, as JustVoice auditioned it",
+      "described": "Made from: “{words}”",
+      "fromRecording": "Made from the recording below.",
+      "licence": "{name} — selling what it makes: {word}",
+      "unknown": "not said"
     },
     "picture": "Picture",
     "noPicture": "No picture yet",
     "pictureAfterAdd": "Add the card first; then paint its picture or take one from a file.",
     "sample": {
       "title": "Voice from a recording",
-      "hint": "A few clear seconds of the voice — a file, or recorded here. Speak then sounds like it, in place of a voice made from the words above. Use a voice you have the right to use.",
+      "hint": "A few clear seconds of the voice — a file, or recorded here. JustVoice then clones it for their lines, in place of a voice made from the words above. Use a voice you have the right to use.",
       "afterAdd": "Add the card first; then give it a recording of the voice.",
       "play": "{name}'s voice recording",
       "fromFile": "From a file…",
@@ -483,11 +518,9 @@
       "framePixels": "Pixels in each card picture",
       "frameCheck": "Check them and keep the best",
       "voicesTitle": "Voices",
-      "voicesHint": "The lines are spoken by a voice design model: it makes a voice from words — the voice on the character's card, or the default voice below for a speaker without one. A character with a voice recording is cloned from it by the cloning model instead. Both are downloaded on the AI page's Speech tab.",
-      "voiceModel": "Voice model",
-      "voiceLanguage": "Language the lines are in",
-      "voiceDefault": "Default voice",
-      "voiceCloneModel": "Model a recorded voice is cloned with",
+      "voicesHint": "The voices come from JustVoice, the family's voice app: it makes each character's voice from their card and speaks their lines. It must be open (or its server running) at the address below. The language the lines are in is a language tag — en-US, en-GB, fr-FR.",
+      "voiceJustVoice": "JustVoice's address",
+      "voiceLocale": "Language the lines are in",
       "voiceSampleSeconds": "Seconds of a recording used",
       "voiceSampleMegabytes": "Largest recording file (MB)",
       "soundsTitle": "Music and sound effects",

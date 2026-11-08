@@ -33,8 +33,13 @@ an online provider and make it the default. The **AI tasks** panel keeps the fai
 and **Retry**.
 
 **A feature says its engine isn't installed or its model isn't downloaded.** The banner where the feature is
-used offers both, with their sizes; the AI page's tabs (**Images**, **Speech**, **FFmpeg**) do the same. Speak
-says what it needs in its message instead: install audio.cpp and download the voice model on the **Speech** tab.
+used offers both, with their sizes; the AI page's tabs (**Images**, **Speech**, **FFmpeg**) do the same.
+
+**"JustVoice isn't running".** The voices come from JustVoice: open it (or start its server with
+`justvoice-server serve`), then press **Check again** on the Shots tab. The message names the address
+JustDirect looked at — if JustVoice listens elsewhere, put its address in **App Settings → General →
+Voices**. A voice JustVoice refuses (a language its models don't speak, a model that doesn't allow
+commercial use) is said in JustVoice's own words.
 
 **Export the film: "FFmpeg isn't installed".** The film is joined with FFmpeg: install it on the AI page's
 **FFmpeg** tab, or name your own FFmpeg there.

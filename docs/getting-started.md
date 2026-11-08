@@ -92,8 +92,8 @@ downloaded engines' settings).
    shot. Change any shot by hand; **Carry it forward** updates the later ones.
 4. **Shots → Paint first frames** — each shot's first picture, painted with its cards' pictures so the
    faces and places stay the same (the cards' pictures are painted first if they have none).
-5. **Shots → Speak lines** — the lines in each character's voice. Do this before the clips: a clip made
-   after its line moves the mouth with it.
+5. **Shots → Speak lines** — the lines in each character's voice, from **JustVoice** (the family's voice
+   app — open it first). Do this before the clips: a clip made after its line moves the mouth with it.
 6. **Shots → Make clips** — each first frame made into a moving clip with its sound (several minutes a clip
    on an 8 GB card).
 7. **Cut** — trim the shots, choose how they join, add music, songs and sound effects, then **Export the

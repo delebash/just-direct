@@ -7,7 +7,17 @@ import { randomUUID } from "node:crypto";
 const now = () => new Date().toISOString();
 
 const FILM_COLUMNS = "id, title, story, look, width, height, created_at, updated_at";
-const CARD_COLUMNS = "id, film_id, kind, name, description, voice, picture, position, created_at, updated_at, voice_sample, voice_sample_text";
+const CARD_COLUMNS = "id, film_id, kind, name, description, voice, picture, position, created_at, updated_at, voice_sample, voice_sample_text, voice_id, voice_info";
+
+/** What JustVoice said of a card's voice (migration 6), as kept: an object, or {} for anything else. */
+function parseInfo(text) {
+  try {
+    const v = JSON.parse(text || "{}");
+    return v && typeof v === "object" && !Array.isArray(v) ? v : {};
+  } catch {
+    return {};
+  }
+}
 
 /** The kinds of card, in the order the screens show them. */
 export const CARD_KINDS = Object.freeze(["character", "place", "prop", "look"]);
@@ -37,6 +47,8 @@ function cardFromRow(row) {
     voice: row.voice,
     voiceSample: row.voice_sample ?? null,
     voiceSampleText: row.voice_sample_text ?? "",
+    voiceId: row.voice_id ?? null,
+    voiceInfo: parseInfo(row.voice_info),
     picture: row.picture ?? null,
     position: row.position,
     createdAt: row.created_at,
@@ -120,20 +132,23 @@ export function createCard(db, filmId, { kind, name, description = "", voice = "
   const at = now();
   const { n } = db.one("SELECT COALESCE(MAX(position), -1) + 1 AS n FROM cards WHERE film_id = ? AND kind = ?", [filmId, kind]);
   db.tx(() => {
-    db.run(`INSERT INTO cards (${CARD_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, NULL, '')`, [id, filmId, kind, name, description, voice, n, at, at]);
+    db.run(`INSERT INTO cards (${CARD_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, NULL, '', NULL, '{}')`, [id, filmId, kind, name, description, voice, n, at, at]);
     touchFilm(db, filmId);
   });
   return getCard(db, id);
 }
 
 export function updateCard(db, id, patch) {
-  const { sets, values } = setsOf(patch, {
+  const p = patch.voiceInfo !== undefined ? { ...patch, voiceInfo: JSON.stringify(patch.voiceInfo ?? {}) } : patch;
+  const { sets, values } = setsOf(p, {
     name: "name",
     description: "description",
     voice: "voice",
     picture: "picture",
     voiceSample: "voice_sample",
     voiceSampleText: "voice_sample_text",
+    voiceId: "voice_id",
+    voiceInfo: "voice_info",
   });
   if (!sets.length) return getCard(db, id);
   sets.push("updated_at = ?");

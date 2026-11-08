@@ -49,6 +49,8 @@ export const useFilmsStore = defineStore("films", {
     exporting: false,
     // the whole film being made (Make the film)
     makingFilm: false,
+    // characters whose voice JustVoice is making: card id → true
+    voicing: {},
   }),
   getters: {
     cardsOf: (state) => (kind) => state.cards.filter((c) => c.kind === kind),
@@ -425,6 +427,22 @@ export const useFilmsStore = defineStore("films", {
         const { [card.id]: _, ...rest } = this.painting;
         this.painting = rest;
       }
+    },
+    /** A character's voice made in JustVoice (a server job), from the card's words and their lines; the card comes back
+     *  with it — the one it had made again. */
+    async makeVoice(card, label) {
+      this.voicing = { ...this.voicing, [card.id]: true };
+      try {
+        const done = await runServerJob({ start: () => post(`/v1/cards/${enc(card.id)}/voice`, {}), feature: "voices.card", label, meta: { cardId: card.id } });
+        return done ? this._put(done) : null;
+      } finally {
+        const { [card.id]: _, ...rest } = this.voicing;
+        this.voicing = rest;
+      }
+    },
+    /** The character's voice gone from JustVoice and the card (the next line makes it again). */
+    async removeVoice(card) {
+      return this._put(await del(`/v1/cards/${enc(card.id)}/voice`));
     },
   },
 });

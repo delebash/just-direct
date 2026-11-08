@@ -1,12 +1,12 @@
 <script setup>
 // SPDX-License-Identifier: MIT
 // A card's editor — the §15 form in the kit's AppModal: its name, the words its picture is painted from, and for a
-// character the voice it speaks with (the words the voice model designs it from). Its picture: painted by the AI (the
-// panel's Paint, a server job), taken from a file (PNG, JPEG or WebP), or taken off. The rules are the route's own
-// schemas (CardIn for a new card, CardPatch for a change); a 422 lands under its field, a change another window made
-// first (412) is said and the cards read again. Delete asks first, naming what is lost. A character's voice can come
-// from a recording instead of words: a file, or one recorded here with the kit's microphone recorder; Speak then
-// clones it, following what it says when that is written.
+// character the words their voice is made from. Its picture: painted by the AI (the panel's Paint, a server job), taken
+// from a file (PNG, JPEG or WebP), or taken off. The rules are the route's own schemas (CardIn for a new card, CardPatch
+// for a change); a 422 lands under its field, a change another window made first (412) is said and the cards read
+// again. Delete asks first, naming what is lost. A character's voice is JustVoice's (the server's voices.js): Make the
+// voice (a server job) shows its audition, the words it was made from and its models' licences; it can come from a
+// recording instead — a file, or one recorded here with the kit's microphone recorder — which JustVoice clones.
 import {
   AppModal,
   confirmDialog,
@@ -96,6 +96,28 @@ async function removeSample() {
   try {
     await films.removeVoiceSample(current.value);
     draft.voiceSampleText = "";
+  } catch (e) {
+    reportError(e);
+  } finally {
+    busy.value = false;
+  }
+}
+
+// ── the voice JustVoice made (from the words, or the recording) ──
+const voiceInfo = computed(() => current.value?.voiceInfo ?? {});
+// a model's licence as the card shows it: its name and JustVoice's word for selling what it makes
+const licenceLine = (m) => (m ? t("cards.voice.licence", { name: m.name || m.model, word: m.commercial || t("cards.voice.unknown") }) : "");
+async function makeVoice() {
+  try {
+    await films.makeVoice(current.value, t("cards.voice.task", { name: current.value.name }));
+  } catch (e) {
+    if (e?.name !== "AbortError") reportError(e);
+  }
+}
+async function removeVoice() {
+  busy.value = true;
+  try {
+    await films.removeVoice(current.value);
   } catch (e) {
     reportError(e);
   } finally {
@@ -204,6 +226,23 @@ async function remove() {
             :rules="rules.voice" :error="!!serverErrors.voice" :error-message="serverErrors.voice"
           />
         </UiField>
+        <section v-if="kind === 'character' && current" class="card-dialog__sample" :aria-label="t('cards.voice.title')">
+          <h3 class="card-dialog__sample-title">{{ t("cards.voice.title") }}</h3>
+          <template v-if="current.voiceId">
+            <audio v-if="current.voiceAuditionUrl" controls preload="none" crossorigin="anonymous" :src="serverUrl(current.voiceAuditionUrl)" :aria-label="t('cards.voice.play', { name: current.name })" />
+            <p v-if="voiceInfo.description" class="hint">{{ t("cards.voice.described", { words: voiceInfo.description }) }}</p>
+            <p v-else-if="voiceInfo.source === 'recording'" class="hint">{{ t("cards.voice.fromRecording") }}</p>
+            <p v-for="m in [voiceInfo.design, voiceInfo.clone].filter(Boolean)" :key="m.model || m.name" class="hint">{{ licenceLine(m) }}</p>
+          </template>
+          <p v-else class="hint">{{ t("cards.voice.none") }}</p>
+          <div class="card-dialog__sample-actions">
+            <UiButton
+              intent="secondary" size="small" focusable-when-disabled :disabled="!!films.voicing[current.id] || busy"
+              :label="films.voicing[current.id] ? t('cards.voice.making') : current.voiceId ? t('cards.voice.again') : t('cards.voice.make')" @click="makeVoice"
+            />
+            <UiButton v-if="current.voiceId" intent="ghost" size="small" :disabled="!!films.voicing[current.id] || busy" :label="t('cards.voice.remove')" @click="removeVoice" />
+          </div>
+        </section>
         <section v-if="kind === 'character'" class="card-dialog__sample" :aria-label="t('cards.sample.title')">
           <h3 class="card-dialog__sample-title">{{ t("cards.sample.title") }}</h3>
           <p class="hint">{{ current ? t("cards.sample.hint") : t("cards.sample.afterAdd") }}</p>

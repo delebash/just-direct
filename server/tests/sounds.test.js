@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
-// A shot's line spoken in its character's voice, and the film's music and effects — fake voices and fake music (the
-// real ones are the kit's audio.cpp runtime): the voice words sent, the line kept as the shot's (the old one gone), the
-// whole film's lines, refusals said at once; music and effects made, placed, moved, deleted with their files.
+// A shot's line spoken in its character's voice, and the film's music and effects — a fake JustVoice (the real voices
+// come from its server, justvoice.js) and fake music (the real one is the kit's audio.cpp runtime): a character's voice
+// made once from their card, the line said with its delivery, kept as the shot's (the old one gone); the whole film's
+// lines as one batch after the card is let go; refusals said at once; music and effects made, placed, moved, deleted.
 import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { beforeEach, describe, expect, test } from "vitest";
 import { createApp } from "../src/app.js";
 import { getDb, getState } from "../src/app_state.js";
-import { updateCard } from "../src/database/films.js";
+import { getCard, updateCard } from "../src/database/films.js";
 import { seedWorkspace } from "../src/database/seed.js";
 import { filmDir } from "../src/files.js";
 import { testClient, tmpDir, useHermeticKit } from "./helpers.js";
@@ -34,19 +35,67 @@ function wav(seconds) {
   return Buffer.concat([h, data]);
 }
 
+/** A fake JustVoice in its client's shape (justvoice.js): what it was asked, in order. */
+function fakeJustVoice() {
+  const jv = {
+    base: "http://127.0.0.1:17494",
+    up: true,
+    calls: [],
+    async health() {
+      return jv.up ? { clientApi: 1 } : null;
+    },
+    async characterVoice(body) {
+      jv.calls.push(["characterVoice", body]);
+      const n = jv.calls.filter((c) => c[0] === "characterVoice").length;
+      return {
+        voice_id: `v${n}`,
+        name: body.name,
+        gender: "female",
+        description: `Written for ${body.name}`,
+        described_by: "gemma",
+        design: { model: "qwen3-vd", name: "Qwen3-TTS VoiceDesign", commercial: "Yes", summary: "", url: "" },
+        clone: { model: "cosyvoice3", name: "CosyVoice3", commercial: "Yes", summary: "", url: "" },
+        audition_url: `/v1/voices/v${n}/audition.wav`,
+      };
+    },
+    async cloneVoice(body) {
+      jv.calls.push(["cloneVoice", { ...body, wav: body.wav.length }]);
+      return { id: "rec1", model: "cosyvoice3", licence: { commercial: "Yes", summary: "", url: "" } };
+    },
+    async fetchFile(p) {
+      jv.calls.push(["fetchFile", p]);
+      return wav(2);
+    },
+    async speak(req) {
+      jv.calls.push(["speak", req]);
+      return wav(1.5);
+    },
+    async speakBatch(lines) {
+      jv.calls.push(["speakBatch", lines]);
+      return lines.map((l) => (l.input.includes("fail") ? { id: l.id, wav: null, seconds: 0, error: "the model refused" } : { id: l.id, wav: wav(1.2), seconds: 1.2, error: null }));
+    },
+    async deleteVoice(id) {
+      jv.calls.push(["deleteVoice", id]);
+    },
+  };
+  return jv;
+}
+
 let client;
 let dataDir;
-let spoken;
+let jv;
+let freed;
 let made;
 beforeEach(async () => {
   dataDir = tmpDir();
-  spoken = [];
+  jv = fakeJustVoice();
+  freed = 0;
   made = [];
   const services = {
-    voiceCheck: () => {},
-    speak: async (model, request) => {
-      spoken.push({ model, ...request });
-      return wav(1.5);
+    voices: () => jv,
+    freeCard: async () => {
+      freed++;
+      jv.calls.push(["freeCard"]);
     },
     makeAudio: async (feature, request) => {
       made.push({ feature, ...request });
@@ -56,6 +105,7 @@ beforeEach(async () => {
   client = testClient(await createApp(dataDir, { services }));
   seedWorkspace(getDb());
 });
+const callsOf = (name) => jv.calls.filter((c) => c[0] === name).map((c) => c[1]);
 
 async function settle(job) {
   for (let i = 0; i < 300; i++) {
@@ -67,96 +117,119 @@ async function settle(job) {
 }
 
 async function scene() {
-  const film = (await client.post("/v1/films", { json: { title: "Ferry" } })).json();
-  const mara = (await client.post(`/v1/films/${film.id}/cards`, { json: { kind: "character", name: "Mara", voice: "a low, weathered woman's voice, dry" } })).json();
+  const film = (await client.post("/v1/films", { json: { title: "Ferry", story: "Mara runs the last ferry. A boy, Teo, arrives with a brass ticket." } })).json();
+  const mara = (await client.post(`/v1/films/${film.id}/cards`, { json: { kind: "character", name: "Mara", description: "a ferry captain in her sixties", voice: "a low, weathered woman's voice, dry" } })).json();
   const teo = (await client.post(`/v1/films/${film.id}/cards`, { json: { kind: "character", name: "Teo" } })).json();
-  const shot = (await client.post(`/v1/films/${film.id}/shots`, { json: { action: "Mara speaks.", line: "This is the last crossing.", speakerId: mara.id } })).json();
+  const shot = (await client.post(`/v1/films/${film.id}/shots`, { json: { action: "Mara speaks.", line: "This is the last crossing.", speakerId: mara.id, delivery: "quietly, to herself", emotion: "sad" } })).json();
   return { film, mara, teo, shot };
 }
+const speakShot = async (shot) => settle((await client.post(`/v1/shots/${shot.id}/line`, { json: {} })).json());
 
-describe("a line spoken", () => {
-  test("in the speaker's voice, from its card's words; kept as the shot's line, the old one gone", async () => {
-    const { film, shot } = await scene();
-    const first = await settle((await client.post(`/v1/shots/${shot.id}/line`, { json: {} })).json());
+describe("a line spoken by JustVoice", () => {
+  test("the speaker's voice made once from their card; the line said as written; kept as the shot's, the old one gone", async () => {
+    const { film, mara, shot } = await scene();
+    const first = await speakShot(shot);
     expect(first.state).toBe("done");
-    expect(spoken[0]).toMatchObject({ model: "qwen3-vd-1.7b-q8", input: "This is the last crossing.", language: "English", instructions: "a low, weathered woman's voice, dry" });
+    // her voice: who she is, her lines, the story's opening, in models a film made with it can be sold with
+    expect(callsOf("characterVoice")).toEqual([
+      {
+        name: "Mara · Ferry",
+        description: "a ferry captain in her sixties. Their voice: a low, weathered woman's voice, dry",
+        lines: ["This is the last crossing."],
+        context: "Mara runs the last ferry. A boy, Teo, arrives with a brass ticket.",
+        language: "en-US",
+        commercial_use: true,
+      },
+    ]);
+    expect(callsOf("speak")[0]).toMatchObject({ voice: "v1", input: "This is the last crossing.", instructions: "quietly, to herself", emotion: "sad" });
     expect(first.result).toMatchObject({ kind: "line", shotId: shot.id, seconds: 1.5 });
-    const again = await settle((await client.post(`/v1/shots/${shot.id}/line`, { json: {} })).json());
+    // the card keeps her voice, what JustVoice said of it and its audition
+    const card = (await client.get(`/v1/films/${film.id}/cards`)).json().items.find((c) => c.id === mara.id);
+    expect(card).toMatchObject({ voiceId: "v1", voiceInfo: { source: "made", description: "Written for Mara · Ferry", design: { commercial: "Yes" }, clone: { name: "CosyVoice3" } } });
+    expect((await client.get(card.voiceAuditionUrl)).headers["content-type"]).toBe("audio/wav");
+    // again: the same voice, a new take in place of the old
+    const again = await speakShot(shot);
+    expect(callsOf("characterVoice")).toHaveLength(1);
     const items = (await client.get(`/v1/films/${film.id}/sounds`)).json().items;
     expect(items.map((s) => s.id)).toEqual([again.result.id]);
     expect(readdirSync(path.join(filmDir(dataDir, film.id), "sounds"))).toEqual([again.result.file]);
-    const audio = await client.get(again.result.audioUrl);
-    expect(audio.headers["content-type"]).toBe("audio/wav");
+    expect((await client.get(again.result.audioUrl)).headers["content-type"]).toBe("audio/wav");
   });
 
-  test("no Voice words: designed from the card's description, else the default voice; a shot with no line is a refusal", async () => {
-    const { film, teo } = await scene();
-    const shot = (await client.post(`/v1/films/${film.id}/shots`, { json: { line: "Is it still good?", speakerId: teo.id } })).json();
-    await settle((await client.post(`/v1/shots/${shot.id}/line`, { json: {} })).json());
-    expect(spoken[0].instructions).toBe("A natural, clear adult voice, calm and unhurried.");
-    await client.patch(`/v1/cards/${teo.id}`, { json: { description: "a ten-year-old boy in a red hoodie" } });
-    await settle((await client.post(`/v1/shots/${shot.id}/line`, { json: {} })).json());
-    expect(spoken[1].instructions).toBe("The voice of Teo: a ten-year-old boy in a red hoodie");
+  test("refused at once: no line, no speaker, JustVoice not answering — naming where it looked", async () => {
+    const { film, shot } = await scene();
     const silent = (await client.post(`/v1/films/${film.id}/shots`, { json: { action: "The lake." } })).json();
-    const r = await settle((await client.post(`/v1/shots/${silent.id}/line`, { json: {} })).json());
-    expect(r.error.title).toBe("The shot has no line");
+    expect((await client.post(`/v1/shots/${silent.id}/line`, { json: {} })).json()).toMatchObject({ status: 409, title: "The shot has no line" });
+    const nobody = (await client.post(`/v1/films/${film.id}/shots`, { json: { line: "Who said that?" } })).json();
+    expect((await client.post(`/v1/shots/${nobody.id}/line`, { json: {} })).json()).toMatchObject({ status: 409, title: "The line has no speaker" });
+    jv.up = false;
+    const off = (await client.post(`/v1/shots/${shot.id}/line`, { json: {} })).json();
+    expect(off).toMatchObject({ status: 409, title: "JustVoice isn't running" });
+    expect(off.detail).toContain("http://127.0.0.1:17494");
+    expect((await client.post(`/v1/films/${film.id}/lines`, { json: {} })).statusCode).toBe(409);
+    expect((await client.get("/v1/voices/status")).json()).toEqual({ reachable: false, address: "http://127.0.0.1:17494", clientApi: 0 });
+    expect(callsOf("speak")).toHaveLength(0);
   });
 
-  test("a character with a voice recording is cloned from it: the cloning model, the recording, its words or none", async () => {
+  test("a character with a voice recording: JustVoice clones it, with its words or its sound alone", async () => {
     const { film, mara, shot } = await scene();
-    const checked = [];
-    getState().services.voiceCheck = (model) => checked.push(model);
-    // a recording on her card, with what it says (the store's own fields; the upload route has its own test)
     mkdirSync(path.join(filmDir(dataDir, film.id), "cards"), { recursive: true });
     writeFileSync(path.join(filmDir(dataDir, film.id), "cards", "mara-voice.wav"), wav(3));
     updateCard(getDb(), mara.id, { voiceSample: "mara-voice.wav", voiceSampleText: "I've run this ferry for forty years." });
-    await settle((await client.post(`/v1/shots/${shot.id}/line`, { json: {} })).json());
-    expect(checked).toEqual(["qwen3-base-1.7b-q8", "qwen3-base-1.7b-q8"]);
-    expect(spoken[0]).toMatchObject({ model: "qwen3-base-1.7b-q8", input: "This is the last crossing.", reference_text: "I've run this ferry for forty years." });
-    expect(spoken[0].voice_ref).toBe(path.join(filmDir(dataDir, film.id), "cards", "mara-voice.wav"));
-    expect(spoken[0].instructions).toBeUndefined();
-    // the words not known: her speaker's sound alone
-    updateCard(getDb(), mara.id, { voiceSampleText: "" });
-    await settle((await client.post(`/v1/shots/${shot.id}/line`, { json: {} })).json());
-    expect(spoken[1].options).toEqual({ x_vector_only_mode: true });
-    expect(spoken[1].reference_text).toBeUndefined();
+    await speakShot(shot);
+    expect(callsOf("characterVoice")).toHaveLength(0);
+    expect(callsOf("cloneVoice")[0]).toMatchObject({ name: "Mara · Ferry", transcript: "I've run this ferry for forty years.", language: "en-US" });
+    expect(callsOf("speak")[0].voice).toBe("rec1");
+    expect(getCard(getDb(), mara.id).voiceInfo).toMatchObject({ source: "recording", clone: { model: "cosyvoice3", commercial: "Yes" } });
   });
 
-  test("a voice model that can't speak yet is refused at once, before any job", async () => {
-    const { shot } = await scene();
-    const { ApiError } = await import("@delebash/core/platform/errors");
-    getState().services.voiceCheck = () => {
-      throw new ApiError(409, "model-not-downloaded", "The voice model isn't downloaded", "Download it on the AI page's Speech tab.");
-    };
-    const r = await client.post(`/v1/shots/${shot.id}/line`, { json: {} });
-    expect(r.statusCode).toBe(409);
-    expect(r.json().type).toMatch(/model-not-downloaded$/);
-  });
-
-  test("the film's lines: every shot with a line and a speaker but no voice yet", async () => {
+  test("the film's lines: every speaker's voice first, the card let go, one batch; a line JustVoice couldn't say is named", async () => {
     const { film, shot, teo } = await scene();
     await client.post(`/v1/films/${film.id}/shots`, { json: { line: "Hello?", speakerId: teo.id } });
+    const bad = (await client.post(`/v1/films/${film.id}/shots`, { json: { line: "Please fail.", speakerId: teo.id } })).json();
     await client.post(`/v1/films/${film.id}/shots`, { json: { line: "Nobody speaks this." } });
-    await settle((await client.post(`/v1/shots/${shot.id}/line`, { json: {} })).json());
-    spoken.length = 0;
     const done = await settle((await client.post(`/v1/films/${film.id}/lines`, { json: {} })).json());
-    expect(done.result).toEqual({ spoken: 1 });
-    expect(spoken.map((s) => s.input)).toEqual(["Hello?"]);
+    expect(done.result).toEqual({ spoken: 2, voicesMade: 2, failed: [{ shotId: bad.id, why: "the model refused" }] });
+    // the voices, then the card handed over, then the batch — in that order
+    expect(jv.calls.map((c) => c[0]).filter((n) => n !== "fetchFile")).toEqual(["characterVoice", "characterVoice", "freeCard", "speakBatch"]);
+    const batch = callsOf("speakBatch")[0];
+    expect(batch.map((l) => [l.id, l.voice, l.input])).toEqual([
+      [shot.id, "v1", "This is the last crossing."],
+      [expect.any(String), "v2", "Hello?"],
+      [bad.id, "v2", "Please fail."],
+    ]);
+    // again: only what wasn't spoken
+    jv.calls.length = 0;
+    await settle((await client.post(`/v1/films/${film.id}/lines`, { json: {} })).json());
+    expect(callsOf("speakBatch")[0].map((l) => l.id)).toEqual([bad.id]);
+    expect(callsOf("characterVoice")).toHaveLength(0);
+    expect(freed).toBe(2);
+  });
+});
+
+describe("a character's voice on the card", () => {
+  test("made on its own, made again (the old one gone from JustVoice), taken off; a new recording forgets it", async () => {
+    const { film, mara } = await scene();
+    const made1 = await settle((await client.post(`/v1/cards/${mara.id}/voice`, { json: {} })).json());
+    expect(made1.result).toMatchObject({ voiceId: "v1" });
+    expect(made1.result.voiceAuditionUrl).toMatch(/^\/v1\/cards\/.+\/voice-audition\?v=/);
+    const made2 = await settle((await client.post(`/v1/cards/${mara.id}/voice`, { json: {} })).json());
+    expect(made2.result.voiceId).toBe("v2");
+    expect(callsOf("deleteVoice")).toEqual(["v1"]);
+    const off = (await client.delete(`/v1/cards/${mara.id}/voice`)).json();
+    expect(off).toMatchObject({ voiceId: null, voiceInfo: {}, voiceAuditionUrl: null });
+    expect(callsOf("deleteVoice")).toEqual(["v1", "v2"]);
+    expect(readdirSync(path.join(filmDir(dataDir, film.id), "cards")).filter((n) => n.includes("audition"))).toEqual([]);
+    // a place has no voice
+    const pier = (await client.post(`/v1/films/${film.id}/cards`, { json: { kind: "place", name: "Pier" } })).json();
+    expect((await client.post(`/v1/cards/${pier.id}/voice`, { json: {} })).json()).toMatchObject({ status: 409, title: "Only a character speaks" });
   });
 
-  test("the film's lines ask only for the voice models they need: every speaker recorded, the design model never", async () => {
-    const { film, mara } = await scene();
-    mkdirSync(path.join(filmDir(dataDir, film.id), "cards"), { recursive: true });
-    writeFileSync(path.join(filmDir(dataDir, film.id), "cards", "mara-voice.wav"), wav(3));
-    updateCard(getDb(), mara.id, { voiceSample: "mara-voice.wav" });
-    const checked = [];
-    getState().services.voiceCheck = (model) => {
-      checked.push(model);
-      if (model === "qwen3-vd-1.7b-q8") throw new Error("the design model isn't downloaded");
-    };
-    const done = await settle((await client.post(`/v1/films/${film.id}/lines`, { json: {} })).json());
-    expect(done.state).toBe("done");
-    expect(new Set(checked)).toEqual(new Set(["qwen3-base-1.7b-q8"]));
+  test("a deleted character's voice leaves JustVoice with it", async () => {
+    const { mara } = await scene();
+    await settle((await client.post(`/v1/cards/${mara.id}/voice`, { json: {} })).json());
+    expect((await client.delete(`/v1/cards/${mara.id}`)).statusCode).toBe(204);
+    expect(callsOf("deleteVoice")).toEqual(["v1"]);
   });
 });
 

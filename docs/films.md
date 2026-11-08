@@ -125,29 +125,41 @@ new clip, marked **Lips repaired**, plays with her mouth on the words.
 
 ### Voices
 
-A shot with a line has a **microphone** button: **Speak shot 2's line** says the line in its speaker's
-voice and puts a small player under it so you can hear it. The voice is made from the words on the
-character's card (**Voice** — "a low, weathered woman's voice, calm and dry"); a line with no speaker,
-or a character with no voice written, gets the default voice (**App Settings → General → Voices**,
-with the language the lines are in). Speaking again replaces the line spoken before.
+The voices come from **JustVoice**, the family's voice app: JustDirect asks it to make each character's
+voice and to speak their lines. JustVoice must be open — or its server running (`justvoice-server serve`) —
+at the address in **App Settings → General → Voices**; when it isn't, the Shots tab says so and clips are
+still made (LTX-2.3 then speaks the line itself, in a voice of its own).
 
-**Speak lines** in the toolbar speaks every line that has a speaker and no voice yet, one after
-another, on the **AI tasks** strip.
+**A character's voice** is made once, the first time a line of theirs is spoken — or now, with **Make the
+voice** on their card under **Their voice**. JustVoice writes a description of the voice from the card's
+description, its **Voice** words ("a low, weathered woman's voice, calm and dry"), their lines and the
+story's opening, designs the voice, and keeps one audition of it, which every line is then spoken from — so
+a character sounds the same in every shot. The card plays that audition, shows the words it was made
+from, and names the models with whether what they make can be sold. **Make it again** makes a new one in
+its place; **Take it off** removes it (the next line makes it again).
+
+A shot with a line has a **microphone** button: **Speak shot 2's line** says the line in its speaker's
+voice and puts a small player under it. A line needs a speaker — **Spoken by** in the shot — and is said
+the way the shot's **How it's said** ("quietly, holding back tears") and **Feeling** (Sad, Whispered,
+Shouted…) say; the planner writes both, and you can change them. Speaking again replaces the line spoken
+before.
+
+**Speak lines** in the toolbar speaks every line that has a speaker and no voice yet: it makes any voice a
+speaker lacks, then lets go of the app's own models on the graphics card and has JustVoice speak all the
+lines in one go, so both apps never fight over the card. A line JustVoice couldn't say is named; speak it
+again from its shot.
 
 **A voice from a recording.** A character's card can carry a recording of the voice they should have:
 open the card, and under **Voice from a recording** press **From a file…** (WAV, MP3, M4A — any recording)
-or **Record**, speak a few clear sentences, and **Stop and keep**. Their lines are then spoken in that voice
-instead of one made from words. Write **What the recording says** if you know the exact words — the voice
-follows the recording more closely — and **Save**. **Take off** goes back to the voice made from words.
+or **Record**, speak a few clear sentences, and **Stop and keep**. JustVoice then clones it for their lines,
+in place of a voice made from words. Write **What the recording says** if you know the exact words — the voice
+follows the recording more closely — and **Save**. **Take off** goes back to a voice made from words.
 Only the first 20 seconds are used (**App Settings → General → Voices**), and reading a recording needs
 FFmpeg. Use a voice you have the right to use.
 
 Speak a line **before** making its shot's clip: the clip is then drawn to that voice — the mouth moves
 with it, and the clip runs at least as long as the line (up to 13 seconds). If you change a line's
 words after it was spoken, the shot shows **Words changed**: speak it again, then make the clip again.
-
-The voices need the speech engine and its voice model, both installed from the AI page's **Speech**
-tab; until then **Speak** says what is missing.
 
 ## Cut
 

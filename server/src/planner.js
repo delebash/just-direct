@@ -13,7 +13,7 @@
 // a spoken line given time to be spoken.
 
 import { CARD_KINDS } from "./database/films.js";
-import { SECONDS_MAX, SIZES, TRANSITIONS } from "./schemas/shots.js";
+import { DELIVERY_MAX, EMOTIONS, SECONDS_MAX, SIZES, TRANSITIONS } from "./schemas/shots.js";
 
 export const ACTIONS = Object.freeze({ cards: "plan.cards", shots: "plan.shots", revise: "plan.revise" });
 
@@ -29,7 +29,7 @@ export const PLANNER_PROMPTS = {
   },
   [ACTIONS.shots]: {
     feature: ACTIONS.shots,
-    system: `${ROLE} Break the whole story into shots in story order — as many as the story needs, at most {{maxShots}}. Direct it like a film: vary wide, medium and close shots, use a close-up for each key object and reaction, and choose the transition that serves the moment. For each shot: place is the card of the place it happens in; cards lists every card seen or named in the shot, its place included; size is how it is framed; camera is the camera's move in a few words ("static", "slow push in", "pan left", "tracking beside her", "handheld"); action says what happens in one or two sentences, never repeating a card's look; line is the words spoken in the shot, or "" if none, and speaker the card of who speaks it, or ""; seconds is how long the shot runs, long enough to speak its line.`,
+    system: `${ROLE} Break the whole story into shots in story order — as many as the story needs, at most {{maxShots}}. Direct it like a film: vary wide, medium and close shots, use a close-up for each key object and reaction, and choose the transition that serves the moment. For each shot: place is the card of the place it happens in; cards lists every card seen or named in the shot, its place included; size is how it is framed; camera is the camera's move in a few words ("static", "slow push in", "pan left", "tracking beside her", "handheld"); action says what happens in one or two sentences, never repeating a card's look; line is the words spoken in the shot, or "" if none, and speaker the card of who speaks it, or ""; delivery is how the line is said, in a few words an actor could play ("quietly, holding back tears"), and emotion the one word for it from the list, both "" when there is no line; seconds is how long the shot runs, long enough to speak its line.`,
     user_template: "STORY:\n{{story}}\n\nCARDS:\n{{cards}}",
     json_mode: true,
   },
@@ -83,6 +83,8 @@ export function shotsText(shots, byId) {
         action: s.action,
         line: s.line,
         speaker: s.speakerId ? (byId.get(s.speakerId) ?? "") : "",
+        delivery: s.delivery,
+        emotion: s.emotion,
         seconds: Math.round(s.seconds),
       }),
     )
@@ -123,10 +125,12 @@ function shotItem(refs, placeRefs, speakerRefs, withNumber = null) {
     action: str,
     line: str,
     speaker: oneOf([...speakerRefs, ""]),
+    delivery: str,
+    emotion: { enum: ["", ...EMOTIONS] },
     seconds: { type: "integer", minimum: 2, maximum: 10 },
     transition: { enum: [...TRANSITIONS] },
   };
-  const required = ["place", "cards", "size", "camera", "action", "line", "speaker", "seconds", "transition"];
+  const required = ["place", "cards", "size", "camera", "action", "line", "speaker", "delivery", "emotion", "seconds", "transition"];
   if (withNumber) {
     props.number = { enum: withNumber };
     required.unshift("number");
@@ -179,9 +183,9 @@ export function parseAnswer(content) {
 
 const clean = (s, max) => String(s ?? "").trim().slice(0, max);
 
-/** A character's voice as the planner wrote it, or "" when it says too little to design a voice from: its brackets and
- *  quotes gone, fewer than two words left (the first real run's `(sixties, "", "")`). With none, Speak designs the
- *  voice from the card's description (sounds_api.js `voiceWords`). */
+/** A character's voice as the planner wrote it, or "" when it says too little to make a voice from: its brackets and
+ *  quotes gone, fewer than two words left (the first real run's `(sixties, "", "")`). JustVoice makes the voice from the
+ *  card's description and these words (voices.js `ensureVoice`). */
 export function plannedVoice(text) {
   const s = clean(text, 600)
     .replace(/["“”()[\]{}]/g, " ")
@@ -238,6 +242,9 @@ export function shotFrom(item, cards, refs, { wordsPerSecond }) {
     action,
     line,
     speakerId: line ? speakerId : null,
+    // how the line is said, only with a line (JustVoice takes both: some models only a label)
+    delivery: line ? clean(item?.delivery, DELIVERY_MAX) : "",
+    emotion: line && EMOTIONS.includes(item?.emotion) ? item.emotion : "",
     seconds,
     transition: TRANSITIONS.includes(item?.transition) ? item.transition : "cut",
   };

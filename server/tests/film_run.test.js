@@ -28,19 +28,26 @@ const PLAN = [
     ],
   },
 ];
+// the same story with Mara's line in its second shot
+const SPOKEN_PLAN = [PLAN[0], { shots: [PLAN[1].shots[0], { ...PLAN[1].shots[1], line: "This is the last crossing.", speaker: "mara", delivery: "quietly", emotion: "sad" }] }];
 const CHECK = { cards: [], extraPeople: 0, lettering: false, faults: [], match: 9, note: "" };
 
 let client;
 let needs;
 let calls;
+let plan;
 beforeEach(async () => {
   needs = [];
   calls = { run: 0, paint: 0, video: 0 };
-  const answers = PLAN.map((a) => JSON.stringify(a));
+  plan = PLAN;
+  let answers = null;
   const run = async () => {
     calls.run++;
+    answers ??= plan.map((a) => JSON.stringify(a));
     return { content: answers.shift() ?? JSON.stringify(CHECK) };
   };
+  // JustVoice not answering (the voices step's own test is sounds.test.js)
+  const voices = () => ({ base: "http://127.0.0.1:17494", health: async () => null });
   const paintImage = async (feature, request) => {
     calls.paint++;
     return sharp({ create: { width: request.width / 16, height: request.height / 16, channels: 3, background: "#456" } }).png().toBuffer();
@@ -52,7 +59,7 @@ beforeEach(async () => {
     execFileSync(FFMPEG, ["-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=256x128:r=24:d=1", "-f", "lavfi", "-i", "sine=f=440:d=1", "-c:v", "libvpx-vp9", "-c:a", "libopus", "-shortest", out]);
     return { bytes: readFileSync(out), fps: 24, frames: 24, format: "webm" };
   };
-  client = testClient(await createApp(tmpDir(), { services: { run, paintImage, makeVideo, filmNeeds: () => needs } }));
+  client = testClient(await createApp(tmpDir(), { services: { run, paintImage, makeVideo, voices, filmNeeds: () => needs } }));
   seedWorkspace(getDb());
 });
 
@@ -84,15 +91,17 @@ describe("Make the film", () => {
     const film = (await client.post("/v1/films", { json: { title: "Ferry", story: STORY, width: 512, height: 384 } })).json();
     const done = await settle((await make(film.id)).json());
     expect(done.state).toBe("done");
+    // no shot has a line: the voices step has nothing to do
     expect(done.result.steps.map((s) => [s.step, s.done])).toEqual([
       ["plan", true],
       ["frames", true],
+      ["voices", false],
       ["clips", true],
       ["export", true],
     ]);
     expect(done.result.steps[0]).toMatchObject({ cardsAdded: 1, shots: 2 });
-    expect(done.result.steps[2]).toMatchObject({ shots: 2, made: 2, failed: [] });
-    expect(done.result.steps[3].shots).toBe(2);
+    expect(done.result.steps[3]).toMatchObject({ shots: 2, made: 2, failed: [] });
+    expect(done.result.steps[4].shots).toBe(2);
     const shots = (await client.get(`/v1/films/${film.id}/shots`)).json().items;
     expect(shots.every((s) => s.frameId && s.clipId)).toBe(true);
     expect((await client.get(`/v1/films/${film.id}/export`)).statusCode).toBe(200);
@@ -105,9 +114,26 @@ describe("Make the film", () => {
     expect(again.result.steps.map((s) => [s.step, s.done])).toEqual([
       ["plan", false],
       ["frames", false],
+      ["voices", false],
       ["clips", false],
       ["export", true],
     ]);
     expect(calls).toEqual(before);
+  });
+
+  test.skipIf(!real)("a line and JustVoice not answering: the voices step skipped and said why; the clips and export go on", { timeout: 120_000 }, async () => {
+    expect((await client.put("/v1/ai/runtimes/ffmpeg/settings", { json: { settings: { path: FFMPEG } } })).statusCode).toBe(200);
+    plan = SPOKEN_PLAN;
+    const film = (await client.post("/v1/films", { json: { title: "Ferry", story: STORY, width: 512, height: 384 } })).json();
+    const done = await settle((await make(film.id)).json());
+    expect(done.state).toBe("done");
+    expect(done.result.steps.map((s) => [s.step, s.done])).toEqual([
+      ["plan", true],
+      ["frames", true],
+      ["voices", false],
+      ["clips", true],
+      ["export", true],
+    ]);
+    expect(done.result.steps[2]).toMatchObject({ skipped: "justvoice-offline", address: "http://127.0.0.1:17494" });
   });
 });

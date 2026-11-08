@@ -406,59 +406,13 @@ export const LTX_23 = {
   },
 };
 
-// ── Voices, music and sound effects, for the kit's audio.cpp runtime. The voice model is Qwen3-TTS VoiceDesign 1.7B,
-// which speaks in a voice designed from words (a character card's Voice) — JustVoice's row for it, the same pinned file
-// (its kit_models.js rowOf, read 2026-11-07), Apache-2.0; audio.cpp's estimate of its memory on the card. Music and
-// effects are Stable Audio 3 Medium and Small SFX at Q8 (feasibility §J.3.1: 30 s of score in 4–4.5 s, 10 s of effects
-// in 2 s on 8 GB; the user's review: the score "use as is", the effects "use with edits"), from audio.cpp's own GGUF
-// repository pinned at 73ce4162 (sizes and LFS hashes from the Hugging Face API, 2026-11-07, matching the downloaded
-// copies' sizes); licence the Stability AI Community License — free for commercial use under US$1M a year in revenue.
-// Both run with audio.cpp's memory saver on, as tested. Their memory on the card is an estimate (the file and room to
-// work: audio.cpp's catalog gives none and the tests didn't capture it) until the kit measures a load.
-export const QWEN3_VOICE_DESIGN = {
-  runtime: "audiocpp",
-  id: "qwen3-vd-1.7b-q8",
-  name: "Qwen3-TTS VoiceDesign 1.7B",
-  kind: "tts",
-  license: "Apache-2.0",
-  files: [
-    {
-      slot: "model",
-      repo: "audio-cpp/audio.cpp-gguf",
-      revision: "661a224e9d9adbd49c01626f85e426f5f425d771",
-      path: "Qwen3-TTS-12Hz-1.7B-VoiceDesign-GGUF/qwen3-tts-12hz-1.7b-voicedesign-q8_0.gguf",
-      sha256: "1bcef9a8c021072fca40e00498e00af9091fbe6d3ae4f87567cfee885d6c7554",
-      bytes: 2816988960,
-    },
-  ],
-  peakVramMb: 8192,
-  minRamMb: 0,
-  refSpeed: {},
-  spec: { family: "qwen3_tts", task: "vdes" },
-};
-// A voice cloned from a character's recording: Qwen3-TTS Base 1.7B — JustVoice's row for it (its kit_models.js rowOf,
-// read 2026-11-07), the same pinned file, Apache-2.0; audio.cpp's estimate of its memory on the card.
-export const QWEN3_VOICE_CLONE = {
-  runtime: "audiocpp",
-  id: "qwen3-base-1.7b-q8",
-  name: "Qwen3-TTS Base 1.7B (cloning)",
-  kind: "tts",
-  license: "Apache-2.0",
-  files: [
-    {
-      slot: "model",
-      repo: "audio-cpp/audio.cpp-gguf",
-      revision: "661a224e9d9adbd49c01626f85e426f5f425d771",
-      path: "Qwen3-TTS-12Hz-1.7B-Base-GGUF/qwen3-tts-12hz-1.7b-base-q8_0_v2.gguf",
-      sha256: "b55e06c7890d43c208d15aed8b4ed3f18215f295e47d5960e061b15bff338ab0",
-      bytes: 2695175104,
-    },
-  ],
-  peakVramMb: 8192,
-  minRamMb: 0,
-  refSpeed: {},
-  spec: { family: "qwen3_tts", task: "tts" },
-};
+// ── Music, sound effects and lip repair, for the kit's audio.cpp runtime (the characters' voices are JustVoice's —
+// justvoice.js). Music and effects are Stable Audio 3 Medium and Small SFX at Q8 (feasibility §J.3.1: 30 s of score in
+// 4–4.5 s, 10 s of effects in 2 s on 8 GB; the user's review: the score "use as is", the effects "use with edits"), from
+// audio.cpp's own GGUF repository pinned at 73ce4162 (sizes and LFS hashes from the Hugging Face API, 2026-11-07, matching
+// the downloaded copies' sizes); licence the Stability AI Community License — free for commercial use under US$1M a year in
+// revenue. Both run with audio.cpp's memory saver on, as tested. Their memory on the card is an estimate (the file and
+// room to work: audio.cpp's catalog gives none and the tests didn't capture it) until the kit measures a load.
 const AUDIOCPP_GGUF = { repo: "audio-cpp/audio.cpp-gguf", revision: "73ce4162f6cce370dd533c6782b772135c1b2a8e" };
 const STABLE_AUDIO_SPEC = { family: "stable_audio", task: "gen", sessionOptions: { "stable_audio.mem_saver": "true" } };
 export const STABLE_AUDIO_MUSIC = {

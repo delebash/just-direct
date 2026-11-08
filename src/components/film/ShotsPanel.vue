@@ -4,8 +4,9 @@
 // needs, then the shots — a server job on the AI tasks strip); planning again replaces the shots, so it asks first,
 // naming what goes with them. Each shot is edited by hand in ShotDialog; after a hand edit the tab offers to carry the
 // change into the later shots nobody changed by hand (the planner's revision), with a note in the user's own words.
-// A shot's line is spoken in its speaker's voice (Speak); a clip made after it moves the mouth to that voice.
-import { confirmDialog, EmptyState, Icon, LuEngineNeeded, pushToast, reportError, serverUrl, UiBanner, UiButton, UiInput, UiServerImage, UiTag, useResolvedRoute } from "@delebash/ui";
+// A shot's line is spoken in its speaker's voice (Speak) — JustVoice's, so the tab says when JustVoice isn't answering
+// before anything is spoken; a clip made after it moves the mouth to that voice.
+import { confirmDialog, EmptyState, get, Icon, LuEngineNeeded, pushToast, reportError, serverUrl, UiBanner, UiButton, UiInput, UiServerImage, UiTag, useResolvedRoute } from "@delebash/ui";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -76,19 +77,32 @@ const stale = (s) => {
   const line = films.lineOf(s.id);
   return !!line && line.prompt !== s.line.trim();
 };
+// JustVoice answering where Settings → Voices says (asked once a film has lines, and again after a failed Speak)
+const voices = ref(null);
+async function readVoices() {
+  try {
+    voices.value = await get("/v1/voices/status");
+  } catch {
+    voices.value = null;
+  }
+}
+onMounted(() => hasLines.value && readVoices());
+const noVoices = computed(() => hasLines.value && voices.value?.reachable === false);
 async function speak(shot) {
   try {
     await films.speakLine(shot, t("voices.task", { n: shot.position + 1 }));
   } catch (e) {
     if (e?.name !== "AbortError") reportError(e);
+    readVoices();
   }
 }
 async function speakAll() {
   try {
     const r = await films.speakAllLines(t("voices.allTask", { title: films.film.title }));
-    if (r) pushToast({ kind: "success", title: t("voices.allDone", { n: r.spoken }) });
+    if (r) pushToast({ kind: r.failed?.length ? "warning" : "success", title: t("voices.allDone", { n: r.spoken }), description: r.failed?.length ? t("voices.allFailed", { n: r.failed.length }) : undefined });
   } catch (e) {
     if (e?.name !== "AbortError") reportError(e);
+    readVoices();
   }
 }
 
@@ -201,6 +215,13 @@ async function move(shot, by) {
       {{ t("shots.plan.noModel") }}
       <template #action>
         <UiButton intent="secondary" size="small" :label="t('shots.plan.setUp')" @click="router.push('/ai')" />
+      </template>
+    </UiBanner>
+    <UiBanner v-if="noVoices" intent="warning" class="shots-panel__noplanner">
+      {{ t("voices.offline", { address: voices.address }) }}
+      <template #action>
+        <UiButton intent="secondary" size="small" :label="t('voices.checkAgain')" @click="readVoices" />
+        <UiButton intent="ghost" size="small" :label="t('voices.settings')" @click="router.push('/settings/general')" />
       </template>
     </UiBanner>
     <LuEngineNeeded v-if="films.shots.length" feature="frames.paint" :label="t('frames.feature')" />

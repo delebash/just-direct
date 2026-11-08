@@ -15,9 +15,9 @@
   checked by a vision model and the best one used; compare them and choose by hand.
 - **Clips**: each shot's first frame made into a clip with its sound — one pass, a long take up to
   13 seconds, drawn to the character's voice, led by paths you draw on the frame or by a guide video.
-- **Voices**: each shot's line spoken in its character's voice, made from the words on the
-  character's card or cloned from a recording you give it (a file, or recorded in the app); a clip
-  made after it moves the mouth with it.
+- **Voices**: each shot's line spoken by JustVoice in its character's voice — made once from the
+  character's card and kept for every line, or cloned from a recording you give it (a file, or
+  recorded in the app) — the way the shot says it's said; a clip made after it moves the mouth with it.
 - **Repair lips**: a talking clip's mouth redrawn to its line's voice as a new clip — off until you
   turn it on in Settings, because its face models are for non-commercial research only.
 - **Cut**: the film's shots on a timeline with their trims and transitions (cut, dissolve, fade), music, songs with your own lyrics and sound effects made from words and laid over the film, and **Export the

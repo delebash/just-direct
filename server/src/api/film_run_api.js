@@ -4,13 +4,15 @@
 // what's missing — so the run never undoes a hand edit, and after a stop or a failure it carries on where it ended:
 //   1. the plan, when the film has no shots (Plan the shots);
 //   2. the first frames of every shot without one, their cards' missing pictures first (the toolbar's first frames);
-//   3. the clips of every shot without one (Make clips);
-//   4. the export (Export the film).
-// The voices step joins between 2 and 3 when JustDirect speaks through JustVoice (docs/plans/2026-11-08-justvoice-voices.md);
-// until then a talking shot's clip speaks its line itself (LTX-2.3). Music and effects stay the Cut tab's.
+//   3. the voices: every unspoken line, its speakers' voices made first, spoken by JustVoice as one batch after
+//      JustDirect lets go of the card (Speak lines; voices.js) — before the clips, so each talking clip is drawn to its
+//      voice; skipped, and said, when JustVoice isn't running (a talking clip then speaks its line itself);
+//   4. the clips of every shot without one (Make clips);
+//   5. the export (Export the film).
+// Music and effects stay the Cut tab's.
 //
-//   POST /v1/films/:id/make → 202 job (kind film): {steps: [{step, done, ...its own result}]} | 404 | 409 (no story and
-//                             no shots; what a step needs that isn't installed)
+//   POST /v1/films/:id/make → 202 job (kind film): {steps: [{step, done, skipped?, ...its own result}]} | 404 | 409 (no
+//                             story and no shots; what a step needs that isn't installed)
 
 import { Hono, input } from "@delebash/core/platform";
 import { ApiError } from "@delebash/core/platform/errors";
@@ -18,6 +20,7 @@ import { getLogger } from "@delebash/core/platform/log";
 import { getDb, getState } from "../app_state.js";
 import * as shots from "../database/shots.js";
 import { IdParams } from "../schemas/films.js";
+import { justVoice, speakFilm, unspokenShots } from "../voices.js";
 import { makeFilmClips } from "./clips_api.js";
 import { joinFilm } from "./cut_api.js";
 import { mustFilm } from "./films_api.js";
@@ -32,7 +35,13 @@ const clientOf = (c) => c.req.header("x-client-id") || null;
 export const STEPS = Object.freeze([
   { step: "plan", share: 0.1, needed: (film) => !shots.listShots(getDb(), film.id).length, run: (film, ctx) => planFilm(film, ctx) },
   { step: "frames", share: 0.25, needed: (film) => shots.listShots(getDb(), film.id).some((s) => !s.frameId), run: (film, ctx) => paintFilmFrames(film, {}, ctx) },
-  { step: "clips", share: 0.6, needed: (film) => shots.listShots(getDb(), film.id).some((s) => !s.clipId), run: (film, ctx) => makeFilmClips(film, {}, ctx) },
+  {
+    step: "voices",
+    share: 0.1,
+    needed: (film) => unspokenShots(film.id).length > 0,
+    run: async (film, ctx) => ((await justVoice().health()) ? speakFilm(film, ctx) : { skipped: "justvoice-offline", address: justVoice().base }),
+  },
+  { step: "clips", share: 0.5, needed: (film) => shots.listShots(getDb(), film.id).some((s) => !s.clipId), run: (film, ctx) => makeFilmClips(film, {}, ctx) },
   { step: "export", share: 0.05, needed: (film) => shots.listShots(getDb(), film.id).some((s) => s.clipId), run: (film, ctx) => joinFilm(film, ctx) },
 ]);
 
@@ -66,7 +75,7 @@ export function router() {
           // the step's own progress and words, inside its share of the run's
           const ctx = { signal, progress: (f, stage) => progress(from + s.share * Math.max(0, Math.min(1, f)), `${s.step}: ${stage ?? ""}`), update };
           const result = await s.run(now, ctx);
-          done.push({ step: s.step, done: true, ...result });
+          done.push({ step: s.step, done: !result?.skipped, ...result });
           at += s.share;
           progress(at, s.step);
         }

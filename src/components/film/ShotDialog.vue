@@ -19,7 +19,7 @@ import {
   UiSelect,
   UiTextarea,
 } from "@delebash/ui";
-import { SIZES, ShotIn, TRANSITIONS } from "just-direct-server/schemas/shots.js";
+import { EMOTIONS, SIZES, ShotIn, TRANSITIONS } from "just-direct-server/schemas/shots.js";
 import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useFilmsStore } from "../../stores/films.js";
@@ -32,7 +32,7 @@ const emit = defineEmits(["close", "saved"]);
 const { t } = useI18n();
 const films = useFilmsStore();
 
-const FIELDS = ["size", "camera", "action", "placeId", "cardIds", "line", "speakerId", "seconds", "transition"];
+const FIELDS = ["size", "camera", "action", "placeId", "cardIds", "line", "speakerId", "delivery", "emotion", "seconds", "transition"];
 const rules = schemaRules(ShotIn);
 const isNew = computed(() => !props.shot);
 const draft = reactive({
@@ -43,6 +43,8 @@ const draft = reactive({
   cardIds: [...(props.shot?.cardIds ?? [])],
   line: props.shot?.line ?? "",
   speakerId: props.shot?.speakerId ?? null,
+  delivery: props.shot?.delivery ?? "",
+  emotion: props.shot?.emotion ?? "",
   seconds: props.shot?.seconds ?? 4,
   transition: props.shot?.transition ?? "cut",
 });
@@ -52,6 +54,7 @@ const modal = ref(null);
 
 const SIZE_OPTIONS = computed(() => SIZES.map((s) => ({ value: s, label: t(`shots.sizes.${s.replace(/[ -]/g, "_")}`) })));
 const TRANSITION_OPTIONS = computed(() => TRANSITIONS.map((s) => ({ value: s, label: t(`shots.transitions.${s}`) })));
+const EMOTION_OPTIONS = computed(() => EMOTIONS.map((e) => ({ value: e, label: t(`shots.emotions.${e}`) })));
 const cardOptions = (kind) => films.cards.filter((c) => !kind || c.kind === kind).map((c) => ({ value: c.id, label: c.name }));
 
 const changes = () => Object.fromEntries(FIELDS.filter((k) => JSON.stringify(draft[k]) !== JSON.stringify(props.shot?.[k] ?? null)).map((k) => [k, draft[k]]));
@@ -59,18 +62,21 @@ const changes = () => Object.fromEntries(FIELDS.filter((k) => JSON.stringify(dra
 async function save() {
   saving.value = true;
   serverErrors.value = {};
+  // a cleared emotion is none ("" — the schema's)
+  if (draft.emotion == null) draft.emotion = "";
   try {
     const body = Object.fromEntries(FIELDS.map((k) => [k, draft[k]]));
     // a place or a speaker is one of the shot's cards too
     body.cardIds = [...new Set([...body.cardIds, ...[body.placeId, body.line ? body.speakerId : null].filter(Boolean)])];
-    if (!body.line) body.speakerId = null;
+    // how a line is said goes with the line
+    if (!body.line) Object.assign(body, { speakerId: null, delivery: "", emotion: "" });
     if (isNew.value) {
       const shot = await films.addShot(body);
       emit("saved", shot, { created: true });
     } else {
       const delta = changes();
       if (Object.keys(delta).length) {
-        const shot = await films.saveShot(props.shot, { ...delta, cardIds: body.cardIds, speakerId: body.speakerId });
+        const shot = await films.saveShot(props.shot, { ...delta, cardIds: body.cardIds, speakerId: body.speakerId, ...(body.line ? {} : { delivery: "", emotion: "" }) });
         emit("saved", shot, { created: false });
       }
     }
@@ -123,6 +129,15 @@ async function save() {
       <div class="form__row">
         <UiField v-if="draft.line" :label="t('shots.fields.speaker')" layout="block" for="shot-speaker">
           <UiSelect id="shot-speaker" v-model="draft.speakerId" :options="cardOptions('character')" width="name" show-clear :placeholder="t('shots.fields.noSpeaker')" />
+        </UiField>
+        <UiField v-if="draft.line" :label="t('shots.fields.delivery')" :hint="t('shots.fields.deliveryHint')" layout="block" for="shot-delivery">
+          <UiInput
+            id="shot-delivery" v-model="draft.delivery" width="name" lazy-rules
+            :rules="rules.delivery" :error="!!serverErrors.delivery" :error-message="serverErrors.delivery"
+          />
+        </UiField>
+        <UiField v-if="draft.line" :label="t('shots.fields.emotion')" layout="block" for="shot-emotion">
+          <UiSelect id="shot-emotion" v-model="draft.emotion" :options="EMOTION_OPTIONS" width="name" show-clear :placeholder="t('shots.fields.noEmotion')" />
         </UiField>
         <UiField :label="t('shots.fields.seconds')" layout="block" for="shot-seconds">
           <UiNumber

@@ -5,11 +5,11 @@
 
 import { buildLlmConfig, runAction, stores } from "@delebash/core/llm";
 import { imageFeatureReadiness, runImageFeature, runVideoFeature, videoFeatureReadiness } from "@delebash/core/llm/image_dispatch";
-import { runAudioFeature, withSpeechModel } from "@delebash/core/llm/speech_dispatch";
-import { ApiError } from "@delebash/core/platform/errors";
-import { wavSeconds } from "@delebash/core/runner/audiocpp";
+import { runAudioFeature } from "@delebash/core/llm/speech_dispatch";
 import { ffmpegReadiness } from "@delebash/core/runner/ffmpeg";
-import { getRuntimeService } from "@delebash/core/runner/runtime_service";
+import * as lifecycle from "@delebash/core/runner/lifecycle";
+import { stopRuntimeServers } from "@delebash/core/runner/runtime_service";
+import { justVoice } from "./justvoice.js";
 
 /** The routes' AI work; `overrides` replaces some (a test's fake painter or planner). */
 export function createServices(overrides = {}) {
@@ -38,28 +38,22 @@ export function createServices(overrides = {}) {
     /** Make a clip with video feature `feature` (runVideoFeature's request: prompt, size, frames, fps, init, guide,
      *  audio, loras by slot, params) → `{bytes, fps, frames}`, the WebM with its sound. */
     makeVideo: (feature, request, opts = {}) => runVideoFeature(feature, request, opts),
-    /** Speak one line with speech model `modelId` on the kit's audio.cpp runtime (loaded when it isn't, its kind held
-     *  for the line): `request` audio.cpp's speech request (`input`, `language`, `seed`, `instructions` — the voice in
-     *  words). → the WAV. */
-    speak: async (modelId, request) => {
-      const [wav] = await withSpeechModel("audiocpp", modelId, { line: (out) => ({ text: request.input, audioS: wavSeconds(out?.[0]) }) }, (server) =>
-        server.speech({ model: modelId, ...request }),
-      );
-      return Buffer.from(wav);
-    },
     /** Make music, an effect or a lip repair with audio feature `feature` (its preset's model): `request` audio.cpp's own
      *  (`text`, `duration_seconds`, `audio_base64`, `options`, …), `opts.timeout` seconds → its result (`audio`, a Base64
      *  WAV; LatentSync's `artifacts`). */
     makeAudio: (feature, request, opts = {}) => runAudioFeature(feature, request, opts),
-    /** Whether speech model `modelId` can speak now: throws the refusal the screens word (the speech engine not on or
-     *  not installed, the model unknown or not downloaded — the AI page's Speech tab installs and downloads them). */
-    voiceCheck: (modelId) => {
-      const svc = getRuntimeService("audiocpp");
-      if (!svc) throw new ApiError(409, "engine-not-on", "The speech engine isn't part of this app", "this app doesn't turn audio.cpp on");
-      if (!svc.installedExe()) throw new ApiError(409, "engine-not-installed", "The speech engine isn't installed", "Install audio.cpp on the AI page's Speech tab.");
-      const state = svc.modelsStatus().find((m) => m.id === modelId);
-      if (!state) throw new ApiError(409, "model-unknown", "The voice model isn't in this app", `no speech model ${modelId}`);
-      if (!state.onDisk) throw new ApiError(409, "model-not-downloaded", "The voice model isn't downloaded", `Download ${state.name || modelId} on the AI page's Speech tab.`);
+    /** JustVoice's client at `base` (Settings → Voices) — the characters' voices come from it (justvoice.js). */
+    voices: (base) => justVoice(base),
+    /** Let go of everything this app holds on the graphics card — before JustVoice speaks a batch (the user, 2026-11-08:
+     *  "just unload your model first ... then you can reload your models"): the language model's server, and every other
+     *  runtime's (pictures, clips, music) — the pair a reset uses (data_admin.js); each loads again when next needed. */
+    freeCard: async () => {
+      try {
+        await lifecycle.getService().stop();
+      } catch {
+        // none running
+      }
+      await stopRuntimeServers();
     },
     ...overrides,
   };

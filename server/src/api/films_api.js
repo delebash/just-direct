@@ -18,13 +18,17 @@
 //   POST   /v1/cards/:id/paint        PaintIn → 202 job (kind card-paint): the picture painted by the AI, the card back
 //   GET    /v1/cards/:id/voice-sample → the WAV | 404
 //   POST   /v1/cards/:id/voice-sample multipart `file` (any audio FFmpeg reads), optional `text` (what it says) → Card |
-//                                     404 | 409 (not a character, no FFmpeg) | 413 | 415
+//                                     404 | 409 (not a character, no FFmpeg) | 413 | 415 — its JustVoice voice made again
+//                                     from the recording when next needed
 //   DELETE /v1/cards/:id/voice-sample → Card | 404
+//   POST   /v1/cards/:id/voice        → 202 job (kind card-voice): the character's voice made in JustVoice (voices.js), the
+//                                     card back | 404 | 409 (not a character, JustVoice not running)
+//   DELETE /v1/cards/:id/voice        → Card | 404 — the voice gone from JustVoice and the card
+//   GET    /v1/cards/:id/voice-audition → the WAV JustVoice auditioned the voice with | 404
 
 import { randomInt } from "node:crypto";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { Hono, input, uploadLimit } from "@delebash/core/platform";
 import { ApiError, notFound, RequestValidationError } from "@delebash/core/platform/errors";
@@ -37,8 +41,9 @@ import * as films from "../database/films.js";
 import { SETTING_DEFAULTS } from "../database/seed.js";
 import { getSetting } from "../database/settings.js";
 import { dropCardFromShots } from "../database/shots.js";
-import { ensureFilmDirs, fileName, filmFile, removeFile, removeFilmDirs, writeWhole } from "../files.js";
+import { ensureFilmDirs, fileName, filmFile, newWorkDir, removeFile, removeFilmDirs, writeWhole } from "../files.js";
 import { CardIn, CardPatch, FilmIn, FilmPatch, IdParams, PaintIn } from "../schemas/films.js";
+import { ensureVoice, forgetVoice, mustReachJustVoice } from "../voices.js";
 
 const log = getLogger("just_direct.films");
 
@@ -60,6 +65,7 @@ export function cardOut(card) {
     ...v,
     pictureUrl: card.picture ? `/v1/cards/${card.id}/picture?v=${encodeURIComponent(card.picture)}` : null,
     voiceSampleUrl: card.voiceSample ? `/v1/cards/${card.id}/voice-sample?v=${encodeURIComponent(card.voiceSample)}` : null,
+    voiceAuditionUrl: card.voiceInfo?.audition ? `/v1/cards/${card.id}/voice-audition?v=${encodeURIComponent(card.voiceInfo.audition)}` : null,
   };
 }
 
@@ -207,13 +213,52 @@ export function router() {
     const card = mustCard(id, c.req.header("if-match") ?? null);
     const running = getState().jobs?.running("card-paint", id);
     if (running) getState().jobs.cancel(running.id);
-    // it leaves the shots that named it (their card list, place or speaker)
+    // it leaves the shots that named it (their card list, place or speaker), and its voice leaves JustVoice
     dropCardFromShots(getDb(), card.filmId, id);
+    if (card.voiceId) await forgetVoice(card);
     if (!films.deleteCard(getDb(), id)) throw notFound(`There is no card with the id ${id}.`);
     for (const name of [fileName(card.picture, "png"), fileName(card.voiceSample, "wav")]) {
       if (name) await removeFile(filmFile(getState().dataDir, card.filmId, "cards", name));
     }
     return c.body(null, 204);
+  });
+
+  // ── a character's voice, made in JustVoice (voices.js) ──
+  app.post("/v1/cards/:id/voice", input({ params: IdParams }), async (c) => {
+    const card = mustCard(c.req.valid("param").id);
+    if (card.kind !== "character") throw new ApiError(409, "not-a-character", "Only a character speaks", "A voice is made for a character's card.");
+    const film = mustFilm(card.filmId);
+    await mustReachJustVoice();
+    const job = getState().jobs.start(
+      { kind: "card-voice", key: card.id, label: card.name, failTitle: "The voice wasn't made", clientId: clientOf(c) },
+      async ({ signal, progress, update }) => {
+        update({ filmId: film.id, cardId: card.id });
+        progress(0.02, "voice");
+        // made again: the voice it had goes first
+        const now = mustCard(card.id);
+        const fresh = now.voiceId ? await forgetVoice(now) : now;
+        return cardOut(await ensureVoice(film, fresh, { signal, onProgress: (f) => progress(0.02 + 0.96 * f, "voice") }));
+      },
+    );
+    return c.json(job, 202);
+  });
+
+  app.delete("/v1/cards/:id/voice", input({ params: IdParams }), async (c) => {
+    const card = mustCard(c.req.valid("param").id);
+    return c.json(cardOut(card.voiceId || card.voiceInfo?.audition ? await forgetVoice(card) : card));
+  });
+
+  app.get("/v1/cards/:id/voice-audition", input({ params: IdParams }), async (c) => {
+    const card = mustCard(c.req.valid("param").id);
+    const name = fileName(card.voiceInfo?.audition, "wav");
+    if (!name) throw notFound("This card's voice has no audition.");
+    let bytes;
+    try {
+      bytes = await readFile(filmFile(getState().dataDir, card.filmId, "cards", name));
+    } catch {
+      throw notFound("This card's voice audition is missing.");
+    }
+    return c.body(bytes, 200, { "content-type": "audio/wav", "cache-control": "private, max-age=31536000, immutable" });
   });
 
   // ── a character's voice from a recording ──
@@ -249,9 +294,9 @@ export function router() {
       if (!(file instanceof Blob)) throw refuseFile("Field required", "missing");
       if (file.size > maxSampleBytes()) throw new ApiError(413, "file-too-large", "File too large", `The recording is over ${setting("voices.maxSampleMegabytes")} MB.`);
       const text = String(form.text ?? "").trim().slice(0, 1000);
-      // FFmpeg reads whatever it is (WAV, MP3, M4A, the window's own recording) into the voice model's 24 kHz mono, at
+      // FFmpeg reads whatever it is (WAV, MP3, M4A, the window's own recording) into a 24 kHz mono WAV for JustVoice, at
       // most the setting's seconds; the old recording goes once the new one is in place
-      const work = mkdtempSync(path.join(os.tmpdir(), "jd-voice-"));
+      const work = newWorkDir(getState().dataDir);
       const name = `${card.id}-voice-${Date.now().toString(36)}${randomInt(1000).toString(36)}.wav`;
       try {
         const src = path.join(work, "in");
@@ -267,6 +312,8 @@ export function router() {
         rmSync(work, { recursive: true, force: true });
       }
       const before = mustCard(card.id);
+      // the voice it had is made again from the recording when next needed
+      if (before.voiceId) await forgetVoice(before);
       const after = films.updateCard(getDb(), card.id, { voiceSample: name, voiceSampleText: text });
       const old = fileName(before.voiceSample, "wav");
       if (old && old !== name) await removeFile(filmFile(getState().dataDir, card.filmId, "cards", old));
@@ -278,6 +325,8 @@ export function router() {
   app.delete("/v1/cards/:id/voice-sample", input({ params: IdParams }), async (c) => {
     const card = mustCard(c.req.valid("param").id);
     const old = fileName(card.voiceSample, "wav");
+    // a voice cloned from the recording goes with it
+    if (card.voiceId && card.voiceInfo?.source === "recording") await forgetVoice(card);
     const after = films.updateCard(getDb(), card.id, { voiceSample: null, voiceSampleText: "" });
     if (old) await removeFile(filmFile(getState().dataDir, card.filmId, "cards", old));
     return c.json(cardOut(after));

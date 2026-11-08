@@ -56,7 +56,12 @@ async function makeFilm() {
     const r = await films.makeFilm(t("film.make.task", { title: film.value.title }), (step) => t(`film.make.steps.${step}`));
     if (r) {
       const made = r.steps.filter((s) => s.done).map((s) => t(`film.make.steps.${s.step}`));
-      pushToast({ kind: "success", title: made.length ? t("film.make.done", { steps: made.join(", ") }) : t("film.make.nothing") });
+      const noVoices = r.steps.find((s) => s.step === "voices" && s.skipped);
+      pushToast({
+        kind: noVoices ? "warning" : "success",
+        title: made.length ? t("film.make.done", { steps: made.join(", ") }) : t("film.make.nothing"),
+        description: noVoices ? t("film.make.noVoices", { address: noVoices.address }) : undefined,
+      });
       if (r.steps.some((s) => s.step === "export" && s.done)) pick("cut");
     }
   } catch (e) {

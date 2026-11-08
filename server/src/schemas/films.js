@@ -56,7 +56,7 @@ export const CardIn = strictObject({
   voice: opt(Voice, ""),
 });
 
-/** What a voice recording says, for the voice model to follow it word by word ('' when it isn't known). */
+/** What a voice recording says, for JustVoice's cloning to follow it word by word ('' when it isn't known). */
 export const SAMPLE_TEXT_MAX = 1000;
 const SampleText = T.String({ maxLength: SAMPLE_TEXT_MAX });
 

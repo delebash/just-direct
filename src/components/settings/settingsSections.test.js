@@ -449,16 +449,16 @@ describe("General", () => {
     expect(server.calls.filter((c) => c[0] === "PATCH" && c[1] === "/v1/settings").map((c) => c[2])).toEqual([{ "windows.checkSeconds": 10 }]);
   });
 
-  test("the voice model is a line of text, saved as written", async () => {
+  test("JustVoice's address is a line of text, saved as written", async () => {
     await mountSettings("general");
-    const box = document.getElementById("setting-voice-model");
+    const box = document.getElementById("setting-voice-justvoice");
     expect(box.tagName).toBe("INPUT");
-    box.value = "qwen3-vd-1.7b-q4";
+    box.value = "http://192.168.1.20:17494";
     box.dispatchEvent(new Event("input"));
     await flushPromises();
     const card = box.closest("section.card");
     await new DOMWrapper([...card.querySelectorAll("button")].find((b) => b.textContent.trim() === "Save")).trigger("click");
     await flushPromises();
-    expect(server.calls.filter((c) => c[0] === "PATCH" && c[1] === "/v1/settings").map((c) => c[2])).toEqual([{ "voices.model": "qwen3-vd-1.7b-q4" }]);
+    expect(server.calls.filter((c) => c[0] === "PATCH" && c[1] === "/v1/settings").map((c) => c[2])).toEqual([{ "voices.justvoiceUrl": "http://192.168.1.20:17494" }]);
   });
 });

@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 // /v1/shots/:id/line, /v1/films/:id/lines, /v1/films/:id/sounds and /v1/sounds — a shot's line spoken in its character's
-// voice (Qwen3-TTS VoiceDesign on the kit's audio.cpp runtime, from the words on the character's card), and the film's
-// music and sound effects (Stable Audio 3 through the kit's audio features; music with lyrics is a song, sung by
-// ACE-Step 1.5), each placed in the cut at a start time.
+// voice (JustVoice's — voices.js), and the film's music and sound effects (Stable Audio 3 through the kit's audio
+// features; music with lyrics is a song, sung by ACE-Step 1.5), each placed in the cut at a start time.
 //
-//   POST   /v1/shots/:id/line       → 202 job (kind line): the line spoken, kept as the shot's (the old one goes)
-//   POST   /v1/films/:id/lines      → 202 job (kind lines): every shot with a line and a speaker but no voice yet
+//   GET    /v1/voices/status        → {reachable, address, clientApi}: whether JustVoice answers where Settings says
+//   POST   /v1/shots/:id/line       → 202 job (kind line): the line spoken, kept as the shot's (the old one goes) | 409
+//                                   (no line, no speaker, JustVoice not running)
+//   POST   /v1/films/:id/lines      → 202 job (kind lines): every shot with a line and a speaker but no voice yet — the
+//                                   speakers' voices made first, the lines spoken by JustVoice as one batch | 409
 //   GET    /v1/films/:id/sounds     → {items: Sound[]} the music and effects in start order, then the lines
 //   POST   /v1/films/:id/sounds     SoundIn → 202 job (kind sound): music or an effect made and placed
 //   GET    /v1/sounds/:id/audio     → the WAV | 404
@@ -16,126 +18,57 @@ import { randomInt, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { Hono, input } from "@delebash/core/platform";
 import { ApiError, notFound } from "@delebash/core/platform/errors";
-import { getLogger } from "@delebash/core/platform/log";
 import { wavSeconds } from "@delebash/core/runner/audiocpp";
 import { getDb, getState } from "../app_state.js";
-import * as films from "../database/films.js";
 import { SETTING_DEFAULTS } from "../database/seed.js";
 import { getSetting } from "../database/settings.js";
-import * as shots from "../database/shots.js";
 import * as sounds from "../database/sounds.js";
 import { fileName, filmFile, removeFile, writeWhole } from "../files.js";
 import { IdParams } from "../schemas/films.js";
 import { SoundIn, SoundPatch } from "../schemas/sounds.js";
+import { justVoice, mustReachJustVoice, speakerOf, speakFilm, speakShot } from "../voices.js";
 import { mustFilm } from "./films_api.js";
 import { mustShot } from "./shots_api.js";
-
-const log = getLogger("just_direct.sounds");
 
 const setting = (key) => getSetting(getDb(), key) ?? SETTING_DEFAULTS[key];
 const clientOf = (c) => c.req.header("x-client-id") || null;
 
 export const soundOut = (s) => ({ ...s, audioUrl: `/v1/sounds/${s.id}/audio` });
 
-/** The voice model — the cloning one for a speaker with a voice recording, else the voice design one — refused with
- *  what is missing when it can't speak yet (services.js `voiceCheck`). */
-function voiceReady(speaker = null) {
-  const model = setting(speaker?.voiceSample ? "voices.cloneModel" : "voices.model");
-  getState().services.voiceCheck(model);
-  return model;
-}
-
-/** The words a line's voice is designed from: the speaker card's Voice; else, for a speaker the card describes, "The
- *  voice of <name>: <description>" — the voice model hears their age and sex in it (a boy is never given the default
- *  adult voice); else `fallback`, the default voice (Settings → Voices). */
-export function voiceWords(speaker, fallback) {
-  const voice = String(speaker?.voice ?? "").trim();
-  if (voice) return voice;
-  const description = String(speaker?.description ?? "").trim();
-  if (description) return `The voice of ${speaker.name}: ${description}`;
-  return fallback;
-}
-
-/** Speak `shot`'s line in its speaker's voice; the WAV kept as the shot's line (its old one removed). → the sound. */
-async function speakLine(film, shot, { signal }) {
-  const db = getDb();
-  if (!shot.line.trim()) throw new ApiError(409, "no-line", "The shot has no line", "Write the words spoken in the shot first.");
-  const speaker = shot.speakerId ? films.getCard(db, shot.speakerId) : null;
-  const model = voiceReady(speaker);
-  const request = { input: shot.line.trim(), language: setting("voices.language"), seed: randomInt(2147483647) };
-  const sample = fileName(speaker?.voiceSample, "wav");
-  if (sample) {
-    // cloned from the character's recording (Qwen3-TTS Base, the request JustVoice's clone sends): the recording, and
-    // what it says to follow it word by word — or, not knowing the words, its speaker's sound alone
-    request.voice_ref = filmFile(getState().dataDir, film.id, "cards", sample);
-    if (speaker.voiceSampleText.trim()) request.reference_text = speaker.voiceSampleText.trim();
-    else request.options = { x_vector_only_mode: true };
-  } else {
-    request.instructions = voiceWords(speaker, setting("voices.default"));
-  }
-  const wav = await getState().services.speak(model, request, { signal });
-  signal?.throwIfAborted();
-  const id = randomUUID();
-  const file = `${id}.wav`;
-  await writeWhole(filmFile(getState().dataDir, film.id, "sounds", file), wav);
-  if (!shots.getShot(db, shot.id)) {
-    await removeFile(filmFile(getState().dataDir, film.id, "sounds", file));
-    throw notFound(`There is no shot with the id ${shot.id}.`);
-  }
-  const old = sounds.lineOf(db, shot.id);
-  const sound = sounds.addSound(db, { id, filmId: film.id, shotId: shot.id, kind: "line", prompt: shot.line.trim(), file, seconds: wavSeconds(wav) ?? 0 });
-  if (old) {
-    sounds.deleteSound(db, old.id);
-    const name = fileName(old.file, "wav");
-    if (name) await removeFile(filmFile(getState().dataDir, film.id, "sounds", name));
-  }
-  log.debug(`shot ${shot.id}: its line spoken, ${sound.seconds.toFixed(1)} s`);
-  return sound;
-}
-
 export function router() {
   const app = new Hono();
 
-  app.post("/v1/shots/:id/line", input({ params: IdParams }), (c) => {
+  // whether JustVoice answers where Settings → Voices says, for the Shots tab's banner before anything is spoken
+  app.get("/v1/voices/status", async (c) => {
+    const jv = justVoice();
+    const h = await jv.health();
+    return c.json({ reachable: !!h, address: jv.base, clientApi: h?.clientApi ?? 0 });
+  });
+
+  app.post("/v1/shots/:id/line", input({ params: IdParams }), async (c) => {
     const shot = mustShot(c.req.valid("param").id);
     const film = mustFilm(shot.filmId);
     // refused at once when it can't run, not after the job starts
-    voiceReady(shot.speakerId ? films.getCard(getDb(), shot.speakerId) : null);
+    if (!shot.line.trim()) throw new ApiError(409, "no-line", "The shot has no line", "Write the words spoken in the shot first.");
+    speakerOf(shot);
+    await mustReachJustVoice();
     const job = getState().jobs.start(
       { kind: "line", key: shot.id, label: film.title, failTitle: "The line wasn't spoken", clientId: clientOf(c) },
       async ({ signal, progress, update }) => {
         update({ filmId: film.id, shotId: shot.id });
         progress(0.05, "speaking");
-        return soundOut(await speakLine(film, mustShot(shot.id), { signal }));
+        return soundOut(await speakShot(film, mustShot(shot.id), { signal, progress }));
       },
     );
     return c.json(job, 202);
   });
 
-  app.post("/v1/films/:id/lines", input({ params: IdParams }), (c) => {
+  app.post("/v1/films/:id/lines", input({ params: IdParams }), async (c) => {
     const film = mustFilm(c.req.valid("param").id);
-    const unspoken = () => shots.listShots(getDb(), film.id).filter((s) => s.line.trim() && s.speakerId && !sounds.lineOf(getDb(), s.id));
-    // refused at once when a voice these lines need can't run: the cloning model for a speaker with a recording, the
-    // design model for the rest — only the ones needed
-    const speakers = new Map(unspoken().map((s) => [s.speakerId, films.getCard(getDb(), s.speakerId)]));
-    const checked = new Set();
-    for (const speaker of speakers.size ? speakers.values() : [null]) {
-      const key = speaker?.voiceSample ? "clone" : "design";
-      if (!checked.has(key)) voiceReady(speaker);
-      checked.add(key);
-    }
+    await mustReachJustVoice();
     const job = getState().jobs.start(
       { kind: "lines", key: film.id, label: film.title, failTitle: "The lines weren't spoken", clientId: clientOf(c) },
-      async ({ signal, progress, update }) => {
-        const todo = unspoken();
-        update({ filmId: film.id, shots: todo.length });
-        for (const [i, s] of todo.entries()) {
-          progress(i / Math.max(1, todo.length), "speaking");
-          const now = shots.getShot(getDb(), s.id);
-          if (now) await speakLine(film, now, { signal });
-        }
-        return { spoken: todo.length };
-      },
+      (ctx) => speakFilm(film, ctx),
     );
     return c.json(job, 202);
   });

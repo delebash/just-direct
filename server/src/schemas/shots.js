@@ -16,8 +16,13 @@ export const SECONDS_MAX = 13;
 /** How a shot is framed, widest first — the planner's words and the shot list's. */
 export const SIZES = Object.freeze(["extreme wide", "wide", "medium", "medium close-up", "close-up", "extreme close-up"]);
 export const TRANSITIONS = Object.freeze(["cut", "dissolve", "fade"]);
+/** How a line is said, as JustVoice's emotion labels (its client API, docs/plans/2026-11-08-justvoice-voices.md) —
+ *  some speech models take only a label; "" for none. */
+export const EMOTIONS = Object.freeze(["neutral", "happy", "sad", "angry", "fearful", "whispered", "shouted", "sarcastic", "contemptuous"]);
+export const DELIVERY_MAX = 200;
 
 const Size = T.Union([T.Literal(""), ...SIZES.map((s) => T.Literal(s))]);
+const Emotion = T.Union([T.Literal(""), ...EMOTIONS.map((e) => T.Literal(e))]);
 const Transition = T.Union(TRANSITIONS.map((s) => T.Literal(s)));
 const Seconds = T.Number({ minimum: SECONDS_MIN, maximum: SECONDS_MAX, multipleOf: 0.5 });
 const CardIds = T.Array(Id, { maxItems: 12 });
@@ -30,6 +35,8 @@ const fields = {
   action: opt(T.String({ maxLength: ACTION_MAX })),
   line: opt(T.String({ maxLength: LINE_MAX })),
   speakerId: opt(nullable(Id)),
+  delivery: opt(T.String({ maxLength: DELIVERY_MAX })),
+  emotion: opt(Emotion),
   seconds: opt(Seconds),
   transition: opt(Transition),
 };

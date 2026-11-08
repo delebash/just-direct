@@ -31,7 +31,10 @@ GO:     the user, 2026-11-07: "finish the app, dont stop coding at turns or decs
 PLAN:   docs/plans/2026-11-07-v1.md
 
 ### Character voices: what JustDirect speaks with [2026-11-07]
-STATE:  waits for the user's word. The user: "do we use jv or just take what we need and put it in just direct"; then,
+STATE:  decided (the user, 2026-11-08: "any decisions are yours to make"), built 2026-11-08 against JustVoice's sent
+        shapes — the plan docs/plans/2026-11-08-justvoice-voices.md "Build steps"; waits for JustVoice's contract
+        fixtures and its client API's build, then a real run. The user: "do we use jv or just take what we need and put
+        it in just direct"; then,
         on the kit rec: "if you move it all to kit donest that defeat the purpose of jv … i thought we had headless
         server for this exact reason, we built jv for video gamaes, for podcast, why wouldnt it work well for just
         directk … do we need another api that does things live instead of handing files".
@@ -47,12 +50,25 @@ STATE:  waits for the user's word. The user: "do we use jv or just take what we 
         isn't running. The passes: the plan's "The voice decision".
 WHY:    the user's review: both lines "Not usable", "does not sound like a women at all"; "did you role your own for
         this app instead of something we have tested and is designe dfor this?"
-HERE:   JustDirect's own speech path is as committed; nothing is built on it until the answer. Waits for the user
-        because it changes round E's split (JustVoice keeps its models and requests — JustVoice
-        docs/plans/2026-10-29-round-e-onto-the-kit.md §1, decided on the user's go); the kit is frozen for the family
-        release; JustVoice's half runs in a JustVoice session. Runs meanwhile under the go: the cloning listening test
-GO:     none yet — the go to finish the app doesn't cover changing the user's round E decision
+HERE:   JustDirect's own speech path is gone (the Qwen3 rows, services.speak/voiceCheck, the voice-model settings);
+        justvoice.js (the client), voices.js (a card's voice made once, a line with its delivery, a film's lines as one
+        batch after freeCard), migration 6 (cards.voice_id/voice_info, shots.delivery/emotion), the card's Their voice,
+        the shot's How it's said and Feeling, the Shots tab's banner, Make the film's voices step, help. JustVoice's
+        session builds its half (its client API); the per-line WAV address of a batch is asked of it. Unverified until
+        the end run.
+GO:     the user, 2026-11-08: "there is a jv session running i fyou need to have it do any code changes jv needs, your
+        rec think on it adverserily ... any decisions are yours to make"
 PLAN:   docs/plans/2026-11-07-v1.md "The voice decision"
+
+### Our sd.cpp fork's next release, then the kit's pin on it — waits for the user's word [2026-11-08]
+STATE:  Claude's rec: release the fork's `jd` (upstream 5f8c19f merged; its Linux CPU and Vulkan jobs on ubuntu-24.04,
+        5b169e5), measure its rows (sizes, hashes, what each build needs — release-rows.js, build-needs.js), pin the
+        kit on it and run clips on the installed build. The green jd-1068-4400f6d isn't pinned as it is: its Linux
+        builds moved to Ubuntu 26.04 and need glibc 2.43 (measured), which would cut off Ubuntu 24.04 LTS users.
+WHY:    a packaged JustDirect runs the kit's pinned sd.cpp, not a development build — its clips need our `jd` build
+HERE:   the release run is a public GitHub release: the permission check refused starting it, and releases are the
+        user's (the global rules). The development build runs JustDirect meanwhile.
+GO:     none yet — say "release the sd.cpp fork" to start it
 
 ### Cloud pictures and clips on the user's own key — waits for a key to test with [2026-11-08]
 STATE:  the PRD's row "Local or your own cloud key, per feature" holds today for the language-model features only

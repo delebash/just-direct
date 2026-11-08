@@ -159,6 +159,22 @@ export const MIGRATIONS = [
       ALTER TABLE sounds ADD COLUMN fade_out REAL NOT NULL DEFAULT 0;
     `,
   },
+  {
+    version: 6,
+    name: "voices from JustVoice; how a line is said",
+    up: `
+      -- A character's voice is JustVoice's (docs/plans/2026-11-08-justvoice-voices.md): its id there, NULL for none; what
+      -- JustVoice said of it (JSON: the description it wrote, its models and their licences, the audition kept in the
+      -- film's cards/ folder).
+      ALTER TABLE cards ADD COLUMN voice_id TEXT;
+      ALTER TABLE cards ADD COLUMN voice_info TEXT NOT NULL DEFAULT '{}';
+      -- How a shot's line is said: in words ("whispered, afraid"), and as one of JustVoice's emotion labels; '' for none.
+      ALTER TABLE shots ADD COLUMN delivery TEXT NOT NULL DEFAULT '';
+      ALTER TABLE shots ADD COLUMN emotion TEXT NOT NULL DEFAULT '';
+      -- The settings of JustDirect's own speech models, which JustVoice's voices replace.
+      DELETE FROM settings WHERE key IN ('voices.model', 'voices.language', 'voices.default', 'voices.cloneModel');
+    `,
+  },
 ];
 
 /**

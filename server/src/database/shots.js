@@ -10,11 +10,11 @@ const now = () => new Date().toISOString();
 
 // what a new shot is written with (the clip's mode, paths and guide take their defaults); what a shot is read with
 const INSERT_COLUMNS =
-  "id, film_id, position, place_id, card_ids, size, camera, action, line, speaker_id, seconds, transition, edited, frame_id, clip_id, trim_in, trim_out, created_at, updated_at";
+  "id, film_id, position, place_id, card_ids, size, camera, action, line, speaker_id, seconds, transition, edited, frame_id, clip_id, trim_in, trim_out, created_at, updated_at, delivery, emotion";
 const COLUMNS = `${INSERT_COLUMNS}, mode, paths, guide_frames`;
 
 /** The fields a shot's content is made of — a change to one is a hand edit (`edited`), which a revision keeps. */
-export const CONTENT_FIELDS = Object.freeze(["placeId", "cardIds", "size", "camera", "action", "line", "speakerId", "seconds", "transition"]);
+export const CONTENT_FIELDS = Object.freeze(["placeId", "cardIds", "size", "camera", "action", "line", "speakerId", "delivery", "emotion", "seconds", "transition"]);
 
 const FIELD_COLUMNS = {
   placeId: "place_id",
@@ -24,6 +24,8 @@ const FIELD_COLUMNS = {
   action: "action",
   line: "line",
   speakerId: "speaker_id",
+  delivery: "delivery",
+  emotion: "emotion",
   seconds: "seconds",
   transition: "transition",
   frameId: "frame_id",
@@ -71,6 +73,8 @@ function fromRow(row) {
     action: row.action,
     line: row.line,
     speakerId: row.speaker_id ?? null,
+    delivery: row.delivery ?? "",
+    emotion: row.emotion ?? "",
     seconds: row.seconds,
     transition: row.transition,
     edited: row.edited === 1,
@@ -107,7 +111,7 @@ export function createShot(db, filmId, shot, { after = null, edited = true } = {
     const pos = i <= 0 ? shots.length : i;
     // the ones after it move down one
     for (const s of shots.slice(pos)) db.run("UPDATE shots SET position = ? WHERE id = ?", [s.position + 1, s.id]);
-    db.run(`INSERT INTO shots (${INSERT_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 0, ?, ?)`, [
+    db.run(`INSERT INTO shots (${INSERT_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 0, ?, ?, ?, ?)`, [
       id,
       filmId,
       pos,
@@ -123,6 +127,8 @@ export function createShot(db, filmId, shot, { after = null, edited = true } = {
       edited ? 1 : 0,
       at,
       at,
+      shot.delivery ?? "",
+      shot.emotion ?? "",
     ]);
     touchFilm(db, filmId);
   });
@@ -183,7 +189,7 @@ export function replaceShots(db, filmId, shots) {
   db.tx(() => {
     db.run("DELETE FROM shots WHERE film_id = ?", [filmId]);
     shots.forEach((s, i) => {
-      db.run(`INSERT INTO shots (${INSERT_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL, 0, 0, ?, ?)`, [
+      db.run(`INSERT INTO shots (${INSERT_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, NULL, 0, 0, ?, ?, ?, ?)`, [
         randomUUID(),
         filmId,
         i,
@@ -198,6 +204,8 @@ export function replaceShots(db, filmId, shots) {
         s.transition ?? "cut",
         at,
         at,
+        s.delivery ?? "",
+        s.emotion ?? "",
       ]);
     });
     touchFilm(db, filmId);

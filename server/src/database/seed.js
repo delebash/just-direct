@@ -58,15 +58,11 @@ export const SETTING_DEFAULTS = {
   "clips.lipRepair": false,
   "clips.lipSteps": 20,
   "clips.lipGuidance": 1.5,
-  // Voices (Settings → General): Qwen3-TTS VoiceDesign 1.7B (the voice line the talking clips were tested with), English
-  // (its language names: English, Chinese, Japanese, Korean, German, French, Russian, Portuguese, Spanish, Italian), and a
-  // plain voice for a character with no Voice words.
-  "voices.model": "qwen3-vd-1.7b-q8",
-  "voices.language": "English",
-  "voices.default": "A natural, clear adult voice, calm and unhurried.",
-  // A character with a voice recording is cloned from it by Qwen3-TTS Base (JustVoice's cloning model), from at most
-  // this many seconds of it (a few clean seconds are what it needs), from a file of at most this size.
-  "voices.cloneModel": "qwen3-base-1.7b-q8",
+  // Voices (Settings → General): JustVoice's server where it listens by default (its port, 17494), English as spoken in
+  // the US; a voice recording is sent from at most this many seconds of it (a few clean seconds are what cloning needs),
+  // from a file of at most this size.
+  "voices.justvoiceUrl": "http://127.0.0.1:17494",
+  "voices.locale": "en-US",
   "voices.sampleSeconds": 20,
   "voices.maxSampleMegabytes": 50,
   // Music and effects (Settings → General): 30 s of music and 6 s of an effect, 8 steps (the tested recipe).
