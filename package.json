@@ -1,0 +1,72 @@
+{
+  "name": "just-direct",
+  "version": "0.0.1",
+  "description": "JustDirect is a free AI film studio that runs on your own computer: describe a story and its AI plans the shots, makes the cast, sets and props once and reuses them, paints each shot's first frame,…",
+  "productName": "JustDirect",
+  "author": "delebash",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "server"
+  ],
+  "scripts": {
+    "dev": "quasar dev -m electron",
+    "dev:spa": "quasar dev",
+    "build": "quasar build -m electron",
+    "build:spa": "quasar build",
+    "build:unpacked": "quasar build -m electron --skip-pkg",
+    "postinstall": "quasar prepare --silent",
+    "server": "node scripts/node24.js server/src/serve.js serve",
+    "lint": "biome check .",
+    "test:server": "node scripts/node24.js node_modules/vitest/vitest.mjs run --config server/vitest.config.js",
+    "test:unit": "vitest run",
+    "test:coverage": "vitest run --coverage && node scripts/node24.js node_modules/vitest/vitest.mjs run --config server/vitest.config.js --coverage.enabled --coverage.provider=v8 --coverage.include=src/**/*.js --coverage.reportsDirectory=../coverage/server",
+    "bump": "node scripts/bump.js",
+    "release": "node scripts/release.js",
+    "test": "npm test --prefix e2e",
+    "screenshots": "node e2e/capture-direct.js",
+    "i18n:lint": "eslint -c eslint.i18n.config.js \"src/**/*.{js,vue}\"",
+    "i18n:report": "vue-i18n-extract report --vueFiles \"src/**/*.?(js|vue)\" --languageFiles \"{src/i18n/locales,../just-core/packages/ui/src/i18n/locales}/en.json\" --exclude kit."
+  },
+  "dependencies": {
+    "@floating-ui/dom": "^1.8.0",
+    "@internationalized/number": "^3.6.9",
+    "@quasar/extras": "^2.1.0",
+    "@vueuse/core": "^15.0.0",
+    "dom-accessibility-api": "^0.7.1",
+    "dompurify": "^3.4.17",
+    "front-matter": "^4.0.2",
+    "github-slugger": "^2.0.0",
+    "marked": "^18.1.0",
+    "pinia": "^4.0.3",
+    "quasar": "^2.35.0",
+    "vue": "^3.5.43",
+    "vue-i18n": "^11.4.14",
+    "vue-router": "^5.4.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@eslint/compat": "^2.1.1",
+    "@intlify/eslint-plugin-vue-i18n": "^4.5.1",
+    "@quasar/app-vite": "^3.10.2",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "@vitest/coverage-v8": "^5.0.3",
+    "@vue/test-utils": "^2.5.1",
+    "autoprefixer": "^10.6.1",
+    "eslint": "^10.12.0",
+    "eslint-plugin-i18next": "^6.1.5",
+    "jsdom": "^30.1.2",
+    "postcss": "^8.5.29",
+    "vitest": "^5.0.3",
+    "vue-eslint-parser": "^10.4.1",
+    "vue-i18n-extract": "^2.0.7"
+  },
+  "allowScripts": {
+    "electron": true,
+    "better-sqlite3": true,
+    "koffi": true,
+    "esbuild": true,
+    "@parcel/watcher": true
+  }
+}

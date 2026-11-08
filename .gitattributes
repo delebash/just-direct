@@ -1,0 +1,9 @@
+# One family answer for line endings (target-tree P10): text normalizes to LF
+# in the repo, Windows-only runners keep CRLF, binaries are auto-detected.
+* text=auto
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.sh text eol=lf
+# the headless launcher for macOS and Linux has no extension (build/launcher/<app>-server): a shell script
+build/launcher/* text eol=lf
+build/launcher/*.cmd text eol=crlf

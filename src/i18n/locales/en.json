@@ -1,0 +1,117 @@
+{
+  "app": {
+    "name": "JustDirect",
+    "mark": "Di",
+    "couldNotStart": "The app could not start: {error}"
+  },
+  "nav": {
+    "home": "Home",
+    "notes": "Notes"
+  },
+  "tray": {
+    "urlCopied": "Server address copied",
+    "copyFailed": "Couldn't copy"
+  },
+  "titleBar": {
+    "theme": "Theme: {mode} — click to change"
+  },
+  "connectionError": {
+    "need": "keep your notes and run its AI features",
+    "devHint": "Development: `npm run dev` starts it, or run it yourself with `npm run server`, then retry.",
+    "portTaken": "Another program is using port {port}. Close it, then press {retry}.",
+    "portOtherUser": "Another person signed in to this computer has the app open, on port {port}. One copy runs at a time: they can quit theirs (its tray icon), then press {retry}.",
+    "portReserved": "Windows has reserved port {port} for another use (Hyper-V, WSL or Docker), so the app can't use it. Restarting the computer usually frees it; Troubleshooting in the help says how to keep it free.",
+    "serverError": "Its server stopped as it started: {error}"
+  },
+  "notFound": {
+    "title": "There's no page here",
+    "message": "The address doesn't match any page of the app.",
+    "home": "Go to Home"
+  },
+  "home": {
+    "title": "Welcome",
+    "lede": "This is the family's reference app: everything a new app starts with, and one small example area to show how the pieces fit.",
+    "notes": {
+      "title": "Notes",
+      "body": "Write short notes, pin the ones you need, and let the AI suggest a title.",
+      "open": "Open Notes"
+    },
+    "ai": {
+      "title": "AI",
+      "body": "Set up a local model or connect an online provider. The app's AI features run on what you choose.",
+      "open": "Open AI Settings"
+    },
+    "help": {
+      "title": "Help",
+      "body": "How the app works, how to set up the AI, and what to do when something goes wrong.",
+      "open": "Read Getting started"
+    }
+  },
+  "ai": {
+    "eyebrow": "AI",
+    "title": "Providers, models and usage"
+  },
+  "notes": {
+    "title": "Notes",
+    "new": "New note",
+    "import": "Import a file…",
+    "imported": "“{title}” imported",
+    "loadFailed": "Couldn't load your notes: {reason}",
+    "empty": {
+      "title": "No notes yet",
+      "message": "Your notes are kept by the app's server, in its data folder."
+    },
+    "filter": "Filter notes",
+    "noMatch": "No note matches the filter.",
+    "pinned": "Pinned",
+    "edit": "Edit “{title}”",
+    "columns": {
+      "title": "Title",
+      "changed": "Changed"
+    },
+    "delete": {
+      "action": "Delete “{title}”",
+      "title": "Delete this note?",
+      "message": "“{title}” and everything in it will be deleted. This can't be undone.",
+      "confirm": "Delete note"
+    },
+    "form": {
+      "newTitle": "New note",
+      "editTitle": "Edit note",
+      "title": "Title",
+      "body": "Note",
+      "pinned": "Pin to the top of the list"
+    },
+    "suggest": {
+      "button": "Suggest a title",
+      "hint": "Ask the AI for a title from what the note says",
+      "needsBody": "Write the note first — the title is suggested from it",
+      "task": "Suggesting a title"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "sections": {
+      "general": "General"
+    },
+    "general": {
+      "notesTitle": "Notes",
+      "notesHint": "How the Notes list shows your notes.",
+      "pageSize": "Notes per page",
+      "maxImportKilobytes": "Largest file to import (KB)",
+      "windowsTitle": "Other windows",
+      "windowsHint": "The app open in more than one place at once — the desktop app, a browser on this server, a phone: how often each one looks for what the others changed. It shows their changes by itself.",
+      "checkSeconds": "Look for other windows' changes every (seconds)"
+    },
+    "appearanceHint": "How the app looks — applied at once and kept by the app.",
+    "accentNote": "The default, 166°, is green.",
+    "backupsHint": "A backup holds everything the app keeps: your notes, your settings and your AI setup. Downloaded models aren't in it — they download again.",
+    "logsHint": "What the server and this window reported, newest last.",
+    "storage": {
+      "saves": "your notes"
+    },
+    "about": {
+      "blurb": "The family's reference app: the shell, the server, the AI stack, settings, help and tests every family app starts with."
+    }
+  }
+}

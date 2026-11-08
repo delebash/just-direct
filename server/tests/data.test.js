@@ -1,0 +1,111 @@
+// SPDX-License-Identifier: MIT
+// Settings → Backups' server half (data_admin.js over the kit's makeDataRouter): a backup is a ZIP
+// of the database, a restore puts its rows back, a reset returns the first-run state — keeping the
+// access tokens, so a reset never opens an exposed server.
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { openDatabase } from "@delebash/core/platform";
+import { ZipReader, ZipWriter } from "@delebash/core/platform/zip";
+import { beforeEach, expect, test } from "vitest";
+import { createApp } from "../src/app.js";
+import { getDb } from "../src/app_state.js";
+import { seedWorkspace } from "../src/database/seed.js";
+import { deleteSetting, getSetting } from "../src/database/settings.js";
+import { testClient, tmpDir, useHermeticKit } from "./helpers.js";
+
+useHermeticKit();
+
+let client;
+beforeEach(async () => {
+  client = testClient(await createApp(tmpDir()));
+  seedWorkspace(getDb());
+});
+
+const titles = async () => (await client.get("/v1/notes")).json().items.map((n) => n.title);
+
+test("backup, change, restore: the backup's rows come back", async () => {
+  await client.post("/v1/notes", { json: { title: "Before the backup" } });
+  const backup = await client.get("/v1/data/backup");
+  expect(backup.statusCode).toBe(200);
+  expect(backup.headers["content-type"]).toBe("application/zip");
+  expect(backup.rawPayload.subarray(0, 2).toString()).toBe("PK");
+
+  await client.post("/v1/notes", { json: { title: "After the backup" } });
+  expect(await titles()).toEqual(["After the backup", "Before the backup"]);
+
+  const form = new FormData();
+  form.append("file", new Blob([backup.rawPayload], { type: "application/zip" }), "backup.zip");
+  const restored = await client.app.request("http://testserver/v1/data/restore", { method: "POST", body: form, headers: { host: "testserver" } });
+  expect(restored.status).toBe(200);
+  expect(await titles()).toEqual(["Before the backup"]);
+});
+
+test("reset returns the first-run state but keeps the access tokens", async () => {
+  await client.post("/v1/notes", { json: { title: "Gone after reset" } });
+  await client.patch("/v1/settings", { json: { "notes.pageSize": 60 } });
+  await client.patch("/v1/prefs", { json: { aiOfferShown: true } });
+  await client.put("/v1/server-auth", { json: { tokens: ["still-here"] } });
+  const auth = { headers: { authorization: "Bearer still-here" } };
+
+  expect((await client.post("/v1/data/reset", auth)).statusCode).toBe(200);
+  expect((await client.get("/v1/notes", auth)).json().items).toEqual([]);
+  expect((await client.get("/v1/settings", auth)).json()["notes.pageSize"]).toBe(25); // reseeded
+  expect((await client.get("/v1/prefs", auth)).json()).toEqual({});
+  expect(getSetting(getDb(), "auth").tokens).toEqual(["still-here"]);
+  // the AI stack was reseeded too
+  expect((await client.get("/v1/llm-providers", auth)).json().providers.length).toBeGreaterThan(0);
+});
+
+test("a restore keeps this server's access tokens — never the backup's", async () => {
+  const restore = async (zip, headers = {}) => {
+    const form = new FormData();
+    form.append("file", new Blob([zip], { type: "application/zip" }), "backup.zip");
+    return client.app.request("http://testserver/v1/data/restore", { method: "POST", body: form, headers: { host: "testserver", ...headers } });
+  };
+  // a backup from before a token was set: restored, the server stays closed with its own token
+  const noToken = (await client.get("/v1/data/backup")).rawPayload;
+  await client.put("/v1/server-auth", { json: { tokens: ["mine"] } });
+  const auth = { authorization: "Bearer mine" };
+  expect((await restore(noToken, auth)).status).toBe(200);
+  expect(getSetting(getDb(), "auth").tokens).toEqual(["mine"]);
+  // a backup that carries a token (an older version's did — ours are scrubbed, below), restored on a server
+  // without one: no token of the backup's comes with it
+  const withToken = await rawBackup();
+  deleteSetting(getDb(), "auth");
+  expect((await restore(withToken)).status).toBe(200);
+  expect(getSetting(getDb(), "auth")).toBeUndefined();
+  // this version's backups carry no token at all
+  await client.put("/v1/server-auth", { json: { tokens: ["mine"] } });
+  const dir = tmpDir();
+  writeFileSync(join(dir, "ours.zip"), (await client.get("/v1/data/backup", { headers: auth })).rawPayload);
+  await (await ZipReader.open(join(dir, "ours.zip"))).extractAll(join(dir, "out"));
+  const copy = openDatabase(join(dir, "out", "db.sqlite"), { foreignKeys: false });
+  expect(getSetting(copy, "auth")).toBeUndefined();
+  copy.close();
+});
+
+/** A backup as an older version made it: the database as it is — its access tokens in it — zipped. */
+async function rawBackup() {
+  const dir = tmpDir();
+  getDb().run("VACUUM INTO ?", [join(dir, "db.sqlite")]);
+  const zip = new ZipWriter();
+  await zip.addFile(join(dir, "db.sqlite"), "db.sqlite");
+  return Buffer.concat(zip.finish());
+}
+
+test("a backup from an older version gets this one's settings seed when restored, not only at the next start", async () => {
+  deleteSetting(getDb(), "notes.pageSize"); // a setting the older version didn't have
+  const old = (await client.get("/v1/data/backup")).rawPayload;
+  seedWorkspace(getDb());
+  const form = new FormData();
+  form.append("file", new Blob([old], { type: "application/zip" }), "backup.zip");
+  expect((await client.app.request("http://testserver/v1/data/restore", { method: "POST", body: form, headers: { host: "testserver" } })).status).toBe(200);
+  expect(getSetting(getDb(), "notes.pageSize")).toBe(25);
+});
+
+test("a restore of something that isn't a backup is refused", async () => {
+  const form = new FormData();
+  form.append("file", new Blob(["not a zip"]), "backup.zip");
+  const r = await client.app.request("http://testserver/v1/data/restore", { method: "POST", body: form, headers: { host: "testserver" } });
+  expect(r.status).toBe(400);
+});

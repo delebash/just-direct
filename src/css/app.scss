@@ -1,0 +1,14 @@
+/* SPDX-License-Identifier: MIT */
+/* The app's own classes — its own surfaces only. The family's page looks (the base, the shell, pages, cards,
+   hints, forms, Settings, the AI page, the splash) are the kit's common/app.css, listed right before this file in
+   quasar.config.js; the kit ships its controls' styles. A class the kit's sheet has is never defined here again
+   (the family guard fails a copy). The family rules: a height:100% chain (NEVER 100vh), one scroller per area,
+   every control sized to its content, and every colour, font and size from tokens.css (app-structure §4, §17). */
+
+/* ── Notes ─────────────────────────────────────────────────────────────── */
+.notes { position: relative; min-height: 160px; }
+.notes__tools { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: 10px; }
+.notes__title { display: inline-flex; align-items: center; gap: 6px; }
+.notes__pin { color: var(--accent); }
+.notes__actions { display: inline-flex; gap: 2px; }
+.notes__picker { display: none; } /* Import a file: the picker opens from its button */
