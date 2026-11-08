@@ -109,7 +109,10 @@ be made (say, set to follow drawn paths with none drawn) is named and the others
   camera its push. The path is smoothed between the points and spread over the clip.
 - **Led by a guide video** — a video from a 3D tool (depth, pose or edges) gives the shapes and
   the motion, and the first frame gives the look. **Add a guide video…** reads its frames (MP4, WebM
-  or MOV, up to 200 MB) — this needs FFmpeg, installed from the AI page.
+  or MOV, up to 200 MB) — this needs FFmpeg, installed from the AI page. Or pick one of your
+  [motion capture](motion-capture.md) takes under **Or from a motion capture take** and press **Use its
+  pose**: the take's skeleton, drawn alone on black, becomes the guide — the clip's person moves as the
+  person in the take did.
 
 Each clip you make is kept: watch them side by side, **Use this one** to put another in the film,
 **Delete** to remove one.

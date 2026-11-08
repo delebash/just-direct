@@ -16,7 +16,8 @@
 
 import { statSync } from "node:fs";
 import path from "node:path";
-import { installLlm, makeImageJobsRouter, runnerRouter } from "@delebash/core/llm";
+import { installLlm, makeImageJobsRouter, makeMocapRouter, runnerRouter } from "@delebash/core/llm";
+import { MOCAP_MODELS } from "@delebash/core/runner/config";
 import {
   bearerAuth,
   CAPACITOR_ORIGINS,
@@ -57,7 +58,7 @@ import { runtimeExeOverrides } from "./dev_builds.js";
 import { openAppDatabase } from "./database/index.js";
 import { getSetting, setSetting } from "./database/settings.js";
 import { FEATURE_CATALOG } from "./feature_catalog.js";
-import { filmsRoot } from "./files.js";
+import { filmsRoot, mocapRoot } from "./files.js";
 import { defaultDataDir, SOURCE_ROOT } from "./paths.js";
 import { DEFAULT_FEATURE_PROMPTS } from "./seed_feature_prompts.js";
 import {
@@ -137,8 +138,10 @@ const llmArgs = (db, dataDir) => ({
   // first frames and makes the clips; the kit installs, downloads, rates and runs them, the AI page shows them.
   // audio.cpp speaks the lines and makes the music and effects; FFmpeg (the kit's tool runtime) reads a guide video's
   // frames and joins the film.
-  runtimes: ["sdcpp", "audiocpp", "ffmpeg"],
-  runtimeModels: [FLUX2_KLEIN, LTX_23, STABLE_AUDIO_MUSIC, STABLE_AUDIO_EFFECTS, ACE_STEP_SONGS, LATENTSYNC],
+  // motion capture is the kit's (its engine, its models, its screen — the user, 2026-11-07: "mocap is ONE screen inside
+  // JustDirect … the screen lives in the kit, so JustStage can share it")
+  runtimes: ["sdcpp", "audiocpp", "ffmpeg", "mocap"],
+  runtimeModels: [FLUX2_KLEIN, LTX_23, STABLE_AUDIO_MUSIC, STABLE_AUDIO_EFFECTS, ACE_STEP_SONGS, LATENTSYNC, ...MOCAP_MODELS],
   // a development build of our sd.cpp or audio.cpp fork in place of the installed one (dev_builds.js — the variables)
   runtimeExeOverrides: runtimeExeOverrides(),
 });
@@ -204,7 +207,7 @@ export async function createApp(dataDir = null, { services = {} } = {}) {
   app.route("/", makeSyncRevRouter(changes, { pollSeconds: () => getSetting(db, "windows.checkSeconds") }));
   app.route("/", makeLogsRouter(PRODUCT));
   // Settings → Storage's sizes: the kit's buckets (its engine builds and models cache) and this app's own, the films
-  app.route("/", makeDiskRouter(dataDir, { films: filmsRoot(dataDir) }));
+  app.route("/", makeDiskRouter(dataDir, { films: filmsRoot(dataDir), mocap: mocapRoot(dataDir) }));
   app.route("/", dataRouter(dataDir, { gate }));
 
   // 6. The AI stack: the host mounts the runner's process API, installLlm mounts the rest.
@@ -214,6 +217,8 @@ export async function createApp(dataDir = null, { services = {} } = {}) {
   // caller outside the screens uses (JustStage's Blender extension, 2026-10-29); each picture kept until fetched
   app.route("/", makeJobsRouter(jobs));
   app.route("/", makeImageJobsRouter(jobs, { resultDir: path.join(dataDir, "image-jobs") }));
+  // motion capture's takes (the kit's mocap_take rows, each a folder under <data>/mocap)
+  app.route("/", makeMocapRouter(jobs, { takesDir: mocapRoot(dataDir) }));
 
   // 7. The app's own routes.
   app.route("/", settingsRouter());

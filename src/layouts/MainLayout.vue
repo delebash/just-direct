@@ -38,7 +38,10 @@ const route = useRoute();
 // The app's pages, then the family's two (their words are the kit's, `kit.nav.*`, the same in
 // every app). Icon names are ids, not words.
 // Films is Home: its row is lit on a film's page too
-const NAV = computed(() => [{ to: "/", label: t("nav.films"), icon: "Film", exact: true, also: "/films/" }]);
+const NAV = computed(() => [
+  { to: "/", label: t("nav.films"), icon: "Film", exact: true, also: "/films/" },
+  { to: "/mocap", label: t("nav.mocap"), icon: "Users" },
+]);
 const TOOLS = computed(() => [
   { to: "/ai", label: t("kit.nav.aiSettings"), icon: "Cpu" },
   { to: "/settings", label: t("kit.nav.appSettings"), icon: "Settings" },

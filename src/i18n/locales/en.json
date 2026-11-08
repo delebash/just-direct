@@ -5,7 +5,11 @@
     "couldNotStart": "The app could not start: {error}"
   },
   "nav": {
-    "films": "Films"
+    "films": "Films",
+    "mocap": "Motion capture"
+  },
+  "mocap": {
+    "title": "Motion capture"
   },
   "tray": {
     "urlCopied": "Server address copied",
@@ -254,6 +258,9 @@
     "guideAdd": "Add a guide video…",
     "guideReading": "Reading…",
     "guideRemove": "Take it off",
+    "fromTake": "Or from a motion capture take",
+    "useTake": "Use its pose",
+    "noTakes": "A motion capture take can lead the clip too: capture one under Motion capture, and its pose shows here.",
     "make": "Make the clip",
     "makeAnother": "Make another",
     "making": "Making…",

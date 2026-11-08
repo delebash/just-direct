@@ -10,6 +10,8 @@ const pages = [
   { path: "", component: () => import("../pages/HomePage.vue") },
   // a film, its tab in the address (Story, Cards …)
   { path: "films/:id/:tab?", component: () => import("../pages/FilmPage.vue"), props: true },
+  // motion capture: the kit's screen (a take becomes a shot's guide video)
+  { path: "mocap", component: () => import("../pages/MocapPage.vue") },
   { path: "ai", component: () => import("../pages/AiPage.vue") },
   { path: "settings/:section?", component: () => import("../pages/SettingsPage.vue"), props: true },
   // anything else, inside the chrome, so the nav still works

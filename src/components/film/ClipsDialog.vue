@@ -5,8 +5,8 @@
 // and delete. The chosen clip is the one in the film. A video plays from the server's address with the app's Origin
 // (crossorigin="anonymous" — app-structure §19). A talking clip offers Repair lips (LatentSync, non-commercial) once
 // Settings → Clips turns it on.
-import { AppModal, confirmDialog, EmptyState, Icon, reportError, serverUrl, UiButton, UiField, UiSelect, UiTag } from "@delebash/ui";
-import { computed, onMounted, ref } from "vue";
+import { AppModal, confirmDialog, EmptyState, get, Icon, reportError, requestBlob, serverUrl, UiButton, UiField, UiSelect, UiTag } from "@delebash/ui";
+import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useFilmsStore } from "../../stores/films.js";
 import { useSettingsStore } from "../../stores/settings.js";
@@ -62,6 +62,33 @@ async function onGuide(file) {
   busy.value = true;
   try {
     await films.uploadGuide(current.value, file);
+  } catch (e) {
+    reportError(e);
+  } finally {
+    busy.value = false;
+  }
+}
+// a motion-capture take as the guide: its pose video (the skeleton on black — the pose control the Union Control LoRA
+// follows; the kit's take file "pose"), fetched from the take and added as the shot's guide video
+const takes = ref(null);
+const takeId = ref(null);
+const TAKES = computed(() => (takes.value ?? []).map((x) => ({ value: x.id, label: x.name })));
+async function loadTakes() {
+  try {
+    takes.value = ((await get("/v1/mocap/takes")).takes ?? []).filter((x) => x.state === "done" && x.files?.includes("pose"));
+    takeId.value = takes.value[0]?.id ?? null;
+  } catch {
+    takes.value = [];
+  }
+}
+watch(() => current.value.mode, (m) => m === "guide" && takes.value === null && loadTakes(), { immediate: true });
+async function useTake() {
+  const take = takes.value?.find((x) => x.id === takeId.value);
+  if (!take) return;
+  busy.value = true;
+  try {
+    const blob = await requestBlob(`/v1/mocap/takes/${encodeURIComponent(take.id)}/files/pose`);
+    await films.uploadGuide(current.value, new File([blob], `${take.name}-pose.mp4`, { type: "video/mp4" }));
   } catch (e) {
     reportError(e);
   } finally {
@@ -130,6 +157,15 @@ async function remove(c) {
         <UiButton intent="secondary" size="small" :disabled="busy" :label="busy ? t('clips.guideReading') : t('clips.guideAdd')" @click="picker?.pickFiles()" />
         <UiButton v-if="current.guideFrames" intent="ghost" size="small" :label="t('clips.guideRemove')" @click="removeGuide" />
         <q-file ref="picker" class="clips-dialog__file" :model-value="null" accept="video/*" :aria-label="t('clips.guideAdd')" @update:model-value="onGuide" />
+      </div>
+      <div v-if="current.mode === 'guide'" class="clips-dialog__guide">
+        <template v-if="takes?.length">
+          <UiField :label="t('clips.fromTake')" layout="block" for="clip-take">
+            <UiSelect id="clip-take" v-model="takeId" :options="TAKES" width="name" />
+          </UiField>
+          <UiButton intent="secondary" size="small" :disabled="busy || !takeId" :label="t('clips.useTake')" @click="useTake" />
+        </template>
+        <span v-else-if="takes" class="muted">{{ t("clips.noTakes") }}</span>
       </div>
       <p v-if="!current.frameId" class="hint">{{ t("clips.noFrame") }}</p>
 

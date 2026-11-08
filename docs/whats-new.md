@@ -22,5 +22,7 @@
   turn it on in Settings, because its face models are for non-commercial research only.
 - **Cut**: the film's shots on a timeline with their trims and transitions (cut, dissolve, fade), music, songs with your own lyrics and sound effects made from words and laid over the film, and **Export the
   film** as one MP4 to watch and save.
+- **Motion capture**: a video of one person made into animation files (body, fingers and face — FBX,
+  BVH, GLB, USD, a Live Link Face CSV), and live webcam tracking sent to VMC or OSC.
 - **More than one window**: the app open in several places at once shows each one's changes in the
   others by itself (**Settings → General → Other windows**).

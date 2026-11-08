@@ -10,7 +10,8 @@
   {
     "group": "Using the app",
     "items": [
-      { "slug": "films", "title": "Your films" }
+      { "slug": "films", "title": "Your films" },
+      { "slug": "motion-capture", "title": "Motion capture" }
     ]
   },
   {

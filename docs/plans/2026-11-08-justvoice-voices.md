@@ -12,6 +12,21 @@ card: "if you need ot make a call to jv just unload your model first, make sure 
 in groups then you can reload your models". JustVoice's code is its session's (justvioce-e3, "just voice"), briefed by
 message 2026-11-08.
 
+## Standards: the kit code each piece uses
+
+| Piece | Kit code |
+|---|---|
+| The client of JustVoice's server (`server/src/justvoice.js`) | app — JustDirect is JustVoice's client over its documented client API (JustVoice `docs/dev/client-api.md`); the kit has no app-to-app client, and an HTTP client to another family app's API is that app's contract, not an engine |
+| A character's voice, a line, a film's lines as server jobs | `JobRegistry` |
+| The refusals (JustVoice not running, no speaker, no line) | `ApiError` |
+| Letting go of the card before a batch (services.freeCard) | `stopRuntimeServers` beside the runner's stop, the pair the app's reset uses (server/src/data_admin.js) |
+| A spoken line's length | `wavSeconds` |
+| A voice recording read into a WAV for cloning | `runFfmpeg`, `ffmpegReadiness` |
+| The jobs in the window (Make the voice, Speak, Speak lines) | `runServerJob` |
+| The card's Their voice, the shot's How it's said and Feeling, the Shots tab's banner | `UiButton`, `UiSelect`, `UiInput`, `UiField`, `UiBanner` |
+| The voices' settings (JustVoice's address, the lines' language) | app — seeded rows with their schemas (family rule 1: a value a user might change is a row) |
+| How a line is said (delivery words, an emotion label) | app — the shot's content, the planner's schema; the labels are JustVoice's client API's list |
+
 ## JustVoice's client API — the shapes its session sent (2026-11-08), final fixtures to follow
 
 Every call sends `X-Client: JustDirect` (stored as the voice's `made_by`).

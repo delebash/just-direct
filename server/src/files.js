@@ -12,6 +12,7 @@
 //   <dataDir>/exports/<filmId>/<name>.mp4         the film, exported
 //   <dataDir>/work/<id>/                          one job's scratch files (a guide video's frames, lip repair's raw
 //                                                 frames), removed after it and at every start; never in the backup
+//   <dataDir>/mocap/<takeId>/                     a motion-capture take: its video and what the kit's engine made of it
 
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
@@ -46,6 +47,8 @@ export function filmFile(dataDir, filmId, part, name) {
 }
 export const exportDir = (dataDir, filmId) => path.join(exportsRoot(dataDir), safeName(filmId));
 export const workRoot = (dataDir) => path.join(dataDir, "work");
+/** Motion capture's takes, one folder each (the kit's makeMocapRouter `takesDir`). */
+export const mocapRoot = (dataDir) => path.join(dataDir, "mocap");
 
 /** A new scratch folder for one job, inside the data folder (a lip repair's frames run to hundreds of MB). */
 export function newWorkDir(dataDir) {
