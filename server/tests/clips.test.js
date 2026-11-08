@@ -274,6 +274,8 @@ describe("the method", () => {
   test("lip repair's join: the raw frames at their size and rate, the clip's count of them, the voice as the sound, a WebM", () => {
     const args = lipClipArgs({ raw: "f.rgb", width: 64, height: 32, fps: 24, frames: 97, voice: "v.wav" }, "out.webm");
     expect(args.join(" ")).toContain("-f rawvideo -pix_fmt rgb24 -s 64x32 -r 24 -i f.rgb -i v.wav -map 0:v:0 -map 1:a:0 -frames:v 97");
+    // near-lossless: the export encodes it again
+    expect(args.join(" ")).toContain("-c:v libvpx-vp9 -b:v 0 -crf 15");
     expect(args.at(-1)).toBe("out.webm");
   });
   test("lip repair's voice: padded with silence, or cut, to the clip's length", () => {

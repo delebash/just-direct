@@ -103,6 +103,17 @@ free). Files in `E:\Dev\Web\test-just-direct\real-run-2026-11-07\`; frames looke
   clip back and forth past its end (`src/community_models/latentsync/pipeline.cpp:83-85, 120-123`). Fixed: the voice
   is padded or cut to the clip's length first and the clip's own frame count kept (`clips.js` `fitVoiceArgs`).
 - **The export:** 7.5 s, the 2 shots with clips (10 without, left out), H.264 and AAC, in 5 s.
+- **Lip repair on a face turned to the camera** (07:27–07:47 UTC, `real-run-lips.js`, through the running app's
+  server): shot 6 turned to "Mara turns to face the camera and speaks, Teo beside her."; 3 first frames painted and
+  checked in 172 s, the talking clip 417 s, lip repair 583 s. The mouth is redrawn in place, no stray mouth; its
+  shapes differ a little from LTX's (`look\facing-talk-mouth.png` against `look\facing-lips-mouth.png`) — whether it
+  follows the words better is for the user's eye. **The length fix holds on the engine:** 97 frames back for the
+  97-frame clip, 4.042 s. LatentSync ran on this 8 GB card with its memory saver (the kit's figure, 9,144 MiB, was a
+  large card's).
+- **The repaired clip's encoding smoothed the face** outside the mouth, which LatentSync doesn't touch. Measured on
+  2 s of the talking clip re-encoded: VP9 CRF 30 → SSIM 0.958 against the original, 329 KB; CRF 15 → 0.978, 2,099 KB;
+  CRF 15 keeps the skin and fabric grain (`scratchpad\crf\compare.png`). The repaired clip is now CRF 15, near-lossless
+  like the cut's own pieces (`cut.js`, x264 CRF 16), since the export encodes it again.
 
 ### The voices round trip through JustVoice's server (2026-11-08, 06:43–06:47 UTC)
 

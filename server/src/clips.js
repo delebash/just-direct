@@ -118,11 +118,13 @@ export function fitVoiceArgs(voice, seconds, out) {
 
 /** FFmpeg's arguments for a repaired clip: LatentSync's raw frames (`raw`, rgb24, `width`×`height` at `fps`), the first
  *  `frames` of them (the clip's own count), and the fitted voice they were drawn to (`voice`, a WAV — a talking shot's
- *  sound in the cut is its line's, cut.js) → a WebM at `out`. */
+ *  sound in the cut is its line's, cut.js) → a WebM at `out`. Near-lossless (VP9 at CRF 15, the top of FFmpeg's VP9
+ *  range): a clip is encoded again by the export, as the cut's own pieces are kept near-lossless (cut.js, CRF 16) —
+ *  CRF 30 visibly smoothed the face outside the mouth in the first real repair. */
 export function lipClipArgs({ raw, width, height, fps, frames, voice }, out) {
   return [
     ...["-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", `${width}x${height}`, "-r", String(fps), "-i", raw, "-i", voice],
-    ...["-map", "0:v:0", "-map", "1:a:0", "-frames:v", String(frames), "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "30", "-deadline", "good", "-cpu-used", "4"],
+    ...["-map", "0:v:0", "-map", "1:a:0", "-frames:v", String(frames), "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "15", "-deadline", "good", "-cpu-used", "4"],
     ...["-row-mt", "1", "-pix_fmt", "yuv420p", "-c:a", "libopus", "-shortest", out],
   ];
 }
