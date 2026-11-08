@@ -139,7 +139,14 @@ the run — through JustDirect's own routes, JustVoice headless on 17494, the ca
   (fixed, 5fcbaf7; the texts checked byte for byte against git and the database). (2) The place cards said what happens
   there ("Spiral stairs: Stairs climbed by Ines."), and their pictures lost the story's lighthouse — a town's straight
   steps, a house's courtyard (`look\cards.png`). The cards prompt now asks for looks only, a place's kind and setting
-  (b14e8c3) — to be measured on the card.
+  (b14e8c3).
+- **The cards prompt measured** (09:37–09:45 UTC, `real-run-plan.js`, both stories planned again with today's prompts
+  healed into the database, `plan-compare.log`): The Last Light's places now say where — "Lighthouse: A lighthouse at
+  dusk.", "Spiral stairs: Spiral stairs inside a lighthouse.", "Top of the lighthouse: At the top of a lighthouse,
+  overlooking a dark sea at dusk."; the ferry story's stay right ("A rain-soaked wooden pier at dawn, with sun shining
+  through the rain.", "The bow of an old green ferry."). Kept. Still empty with the prompt asking: **every character's
+  voice** (4 of 4) and **one of two lines' delivery and feeling** (the other: "softly", "whispered"). The schema
+  allowed ""; it now holds them (b973eed) — to be measured.
 
 ### The voices round trip through JustVoice's server (2026-11-08, 06:43–06:47 UTC)
 
