@@ -3,14 +3,15 @@
 // Playwright (app-structure §10, §18). It asserts the CONTRACT, not pixels: the shell mounts, the
 // nav works, the AI status button and the AI-tasks toggle behave, a film and its card are made through the
 // window and reach the server, the once-ever AI offer comes once, Settings shows the family's
-// sections in their order. Hermetic (lib/driver.js): a temp data folder, the harness's own server,
+// sections in their order, and no page's error reached the server's log. Hermetic (lib/driver.js): a temp data folder, the harness's own server,
 // the shell's <ID>_DEV_NO_SERVER=1. One launch shared by the tests, in order.
 //
 // Before: `npm run build:unpacked` (the harness drives what was last built). Run: `npm test` from
 // the app's root.
 
 import { strict as assert } from "node:assert";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { after, before, test } from "node:test";
 import { Driver, waitFor } from "../lib/driver.js";
 
@@ -54,6 +55,8 @@ test("the nav works: Motion capture, AI Settings, App Settings and Films open th
   await page.locator(".navlink", { hasText: "Motion capture" }).click();
   await page.waitForURL(/#\/mocap$/);
   await page.locator(".pane-h1", { hasText: "Motion capture" }).waitFor();
+  // a fresh folder has no mocap engine: the kit's banner offers it (the readiness names the engine, no model yet)
+  await page.locator(".mocap .lu-needed").waitFor();
 
   await page.locator(".navlink", { hasText: "AI Settings" }).click();
   await page.waitForURL(/#\/ai$/);
@@ -174,4 +177,16 @@ test("window.open of the app's own page opens another window of the app, which c
   await child.close();
   await waitFor(async () => d.app.windows().length === 1, { what: "the second window closed, the app still open" });
   assert.ok(await page.evaluate(() => !!document.querySelector(".shell")));
+});
+
+// Last: every page the smoke opened, without an error in the window. The kit's error reporting catches a Vue error and
+// sends it to the server's log ("[ERROR] renderer: …", installErrorReporting), so it never reaches the page as an
+// uncaught error — the log is where to look (the Motion capture banner's mounted hook threw there, 2026-11-08).
+test("no error in the window reached the server's log", async () => {
+  const file = path.join(d.dataDir, "logs", "just-direct.log");
+  await waitFor(async () => existsSync(file), { what: "the server's log" });
+  const errors = readFileSync(file, "utf8")
+    .split(/\r?\n/)
+    .filter((l) => l.includes("[ERROR] renderer"));
+  assert.deepEqual(errors, []);
 });
