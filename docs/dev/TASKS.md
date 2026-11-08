@@ -21,11 +21,11 @@
 ### Finish the app [2026-11-07]
 STATE:  building v1 to the plan's milestones; every decision Claude's rec under the go, recorded in the plan with its attack
 WHY:    the user wants a free, local AI film studio (docs/dev/PRD.md) and has asked for it finished
-HERE:   milestones 1–7 built, and since (2026-11-08): lip repair, fades, Make the film, the App Settings help page,
-        the voices from JustVoice, the kit's Motion capture screen and a take's pose as a shot's guide. Not yet on real
-        models: the JustVoice round trip, clips, the export, lip repair (the first clips run found the kit's idle-timer
-        bug, fixed) — they run on the card in turn with the other sessions. Then milestone 8 (the end run) — the plan's
-        "Where it stands" and "Next"
+HERE:   v1 complete (2026-11-08): every PRD row built; run on real models — the JustVoice round trip, clips, lip repair,
+        a song, a clone, Make the film end to end (RESEARCH); the end run green but the kit's fit-chip contrast (the
+        kit's TASKS, just-core 7c4849db). What remains waits for the user: the items below, and their listening and
+        watching — http://127.0.0.1:18190/review.html?set=jv, ?set=clips, ?set=film (answers in
+        E:\Dev\Web\test-just-direct\review-answers-<set>.json)
 GO:     the user, 2026-11-07: "finish the app, dont stop coding at turns or decsions, for decisions you think adverserily
         multiple times on each decision you need to make and take your own rec, do not stop to ask me to make decsions,
         complete the app until all bugs features things you find our think of to do are donel, finish the app"
@@ -55,8 +55,10 @@ HERE:   JustDirect's own speech path is gone (the Qwen3 rows, services.speak/voi
         justvoice.js (the client), voices.js (a card's voice made once, a line with its delivery, a film's lines as one
         batch after freeCard), migration 6 (cards.voice_id/voice_info, shots.delivery/emotion), the card's Their voice,
         the shot's How it's said and Feeling, the Shots tab's banner, Make the film's voices step, help; the client
-        checked against JustVoice's own fixtures, a card's voice tagged "Words changed" when its words move on.
-        Unverified until the end run.
+        checked against JustVoice's own fixtures, a card's voice tagged "Words changed" when its words move on. Run on
+        real models 2026-11-08: Mara's voice made and her line spoken as a batch, Ines's cloned from a recording inside
+        Make the film (RESEARCH). Waits for the user's ears: review.html?set=jv and ?set=film — the PRD's check is
+        "judged good by the user".
 GO:     the user, 2026-11-08: "there is a jv session running i fyou need to have it do any code changes jv needs, your
         rec think on it adverserily ... any decisions are yours to make"
 PLAN:   docs/plans/2026-11-07-v1.md "The voice decision"
@@ -95,11 +97,8 @@ STATE:  the PRD: "Lip repair (LatentSync) is offered, off by default, labelled n
         all the time"); the kit's pin moves with the family release. This repo's rule: a feature is registered the day
         it calls the engine (AGENTS.md).
 WHY:    a fallback for a talking clip whose mouth misses its voice; LTX-2.3's audio-to-video already draws the mouth
-HERE:   built 2026-11-08, not yet run on real models: Settings → General → Clips "Offer lip repair on talking clips"
-        (off), "Repair lips" on a talking clip (ClipsDialog.vue), POST /v1/clips/:id/lips (clips_api.js; LatentSync 1.6
-        Q8 row and the Lip repair preset, seed_presets.js), the frames and the line's voice joined by the kit's FFmpeg
-        (clips.js lipClipArgs), a clip past one answer's length refused (lipFramesMax: about 6 s at 1280×704, the
-        user's decision 6). The kit's FFmpeg is on audio.cpp's PATH since just-core 64b868fb. Next: a real run on
-        the card on an audio.cpp development build of JustDirect's own (JustVoice's `npm run dev` rebuilds `jv-dev`);
-        its 8 GB fit is unmeasured (9,144 MiB measured on a large card)
+HERE:   built and run on real models 2026-11-08 (RESEARCH "The second clips run"): on this 8 GB card, ~8–10 min a
+        4 s clip; the repaired clip keeps the clip's length (the voice fitted first) and is near-lossless; on a face
+        turned to the camera the mouth is redrawn in place, on a face in profile it draws a mouth beside it — the window
+        and the help say so. Waits for the user's eyes: review.html?set=clips
 GO:     the user's go to finish the app (above)
