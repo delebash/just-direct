@@ -99,7 +99,7 @@ const text = () => document.body.textContent;
 const button = (words) => [...document.body.querySelectorAll("button")].find((b) => b.textContent.includes(words));
 
 beforeEach(() => {
-  server = { calls: [], auth: { tokens: [], requireForLoopback: false }, disk: { modelsCache: 2e9, spawnLogs: 1e6, total: 3e9, diskFree: 5e10 }, clear: { ok: true }, settings: { "films.width": 1280, "films.height": 704, "cards.pictureSide": 1024, "cards.maxPictureMegabytes": 20, "cards.prompt.character": "A full-length photograph of {name}: {description}.", "cards.prompt.place": "{description}. {look}", "cards.prompt.prop": "{description}.", "cards.prompt.look": "{description}. {look}", "planner.maxShots": 24, "planner.maxTokens": 12000, "planner.wordsPerSecond": 2.5, "frames.candidates": 3, "frames.maxReferences": 3, "frames.referencePixels": 262144, "frames.check": true, "frames.prompt": "{size} {action} {cards} {look}", "clips.fps": 24, "clips.prompt": "{action} {camera} {cards} {line} {look}", "clips.negative": "", "clips.maxGuideMegabytes": 200, "voices.model": "qwen3-vd-1.7b-q8", "voices.language": "English", "voices.default": "A natural, clear adult voice, calm and unhurried.", "voices.cloneModel": "qwen3-base-1.7b-q8", "voices.sampleSeconds": 20, "voices.maxSampleMegabytes": 50, "sounds.musicSeconds": 30, "sounds.effectSeconds": 6, "sounds.steps": 8, "windows.checkSeconds": 3 } };
+  server = { calls: [], auth: { tokens: [], requireForLoopback: false }, disk: { modelsCache: 2e9, spawnLogs: 1e6, total: 3e9, diskFree: 5e10 }, clear: { ok: true }, settings: { "films.width": 1280, "films.height": 704, "cards.pictureSide": 1024, "cards.maxPictureMegabytes": 20, "cards.prompt.character": "A full-length photograph of {name}: {description}.", "cards.prompt.place": "{description}. {look}", "cards.prompt.prop": "{description}.", "cards.prompt.look": "{description}. {look}", "planner.maxShots": 24, "planner.maxTokens": 12000, "planner.wordsPerSecond": 2.5, "frames.candidates": 3, "frames.maxReferences": 3, "frames.referencePixels": 262144, "frames.check": true, "frames.prompt": "{size} {action} {cards} {look}", "clips.fps": 24, "clips.prompt": "{action} {camera} {cards} {line} {look}", "clips.negative": "", "clips.maxGuideMegabytes": 200, "clips.lipRepair": false, "clips.lipSteps": 20, "clips.lipGuidance": 1.5, "voices.justvoiceUrl": "http://127.0.0.1:17494", "voices.locale": "en-US", "voices.sampleSeconds": 20, "voices.maxSampleMegabytes": 50, "sounds.musicSeconds": 30, "sounds.effectSeconds": 6, "sounds.steps": 8, "sounds.musicFadeOut": 2, "windows.checkSeconds": 3 } };
   Object.assign(shell, { version: "", root: null, picked: null, relocated: [], keepRunning: [], oldCopies: [], removed: [], forgotten: [], oldCopiesAsked: [], usedDefault: 0 });
   setServerToken(""); // a token a test's window kept (the Server panel) isn't the next test's
   vi.stubGlobal("fetch", vi.fn(fakeFetch));
@@ -458,6 +458,19 @@ describe("General", () => {
     await flushPromises();
     const card = box.closest("section.card");
     await new DOMWrapper([...card.querySelectorAll("button")].find((b) => b.textContent.trim() === "Save")).trigger("click");
+    await flushPromises();
+    expect(server.calls.filter((c) => c[0] === "PATCH" && c[1] === "/v1/settings").map((c) => c[2])).toEqual([{ "voices.justvoiceUrl": "http://192.168.1.20:17494" }]);
+  });
+
+  test("a setting the server didn't send is never saved as null beside a change", async () => {
+    // a server without one of the card's settings (an older one, say): the card's other change saves alone
+    delete server.settings["voices.locale"];
+    await mountSettings("general");
+    const box = document.getElementById("setting-voice-justvoice");
+    box.value = "http://192.168.1.20:17494";
+    box.dispatchEvent(new Event("input"));
+    await flushPromises();
+    await new DOMWrapper([...box.closest("section.card").querySelectorAll("button")].find((b) => b.textContent.trim() === "Save")).trigger("click");
     await flushPromises();
     expect(server.calls.filter((c) => c[0] === "PATCH" && c[1] === "/v1/settings").map((c) => c[2])).toEqual([{ "voices.justvoiceUrl": "http://192.168.1.20:17494" }]);
   });

@@ -47,7 +47,7 @@ test("routing by feature lists exactly this app's features, each on its preset",
   expect(routing.statusCode).toBe(200);
   const keys = (routing.json().features || []).map((f) => f.key);
   expect(keys).toEqual(FEATURE_CATALOG.map((f) => f.key));
-  expect(keys).toEqual(["cards.paint", "plan.cards", "plan.shots", "plan.revise", "frames.paint", "frames.check", "clips.make", "sounds.music", "sounds.effect", "sounds.song"]);
+  expect(keys).toEqual(["cards.paint", "plan.cards", "plan.shots", "plan.revise", "frames.paint", "frames.check", "clips.make", "clips.lips", "sounds.music", "sounds.effect", "sounds.song"]);
 });
 
 test("the runner's cache lands in the app's data folder", () => {

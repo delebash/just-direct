@@ -326,9 +326,8 @@ describe("lip repair", () => {
     });
 
     test("LatentSync's frames and the line's voice make a new clip of the clip's own length, chosen; the old one kept", { timeout: 60_000 }, async () => {
-      // a 3 s shot's clip: 73 frames; its line's voice 3.2 s, longer than the clip
-      const { film, shot, clip } = await talkingClip();
-      expect(clip.recipe.frames).toBe(73);
+      // a clip of 49 frames (2.04 s) whose line's voice runs 3.2 s, longer than it — the voice is cut to the clip
+      const { film, shot, clip } = await talkingClip({ frames: 49 });
       const done = await settle((await repair(clip)).json());
       expect(done.state).toBe("done");
       // the request: the line's voice cut to the clip's length, the clip as LatentSync's video, the settings' steps and
@@ -336,13 +335,13 @@ describe("lip repair", () => {
       expect(lipped[0].feature).toBe("clips.lips");
       const sent = Buffer.from(lipped[0].request.audio_base64, "base64");
       expect(sent.toString("ascii", 0, 4)).toBe("RIFF");
-      expect(wavSeconds(sent)).toBeCloseTo(73 / 24, 2);
+      expect(wavSeconds(sent)).toBeCloseTo(49 / 24, 2);
       expect(lipped[0].request.options).toMatchObject({ reference_video_file: path.join(filmDir(dataDir, film.id), "clips", clip.file), fps: 24, num_inference_steps: 20, guidance_scale: 1.5 });
       expect(lipped[0].opts.timeout).toBeGreaterThan(3600);
-      // LatentSync answers 74 frames for it; the clip keeps its own 73, so the shot's timing and trims don't move
+      // LatentSync answers 50 frames for it; the clip keeps its own 49, so the shot's timing and trims don't move
       const fixed = done.result.clip;
-      expect(fixed).toMatchObject({ chosen: true, seconds: 73 / 24 });
-      expect(fixed.recipe).toMatchObject({ mode: "lips", talking: true, width: 64, height: 64, frames: 73, repairedFrom: clip.id });
+      expect(fixed).toMatchObject({ chosen: true, seconds: 49 / 24 });
+      expect(fixed.recipe).toMatchObject({ mode: "lips", talking: true, width: 64, height: 64, frames: 49, repairedFrom: clip.id });
       expect(done.result.shot.clipId).toBe(fixed.id);
       expect((await client.get(`/v1/shots/${shot.id}/clips`)).json().items.map((c) => c.id).sort()).toEqual([clip.id, fixed.id].sort());
       // a real WebM: the frames as VP9, the voice as Opus, as long as the clip
@@ -351,18 +350,21 @@ describe("lip repair", () => {
       expect(probe.streams).toEqual(
         expect.arrayContaining([expect.objectContaining({ codec_type: "video", codec_name: "vp9", width: 64, height: 64 }), expect.objectContaining({ codec_type: "audio", codec_name: "opus" })]),
       );
-      expect(Number(probe.format.duration)).toBeCloseTo(73 / 24, 1);
+      expect(Number(probe.format.duration)).toBeCloseTo(49 / 24, 1);
       // nothing left in the scratch folder
       expect(readdirSync(path.join(dataDir, "work"))).toHaveLength(0);
     });
 
     test("a line shorter than its clip is padded with silence: the repaired clip still runs the clip's length", { timeout: 60_000 }, async () => {
+      // the talking clip the app makes for a 3 s shot whose line runs 1.5 s
       const { clip } = await talkingClip({ voiceSeconds: 1.5 });
+      const n = clip.recipe.frames;
+      expect(n / 24).toBeGreaterThan(1.5);
       const done = await settle((await repair(clip)).json());
       expect(done.state).toBe("done");
-      expect(wavSeconds(Buffer.from(lipped[0].request.audio_base64, "base64"))).toBeCloseTo(73 / 24, 2);
-      expect(done.result.clip).toMatchObject({ seconds: 73 / 24 });
-      expect(done.result.clip.recipe.frames).toBe(73);
+      expect(wavSeconds(Buffer.from(lipped[0].request.audio_base64, "base64"))).toBeCloseTo(n / 24, 2);
+      expect(done.result.clip).toMatchObject({ seconds: n / 24 });
+      expect(done.result.clip.recipe.frames).toBe(n);
     });
 
     test("a clip longer than one answer can carry is refused before LatentSync runs", async () => {

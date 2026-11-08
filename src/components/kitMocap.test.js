@@ -3,11 +3,11 @@
 //
 // The kit's Motion capture screen (MocapArea, mounted by pages/MocapPage.vue) over a stand-in server in the kit's
 // shapes (just-core llm/mocap_api.js; just-mocap's brief, docs/plans/2026-11-08-justdirect-mocap-brief.md §5): the
-// engine ready, one captured take — its files to save, its foot contacts strip — and Capture again posting the take's
-// run.
+// engine ready, one captured take — its files listed, one saved (fetched from the take's folder), its foot contacts
+// strip — and Capture again posting the take's run.
 import { QUASAR_TEST_OPTIONS } from "@delebash/ui/quasar/install.js";
 import MocapArea from "@delebash/ui/views/MocapArea.vue";
-import { flushPromises, mount } from "@vue/test-utils";
+import { DOMWrapper, flushPromises, mount } from "@vue/test-utils";
 import { createPinia } from "pinia";
 import * as quasar from "quasar";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
@@ -51,6 +51,9 @@ beforeEach(() => {
   server = { calls: [], take: { ...TAKE } };
   vi.stubGlobal("fetch", vi.fn(fakeFetch));
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
+  // the browser's download takes the file as a blob URL (jsdom has none)
+  URL.createObjectURL ??= () => "blob:take-file";
+  URL.revokeObjectURL ??= () => {};
 });
 afterEach(() => {
   wrapper?.unmount();
@@ -68,10 +71,13 @@ test("the takes: one captured, its files to save, its foot contacts; Capture aga
   // the list, the take picked, its state
   expect(text()).toContain("Walk in the yard");
   expect(text()).toContain("Done");
-  // its files, each a download from the take's own folder
-  const links = [...document.body.querySelectorAll("a[href]")].map((a) => a.getAttribute("href"));
-  expect(links.some((h) => h.includes("/v1/mocap/takes/t1/files/bvh"))).toBe(true);
-  expect(links.some((h) => h.includes("/v1/mocap/takes/t1/files/fbx"))).toBe(true);
+  // its files, each with its own Download — the kit's saveUrlAs (the shell's Save dialog in the app; in a browser, the
+  // file fetched from the take's own folder and handed to the browser's download)
+  const rows = [...document.body.querySelectorAll(".take__files li")];
+  expect(rows.map((li) => li.textContent.trim())).toEqual(expect.arrayContaining([expect.stringContaining("FBX"), expect.stringContaining("BVH")]));
+  await new DOMWrapper(rows.find((li) => li.textContent.includes("BVH")).querySelector("button")).trigger("click");
+  await settle();
+  expect(server.calls.some(([m, p]) => m === "GET" && p === "/v1/mocap/takes/t1/files/bvh")).toBe(true);
   // the contacts strip, a row per foot with where it is planted
   const strips = [...document.body.querySelectorAll(".contacts__strip")].map((s) => s.getAttribute("aria-label"));
   expect(strips).toHaveLength(2);

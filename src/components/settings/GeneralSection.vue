@@ -123,7 +123,9 @@ const serverErrors = ref({});
 const saving = ref(""); // the card being saved
 const loaded = ref(false);
 
-const changedKeys = (group) => (loaded.value ? group.fields.map((f) => f.key).filter((k) => draft[k] !== settings.values[k]) : []);
+// a field is changed when its value differs from the server's; a setting the server didn't send is the draft's null, not
+// a change — sending it would save null over it
+const changedKeys = (group) => (loaded.value ? group.fields.map((f) => f.key).filter((k) => draft[k] !== (settings.values[k] ?? null)) : []);
 
 onMounted(async () => {
   try {
