@@ -39,10 +39,28 @@ export const DEFAULT_ENGINE_PRESETS = [
     params: { steps: 4, cfg: 1, strength: 1, sampler: "euler" },
     position: 1,
   },
+  // The planner: thinking on with room to finish — the local "medium" level, 4,096 tokens (the kit's reasoning map),
+  // the budget its test passed with; the test's 1,500 ran out before the answer every time (feasibility §J.3). The
+  // model is the one the user sets up (Quick Setup picks Gemma 4 26B-A4B on 8 GB, the model tested).
+  {
+    id: "p_plan",
+    name: "Planning",
+    provider_id: "local-llamacpp",
+    model: "",
+    temperature: 0.7,
+    top_p: 0.95,
+    position: 2,
+    think: true,
+    reasoning_effort: "medium",
+    samplers: { min_p: "0.05" },
+  },
 ];
 
 export const DEFAULT_FEATURE_PRESETS = {
   "cards.paint": "p_cards",
+  "plan.cards": "p_plan",
+  "plan.shots": "p_plan",
+  "plan.revise": "p_plan",
 };
 
 export const DEFAULT_PRESET_ID = "p_general";

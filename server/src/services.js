@@ -3,14 +3,17 @@
 // is the donor). Each one is the kit's own run — the feature's preset picks the engine and model (app-structure §19):
 // nothing here starts an engine or names a model.
 
-import { runImageFeature } from "@delebash/core/llm";
+import { buildLlmConfig, runAction, runImageFeature, stores } from "@delebash/core/llm";
 
-/** The routes' AI work; `overrides` replaces some (a test's fake painter). */
+/** The routes' AI work; `overrides` replaces some (a test's fake painter or planner). */
 export function createServices(overrides = {}) {
   return {
     /** Paint a picture with image feature `feature`: `request` `{prompt, width, height, refs, seed}` (PNG Buffers) →
      *  a PNG Buffer. `onProgress({fraction})`, `signal` cancels. */
     paintImage: (feature, request, opts = {}) => runImageFeature(feature, request, opts),
+    /** Run a chat action (the kit's RunRequest: `action`, `variables`, `jsonSchema`, `maxTokens`, `images`) → its
+     *  LLMResponse (`content`). `signal` cancels. */
+    run: (body, opts = {}) => runAction(stores.getPromptStore(), buildLlmConfig(), body, opts),
     ...overrides,
   };
 }

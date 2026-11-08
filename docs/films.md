@@ -39,6 +39,24 @@ use it to keep the same face and clothes.
 Painting runs on the **AI tasks** strip, so you can keep working while it paints; the card's picture
 changes when it's done. Deleting a card asks first.
 
+## Shots
+
+The film's shots in order. **Plan the shots** asks the AI to plan the film from its story: first it
+adds a card for each character, place and prop the story needs that the film doesn't have yet (your
+own cards stay as they are), then it plans every shot — how it is framed and how the camera moves,
+what happens, where, who and what is in it, the line spoken and by whom, how long it runs and how it
+joins the next. On a local model this takes a few minutes; it runs on the **AI tasks** strip.
+**Plan again** replaces the shots, with their first frames and clips, so it asks first.
+
+Every shot can be changed by hand (**✎**), moved earlier or later (**↑ ↓**), deleted, or added
+(**Add a shot**). A shot you changed is marked **Changed by you**. After a change, the tab offers to
+**Carry it forward**: the AI rewrites the later shots your change affects — a prop that's gone
+leaves them, a coat now worn stays on — and never touches a shot you changed yourself. Say what
+changed in your own words in the box beside it; it helps.
+
+A shot with a line runs at least as long as it takes to say it (**App Settings → General →
+Planning**).
+
 ## Deleting a film
 
 On **Films**, a film's **⋯** menu has **Delete film**. It asks first: the film and everything in it —

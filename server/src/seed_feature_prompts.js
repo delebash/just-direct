@@ -8,5 +8,9 @@
 //
 // The prompt text is what the model reads, so it stays English on purpose (§Q.11). An image
 // feature (cards.paint) has no prompt row: its words are the card's, through Settings → Pictures.
+// The planner's three rows are planner.js's (the prompts its test passed with); each run sends the
+// schema it builds from the film.
 
-export const DEFAULT_FEATURE_PROMPTS = {};
+import { PLANNER_PROMPTS } from "./planner.js";
+
+export const DEFAULT_FEATURE_PROMPTS = { ...PLANNER_PROMPTS };

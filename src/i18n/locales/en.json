@@ -74,7 +74,89 @@
     "tabs": {
       "label": "The film's work",
       "story": "Story",
-      "cards": "Cards"
+      "cards": "Cards",
+      "shots": "Shots"
+    }
+  },
+  "shots": {
+    "total": "{n} shots · {s} s",
+    "add": "Add a shot",
+    "addButton": "Add",
+    "newTitle": "New shot",
+    "editTitle": "Shot {n}",
+    "edit": "Edit shot {n}",
+    "moveUp": "Move shot {n} earlier",
+    "moveDown": "Move shot {n} later",
+    "seconds": "{s} s",
+    "noSize": "Shot",
+    "noAction": "Nothing written yet.",
+    "someone": "Someone",
+    "editedTag": "Changed by you",
+    "editedHint": "You changed this shot by hand: planning carries changes around it, never into it.",
+    "empty": {
+      "title": "No shots yet",
+      "message": "The AI plans the shots from the story: how each is framed, what happens, who is in it and what they say. You can change any of it.",
+      "noStory": "Write the story first — the shots are planned from it. Or add shots by hand.",
+      "writeStory": "Write the story"
+    },
+    "plan": {
+      "button": "Plan the shots",
+      "again": "Plan again",
+      "running": "Planning…",
+      "hint": "The AI reads the story, adds the cards it needs, then plans every shot — a few minutes on a local model.",
+      "needsStory": "Write the story first, on the Story tab.",
+      "task": "Planning {title}",
+      "done": "{shots} shots planned · {cards} new cards",
+      "againTitle": "Plan the film again?",
+      "againMessage": "The {n} shots it has now are replaced, with their first frames and clips. Your cards stay. This can't be undone.",
+      "againConfirm": "Plan again"
+    },
+    "carry": {
+      "offer": "You changed shot {n}. Carry the change into the later shots? The AI rewrites the ones it affects and leaves the ones you changed yourself.",
+      "note": "What changed",
+      "notePlaceholder": "What changed, in your words — “there is no thermos now; Teo keeps the coat”",
+      "button": "Carry it forward",
+      "running": "Carrying…",
+      "dismiss": "Not now",
+      "task": "Carrying shot {n}'s change forward",
+      "done": "{n} later shots rewritten",
+      "none": "No later shot needed a change"
+    },
+    "fields": {
+      "size": "Framing",
+      "camera": "Camera",
+      "cameraHint": "How the camera moves — “static”, “slow push in”, “pan left”, “tracking beside her”.",
+      "action": "What happens",
+      "actionHint": "One or two sentences. A card's look comes from its card, so there's no need to repeat it here.",
+      "place": "Place",
+      "noPlace": "No place",
+      "cards": "Who and what is in it",
+      "cardsHint": "The cards whose pictures keep them the same in this shot.",
+      "line": "Line",
+      "lineHint": "The words spoken in the shot, if any.",
+      "speaker": "Spoken by",
+      "noSpeaker": "Someone",
+      "seconds": "Seconds",
+      "transition": "Into the next shot"
+    },
+    "sizes": {
+      "extreme_wide": "Extreme wide",
+      "wide": "Wide",
+      "medium": "Medium",
+      "medium_close_up": "Medium close-up",
+      "close_up": "Close-up",
+      "extreme_close_up": "Extreme close-up"
+    },
+    "transitions": {
+      "cut": "Cut",
+      "dissolve": "Dissolve",
+      "fade": "Fade"
+    },
+    "delete": {
+      "action": "Delete shot {n}",
+      "title": "Delete this shot?",
+      "message": "Shot {n}, with its first frames, clips and line, will be deleted. This can't be undone.",
+      "confirm": "Delete shot"
     }
   },
   "cards": {
@@ -149,6 +231,11 @@
       "cardsHint": "The long side a card's picture is painted at, and the largest picture file a card takes.",
       "pictureSide": "Long side (pixels)",
       "maxPictureMegabytes": "Largest picture file (MB)",
+      "plannerTitle": "Planning",
+      "plannerHint": "Plan the shots: the most shots a plan may have, the room the AI has for each answer with its thinking (a larger number lets a long story finish; a smaller one is quicker), and how fast a line is spoken — a shot with a line runs at least as long as it takes to say it.",
+      "maxShots": "Most shots in a plan",
+      "maxTokens": "Room for each answer (tokens)",
+      "wordsPerSecond": "Words spoken a second",
       "windowsTitle": "Other windows",
       "windowsHint": "The app open in more than one place at once — the desktop app, a browser on this server, a phone: how often each one looks for what the others changed. It shows their changes by itself.",
       "checkSeconds": "Look for other windows' changes every (seconds)",

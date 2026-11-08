@@ -35,6 +35,17 @@ const GROUPS = [
       { key: "cards.maxPictureMegabytes", id: "setting-max-picture", label: "settings.general.maxPictureMegabytes" },
     ],
   },
+  // the planner: the most shots a plan may have, the room each answer has, how fast a line is spoken
+  {
+    id: "planner",
+    title: "settings.general.plannerTitle",
+    hint: "settings.general.plannerHint",
+    fields: [
+      { key: "planner.maxShots", id: "setting-max-shots", label: "settings.general.maxShots" },
+      { key: "planner.maxTokens", id: "setting-max-tokens", label: "settings.general.maxTokens", step: 500 },
+      { key: "planner.wordsPerSecond", id: "setting-words-per-second", label: "settings.general.wordsPerSecond", step: 0.1 },
+    ],
+  },
   // the words each kind of card's picture is painted from
   {
     id: "prompts",

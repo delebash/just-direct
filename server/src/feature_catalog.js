@@ -20,4 +20,25 @@ export const FEATURE_CATALOG = [
     group: "Cards",
     kind: "image",
   }),
+  // The planner (POST /v1/films/:id/plan, a job; planner.js): three passes on the same thinking preset, each answer held
+  // to a schema built from the film — the cards, then the shots; and the revision after a hand edit (POST
+  // /v1/shots/:id/carry). Gemma 4 26B-A4B with thinking on is what was tested (feasibility §J.3).
+  FeatureCatalogEntry({
+    key: "plan.cards",
+    label: "Find the story's cards",
+    hint: "Reads the story and makes a card for each character, place and prop it needs that the film doesn't have yet — the first step of Plan the shots.",
+    group: "Planning",
+  }),
+  FeatureCatalogEntry({
+    key: "plan.shots",
+    label: "Plan the shots",
+    hint: "Breaks the story into shots in order: how each is framed and moves, what happens, who and what is in it, the line spoken — Plan the shots on a film's Shots tab.",
+    group: "Planning",
+  }),
+  FeatureCatalogEntry({
+    key: "plan.revise",
+    label: "Carry a change forward",
+    hint: "After you change a shot by hand, rewrites the later shots your change affects — a prop that's gone, a coat now worn — and leaves the ones you changed yourself.",
+    group: "Planning",
+  }),
 ];

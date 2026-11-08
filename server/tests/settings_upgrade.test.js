@@ -24,6 +24,9 @@ const TODAY = {
   "cards.prompt.place": "c639ed750f83ea61",
   "cards.prompt.prop": "895aa78746aa882d",
   "cards.prompt.look": "65e0bd3396eee9b8",
+  "planner.maxShots": "c2356069e9d1e79c",
+  "planner.maxTokens": "c5d1866aabc15dda",
+  "planner.wordsPerSecond": "b8736b9999090496",
   "windows.checkSeconds": "4e07408562bedb8b",
 };
 

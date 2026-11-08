@@ -28,6 +28,7 @@ import { getDb, getState } from "../app_state.js";
 import * as films from "../database/films.js";
 import { SETTING_DEFAULTS } from "../database/seed.js";
 import { getSetting } from "../database/settings.js";
+import { dropCardFromShots } from "../database/shots.js";
 import { ensureFilmDirs, fileName, filmFile, removeFile, removeFilmDirs, writeWhole } from "../files.js";
 import { CardIn, CardPatch, FilmIn, FilmPatch, IdParams, PaintIn } from "../schemas/films.js";
 
@@ -183,6 +184,8 @@ export function router() {
     const card = mustCard(id, c.req.header("if-match") ?? null);
     const running = getState().jobs?.running("card-paint", id);
     if (running) getState().jobs.cancel(running.id);
+    // it leaves the shots that named it (their card list, place or speaker)
+    dropCardFromShots(getDb(), card.filmId, id);
     if (!films.deleteCard(getDb(), id)) throw notFound(`There is no card with the id ${id}.`);
     const old = fileName(card.picture, "png");
     if (old) await removeFile(filmFile(getState().dataDir, card.filmId, "cards", old));

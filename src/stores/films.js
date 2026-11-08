@@ -25,6 +25,12 @@ export const useFilmsStore = defineStore("films", {
     cardsLoaded: false,
     // cards whose picture is being painted: id → true
     painting: {},
+    // the open film's shots, in film order
+    shots: [],
+    shotsLoaded: false,
+    // the film being planned, and the shot whose change is being carried forward
+    planning: false,
+    carrying: null,
   }),
   getters: {
     cardsOf: (state) => (kind) => state.cards.filter((c) => c.kind === kind),
@@ -51,18 +57,77 @@ export const useFilmsStore = defineStore("films", {
       if (this.film?.id === film.id) this.film = null;
     },
 
-    /** Open a film: it and its cards. */
+    /** Open a film: it, its cards and its shots. */
     async open(id) {
       if (this.film?.id !== id) {
         this.film = null;
         this.cards = [];
         this.cardsLoaded = false;
+        this.shots = [];
+        this.shotsLoaded = false;
       }
-      const [film, cards] = await Promise.all([get(`/v1/films/${enc(id)}`), get(`/v1/films/${enc(id)}/cards`)]);
+      const [film, cards, shots] = await Promise.all([get(`/v1/films/${enc(id)}`), get(`/v1/films/${enc(id)}/cards`), get(`/v1/films/${enc(id)}/shots`)]);
       this.film = film;
       this.cards = cards.items;
       this.cardsLoaded = true;
+      this.shots = shots.items;
+      this.shotsLoaded = true;
       return film;
+    },
+    async loadShots() {
+      this.shots = (await get(`/v1/films/${enc(this.film.id)}/shots`)).items;
+      this.shotsLoaded = true;
+    },
+    async addShot(input) {
+      const shot = await post(`/v1/films/${enc(this.film.id)}/shots`, input);
+      await this.loadShots();
+      return shot;
+    },
+    async saveShot(shot, changes) {
+      const saved = await patchJson(`/v1/shots/${enc(shot.id)}`, changes, ...ifMatch(shot.version));
+      this.shots = this.shots.map((s) => (s.id === saved.id ? saved : s));
+      return saved;
+    },
+    async removeShot(shot) {
+      await del(`/v1/shots/${enc(shot.id)}`, ...ifMatch(shot.version));
+      await this.loadShots();
+    },
+    /** Move a shot one place earlier (-1) or later (+1). */
+    async moveShot(shot, by) {
+      const ids = this.shots.map((s) => s.id);
+      const i = ids.indexOf(shot.id);
+      const j = i + by;
+      if (i < 0 || j < 0 || j >= ids.length) return;
+      [ids[i], ids[j]] = [ids[j], ids[i]];
+      this.shots = (await post(`/v1/films/${enc(this.film.id)}/shots/order`, { ids })).items;
+    },
+    /** The AI plans the film from its story: the cards it needs, then the shots (a server job on the AI tasks strip). */
+    async plan(label, { replace = false } = {}) {
+      this.planning = true;
+      try {
+        const done = await runServerJob({
+          start: () => post(`/v1/films/${enc(this.film.id)}/plan`, { replace }),
+          feature: "plan.shots",
+          label,
+          meta: { filmId: this.film.id },
+          describe: (job, pct) => (job.message ? `${job.message} · ${pct}%` : `${pct}%`),
+        });
+        return done?.result ?? null;
+      } finally {
+        this.planning = false;
+        await this.open(this.film.id).catch(() => {});
+      }
+    },
+    /** A hand edit to `shot` carried into the later shots nobody changed by hand (a server job). */
+    async carry(shot, note, label) {
+      this.carrying = shot.id;
+      try {
+        const done = await runServerJob({ start: () => post(`/v1/shots/${enc(shot.id)}/carry`, { note }), feature: "plan.revise", label, meta: { shotId: shot.id } });
+        return done?.result ?? null;
+      } finally {
+        this.carrying = null;
+        await this.loadShots().catch(() => {});
+      }
     },
     async saveFilm(changes) {
       const film = await patchJson(`/v1/films/${enc(this.film.id)}`, changes, ...ifMatch(this.film.version));

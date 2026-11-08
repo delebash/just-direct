@@ -8,6 +8,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import CardsPanel from "../components/film/CardsPanel.vue";
+import ShotsPanel from "../components/film/ShotsPanel.vue";
 import StoryPanel from "../components/film/StoryPanel.vue";
 import { useFilmsStore } from "../stores/films.js";
 import { useSettingsStore } from "../stores/settings.js";
@@ -24,6 +25,7 @@ const settings = useSettingsStore();
 const TABS = computed(() => [
   { id: "story", label: t("film.tabs.story") },
   { id: "cards", label: t("film.tabs.cards") },
+  { id: "shots", label: t("film.tabs.shots") },
 ]);
 const active = computed(() => (TABS.value.some((x) => x.id === props.tab) ? props.tab : "story"));
 const pick = (tab) => router.replace(`/films/${props.id}/${tab}`);
@@ -75,6 +77,7 @@ const failedReason = computed(() => {
       <div v-bind="tabPanelAttrs('film', active)" class="film__panel">
         <StoryPanel v-if="active === 'story'" :key="`story-${film.id}`" />
         <CardsPanel v-else-if="active === 'cards'" :key="`cards-${film.id}`" />
+        <ShotsPanel v-else-if="active === 'shots'" :key="`shots-${film.id}`" @go="pick" />
       </div>
     </template>
     <q-inner-loading v-else :showing="true" :label="t('kit.common.loading')" />

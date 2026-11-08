@@ -33,6 +33,11 @@ export const SETTING_DEFAULTS = {
   "cards.prompt.place": "{description}. A wide photograph of the place, with no people in it. {look}",
   "cards.prompt.prop": "{description}. A photograph of the object alone on a plain light grey background, soft even light, sharp focus.",
   "cards.prompt.look": "{description}. {look}",
+  // The planner (Settings → General): at most 24 shots (the planner test's schema), 12,000 tokens an answer (its
+  // passes needed up to 10,000 with a 4,096 thinking budget), lines spoken at 2.5 words a second (150 a minute).
+  "planner.maxShots": 24,
+  "planner.maxTokens": 12000,
+  "planner.wordsPerSecond": 2.5,
   // How often a window looks for what other windows changed on this server, in seconds (Settings → General — the
   // kit's GET /v1/sync/rev `pollSeconds`).
   "windows.checkSeconds": 3,

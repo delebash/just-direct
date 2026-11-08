@@ -44,6 +44,7 @@ import { router as healthRouter } from "./api/health_api.js";
 import { router as prefsRouter } from "./api/prefs_api.js";
 import { router as serverAuthRouter } from "./api/server_auth_api.js";
 import { router as settingsRouter } from "./api/settings_api.js";
+import { router as shotsRouter } from "./api/shots_api.js";
 import { AppState, setState } from "./app_state.js";
 import { readAuth } from "./auth.js";
 import { router as dataRouter } from "./data_admin.js";
@@ -202,6 +203,7 @@ export async function createApp(dataDir = null, { services = {} } = {}) {
   // 7. The app's own routes.
   app.route("/", settingsRouter());
   app.route("/", filmsRouter());
+  app.route("/", shotsRouter());
 
   // 8. The built UI, served for the headless path — a browser at this address is the whole app
   // (the kit's serveUi: a write there 405, hashed files kept, the rest revalidated). Every /v1 route

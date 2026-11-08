@@ -25,6 +25,11 @@ export const SETTINGS = {
   "cards.prompt.place": PromptTemplate,
   "cards.prompt.prop": PromptTemplate,
   "cards.prompt.look": PromptTemplate,
+  // The planner: the most shots a plan may have, the room each answer has (thinking included), and how fast a line is
+  // spoken (a shot with a line runs at least as long as it takes to say it).
+  "planner.maxShots": T.Integer({ minimum: 1, maximum: 60 }),
+  "planner.maxTokens": T.Integer({ minimum: 2000, maximum: 32768 }),
+  "planner.wordsPerSecond": T.Number({ minimum: 1, maximum: 5 }),
   // How often a window looks for what other windows changed on this server, in seconds.
   "windows.checkSeconds": T.Integer({ minimum: 1, maximum: 60 }),
 };
