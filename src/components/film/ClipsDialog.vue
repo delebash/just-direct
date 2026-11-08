@@ -72,10 +72,14 @@ async function onGuide(file) {
 // follows; the kit's take file "pose"), fetched from the take and added as the shot's guide video
 const takes = ref(null);
 const takeId = ref(null);
+// captured takes made before the kit wrote a pose file (its engine r4): they lead nothing until captured again
+const poseless = ref(0);
 const TAKES = computed(() => (takes.value ?? []).map((x) => ({ value: x.id, label: x.name })));
 async function loadTakes() {
   try {
-    takes.value = ((await get("/v1/mocap/takes")).takes ?? []).filter((x) => x.state === "done" && x.files?.includes("pose"));
+    const done = ((await get("/v1/mocap/takes")).takes ?? []).filter((x) => x.state === "done");
+    takes.value = done.filter((x) => x.files?.includes("pose"));
+    poseless.value = done.length - takes.value.length;
     takeId.value = takes.value[0]?.id ?? null;
   } catch {
     takes.value = [];
@@ -166,6 +170,7 @@ async function remove(c) {
           <UiButton intent="secondary" size="small" :disabled="busy || !takeId" :label="t('clips.useTake')" @click="useTake" />
         </template>
         <span v-else-if="takes" class="muted">{{ t("clips.noTakes") }}</span>
+        <span v-if="poseless" class="muted">{{ t("clips.poselessTakes", { n: poseless }, poseless) }}</span>
       </div>
       <p v-if="!current.frameId" class="hint">{{ t("clips.noFrame") }}</p>
 

@@ -68,6 +68,13 @@ export async function pathFrames(paths, { frames, width, height }) {
   return out;
 }
 
+/** FFmpeg's filter that reads a guide video at the clip's rate and the film's size: fitted whole inside the frame and
+ *  centred on black, never cropped — a phone's upright take keeps the head and feet of its skeleton, and black is the
+ *  background a pose, depth or edges guide already has (FFmpeg's scale `force_original_aspect_ratio=decrease` then
+ *  `pad`, its documented fit-into-a-box pattern; the even sizes the encoders want come from the film's). */
+export const guideFilter = (fps, width, height) =>
+  `fps=${fps},scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1`;
+
 /** A guide video's frames fitted to the clip: as many as it has frames (the last held, or the rest cut). */
 export function fitGuide(frames, count) {
   if (!frames.length) return [];

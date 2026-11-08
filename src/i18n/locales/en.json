@@ -261,6 +261,7 @@
     "fromTake": "Or from a motion capture take",
     "useTake": "Use its pose",
     "noTakes": "A motion capture take can lead the clip too: capture one under Motion capture, and its pose shows here.",
+    "poselessTakes": "One take was captured before takes kept their pose: open it under Motion capture and press Capture again from the start to use it here. | {n} takes were captured before takes kept their pose: open one under Motion capture and press Capture again from the start to use it here.",
     "make": "Make the clip",
     "makeAnother": "Make another",
     "making": "Making…",

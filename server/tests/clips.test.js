@@ -5,7 +5,7 @@
 // delete, the refusals. And the method's own pieces.
 import { constants } from "node:buffer";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -92,6 +92,12 @@ async function filmWithShot(shot = {}) {
 }
 const makeClip = async (shotId) => settle((await client.post(`/v1/shots/${shotId}/clips`, { json: {} })).json());
 
+// this computer's FFmpeg — the kit's pinned build the test bench installed, or JD_TEST_FFMPEG
+const FFMPEG =
+  process.env.JD_TEST_FFMPEG || "E:\\Dev\\Web\\test-just-direct\\ai-cache\\kit-ffmpeg\\ffmpeg\\9.0.2\\cpu\\ffmpeg-9.0.2-essentials_build\\bin\\ffmpeg.exe";
+const FFPROBE = path.join(path.dirname(FFMPEG), process.platform === "win32" ? "ffprobe.exe" : "ffprobe");
+const realFfmpeg = existsSync(FFMPEG) && existsSync(FFPROBE);
+
 describe("a shot's clip", () => {
   test("one pass from its chosen first frame: the film's size, 8n+1 frames at 24 a second; saved and chosen", async () => {
     const { film, shot } = await filmWithShot();
@@ -177,6 +183,28 @@ describe("a shot's clip", () => {
     // taken off: the frames go, the mode back to the app's pick
     const off = await client.delete(`/v1/shots/${shot.id}/guide`);
     expect(off.json()).toMatchObject({ mode: "auto", guideFrames: 0 });
+  });
+
+  test.skipIf(!realFfmpeg)("an upright guide video is read whole, centred on black — a take's skeleton keeps its head and feet", { timeout: 60_000 }, async () => {
+    expect((await client.put("/v1/ai/runtimes/ffmpeg/settings", { json: { settings: { path: FFMPEG } } })).statusCode).toBe(200);
+    const { film, shot } = await filmWithShot({ seconds: 2 });
+    // a phone's upright take: 1 s of white at 180×320, 30 a second (a motion capture take's pose file's rate)
+    const src = path.join(tmpDir(), "upright.mp4");
+    execFileSync(FFMPEG, ["-v", "error", "-y", "-f", "lavfi", "-i", "color=c=white:s=180x320:r=30:d=1", "-c:v", "libx264", "-pix_fmt", "yuv420p", src]);
+    const form = new FormData();
+    form.append("file", new Blob([readFileSync(src)], { type: "video/mp4" }), "upright.mp4");
+    const r = await client.app.request(`http://testserver/v1/shots/${shot.id}/guide`, { method: "POST", body: form, headers: { host: "testserver" } });
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({ mode: "guide", guideFrames: 24 }); // 1 s at the clips' 24 a second
+    const first = path.join(filmDir(dataDir, film.id), "guides", shot.id, "00000.png");
+    const { data, info } = await sharp(first).raw().toBuffer({ resolveWithObject: true });
+    expect([info.width, info.height]).toEqual([film.width, film.height]);
+    const at = (x, y) => data[(y * info.width + x) * info.channels];
+    // the middle's top and bottom rows are the video's (nothing cut), the sides the black it is centred on
+    expect(at(info.width / 2, 0)).toBeGreaterThan(200);
+    expect(at(info.width / 2, info.height - 1)).toBeGreaterThan(200);
+    expect(at(0, info.height / 2)).toBeLessThan(30);
+    expect(at(info.width - 1, info.height / 2)).toBeLessThan(30);
   });
 
   test("chosen by hand; another shot's clip refused; a deleted chosen clip hands the choice on; a deleted shot takes its clips", async () => {
@@ -285,10 +313,7 @@ describe("lip repair", () => {
     expect(lipped).toHaveLength(0);
   });
 
-  const FFMPEG =
-    process.env.JD_TEST_FFMPEG || "E:\\Dev\\Web\\test-just-direct\\ai-cache\\kit-ffmpeg\\ffmpeg\\9.0.2\\cpu\\ffmpeg-9.0.2-essentials_build\\bin\\ffmpeg.exe";
-  const FFPROBE = path.join(path.dirname(FFMPEG), process.platform === "win32" ? "ffprobe.exe" : "ffprobe");
-  describe.skipIf(!(existsSync(FFMPEG) && existsSync(FFPROBE)))("with this computer's FFmpeg", () => {
+  describe.skipIf(!realFfmpeg)("with this computer's FFmpeg", () => {
     beforeEach(async () => {
       expect((await client.put("/v1/ai/runtimes/ffmpeg/settings", { json: { settings: { path: FFMPEG } } })).statusCode).toBe(200);
       await turnOn();

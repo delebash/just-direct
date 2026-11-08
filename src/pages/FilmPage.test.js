@@ -4,7 +4,7 @@
 // A film's page mounted for real (app-structure §18) against a stand-in server in the real one's shapes: the tab in the
 // address; the Story form's save with its version; a card added on the Cards tab; Plan the shots as a server job on the
 // AI tasks strip (its result read again); a hand edit to a shot, then Carry it forward with the user's note; a line
-// spoken and played; the Cut tab's trims, transitions, export and music.
+// spoken and played; a motion capture take's pose as a clip's guide; the Cut tab's trims, transitions, export and music.
 import { installLlmUi, LlmUiHosts, useResolvedRoute } from "@delebash/ui";
 import { QUASAR_TEST_OPTIONS } from "@delebash/ui/quasar/install.js";
 import { DOMWrapper, flushPromises, mount } from "@vue/test-utils";
@@ -136,6 +136,16 @@ function fakeFetch(input, init = {}) {
     return Promise.resolve(json({ id: "job-make", state: "done", progress: 1, result: { steps } }));
   }
   if (p === "/v1/jobs/job-carry") return Promise.resolve(json({ id: "job-carry", state: "done", progress: 1, result: { why: "Teo keeps the coat.", changed: ["s3"] } }));
+  // a shot's clips; the kit's motion capture takes (just-core llm/mocap_api.js), a take's pose file, a guide video added
+  if (/^\/v1\/shots\/s\d+\/clips$/.test(p) && method === "GET") return Promise.resolve(json({ items: [] }));
+  if (p === "/v1/mocap/takes") return Promise.resolve(json({ takes: server.takes }));
+  if (p === "/v1/mocap/takes/t1/files/pose") return Promise.resolve(new Response(new Blob([new Uint8Array([0, 0, 0, 24])], { type: "video/mp4" })));
+  if (/^\/v1\/shots\/s\d+\/guide$/.test(p) && method === "POST") {
+    const id = p.split("/")[3];
+    server.guideFile = init.body.get("file");
+    server.shots = server.shots.map((s) => (s.id === id ? { ...s, mode: "guide", guideFrames: 24, version: '"g"' } : s));
+    return Promise.resolve(json(server.shots.find((s) => s.id === id)));
+  }
   return Promise.resolve(json({}));
 }
 const shot = (n, action) => ({
@@ -180,7 +190,7 @@ const settle = async () => {
 };
 
 beforeEach(() => {
-  server = { calls: [], n: 1, film: { id: "f1", title: "The Last Ferry", story: "", look: "", width: 1280, height: 704, version: '"v1"' }, cards: [], shots: [], sounds: [], exported: null, route: { configured: true } };
+  server = { calls: [], n: 1, film: { id: "f1", title: "The Last Ferry", story: "", look: "", width: 1280, height: 704, version: '"v1"' }, cards: [], shots: [], sounds: [], takes: [], guideFile: null, exported: null, route: { configured: true } };
   reported.length = 0;
   // the kit keeps resolved routes for the session: each test asks its own server
   useResolvedRoute().invalidateRoutes();
@@ -338,6 +348,28 @@ test("Shots: Speak runs as a job and the spoken line plays; a line changed after
   await wrapper.unmount();
   await mountPage("/films/f1/shots");
   expect(text()).toContain("Words changed");
+});
+
+test("Shots: a motion capture take's pose leads a clip; a take captured before takes kept their pose says so", async () => {
+  server.film.story = "x";
+  server.shots = [{ ...shot(1, "Mara crosses the deck."), mode: "guide", guideFrames: 0 }];
+  server.takes = [
+    { id: "t1", name: "Walk to the door", state: "done", files: ["bvh", "fbx", "pose"] },
+    { id: "t0", name: "Before r4", state: "done", files: ["bvh", "fbx"] },
+    { id: "t2", name: "Still running", state: "running", files: [] },
+  ];
+  await mountPage("/films/f1/shots");
+  await click(document.querySelector('[aria-label="Shot 1\'s clip"]'));
+  expect(text()).toContain("No guide video yet.");
+  expect(text()).toContain("Or from a motion capture take");
+  expect(text()).toContain("One take was captured before takes kept their pose");
+  await click(byText("button", "Use its pose"));
+  // the take's pose file, fetched from the kit's take, is the shot's guide video
+  expect(server.calls.some((c) => c[0] === "GET" && c[1] === "/v1/mocap/takes/t1/files/pose")).toBe(true);
+  expect(server.guideFile.name).toBe("Walk to the door-pose.mp4");
+  expect(server.guideFile.type).toBe("video/mp4");
+  expect(text()).toContain("Guide video: 24 frames");
+  expect(reported).toEqual([]);
 });
 
 test("Cut: a shot without a clip is left out; a trim and a transition save; Export runs as a job and plays the film", async () => {

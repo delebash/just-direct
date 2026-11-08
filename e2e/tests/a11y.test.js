@@ -14,6 +14,7 @@ import { Driver } from "../lib/driver.js";
 // WCAG 2.0, 2.1 and 2.2, levels A and AA — axe's tags (github.com/dequelabs/axe-core/blob/develop/doc/API.md)
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const PAGES = [
+  { nav: "Motion capture", url: /#\/mocap$/ },
   { nav: "AI Settings", url: /#\/ai$/ },
   { nav: "App Settings", url: /#\/settings/ },
   { nav: "Films", url: /#\/$/ },

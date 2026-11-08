@@ -39,7 +39,7 @@ test("the shell mounts: the title bar, the nav and the AI status button", async 
   await page.locator(".titlebar").waitFor();
   await page.locator(".shell__nav").waitFor();
   const labels = await page.locator(".shell__nav .navlink").allTextContents();
-  for (const word of ["Films", "AI Settings", "App Settings", "AI tasks"]) {
+  for (const word of ["Films", "Motion capture", "AI Settings", "App Settings", "AI tasks"]) {
     assert.ok(labels.some((l) => l.includes(word)), `the nav has "${word}" (${labels.join(" | ")})`);
   }
   assert.equal(await page.locator(".titlebar .ai-status-btn").count(), 1, "the kit's AiStatusButton is in the title bar");
@@ -49,7 +49,11 @@ test("the boot plate is gone once the app shows", async () => {
   assert.equal(await page.locator("#app-boot").count(), 0);
 });
 
-test("the nav works: AI Settings, App Settings and Films open their pages", async () => {
+test("the nav works: Motion capture, AI Settings, App Settings and Films open their pages", async () => {
+  // the kit's Motion capture screen (MocapArea) mounts inside the app's page, its readiness asked of the server
+  await page.locator(".navlink", { hasText: "Motion capture" }).click();
+  await page.waitForURL(/#\/mocap$/);
+  await page.locator(".pane-h1", { hasText: "Motion capture" }).waitFor();
 
   await page.locator(".navlink", { hasText: "AI Settings" }).click();
   await page.waitForURL(/#\/ai$/);

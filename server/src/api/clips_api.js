@@ -23,7 +23,7 @@ import { getLogger } from "@delebash/core/platform/log";
 import { ffmpegExe, runFfmpeg } from "@delebash/core/runner/ffmpeg";
 import sharp from "sharp";
 import { getDb, getState } from "../app_state.js";
-import { clipPrompt, fitGuide, frameCount, half, LONG_TAKE_HIRES, lipClipArgs, lipFramesMax, modeOf, pathFrames, wavSeconds } from "../clips.js";
+import { clipPrompt, fitGuide, frameCount, guideFilter, half, LONG_TAKE_HIRES, lipClipArgs, lipFramesMax, modeOf, pathFrames, wavSeconds } from "../clips.js";
 import * as clips from "../database/clips.js";
 import * as films from "../database/films.js";
 import * as frames from "../database/frames.js";
@@ -297,7 +297,8 @@ export function router() {
     return c.json(job, 202);
   });
 
-  // a guide video: its frames read at the film's size and the clips' frame rate by the kit's FFmpeg, kept as PNGs
+  // a guide video: its frames read at the film's size (fitted whole, on black) and the clips' frame rate by the kit's
+  // FFmpeg, kept as PNGs
   const maxGuideBytes = () => setting("clips.maxGuideMegabytes") * 1024 * 1024;
   app.post("/v1/shots/:id/guide", uploadLimit(() => maxGuideBytes() + 64 * 1024, { slug: "file-too-large", title: "File too large" }), input({ params: IdParams }), async (c) => {
     const shot = mustShot(c.req.valid("param").id);
@@ -319,7 +320,7 @@ export function router() {
       const fps = setting("clips.fps");
       const most = frameCount(13, fps);
       try {
-        await runFfmpeg(["-v", "error", "-y", "-i", src, "-vf", `fps=${fps},scale=${film.width}:${film.height}:force_original_aspect_ratio=increase,crop=${film.width}:${film.height}`, "-frames:v", String(most), path.join(work, "out", "%05d.png")]);
+        await runFfmpeg(["-v", "error", "-y", "-i", src, "-vf", guideFilter(fps, film.width, film.height), "-frames:v", String(most), path.join(work, "out", "%05d.png")]);
       } catch {
         throw new ApiError(415, "not-a-video", "Not a video FFmpeg can read", "Use an MP4, WebM or MOV video.");
       }

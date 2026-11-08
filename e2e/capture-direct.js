@@ -37,6 +37,8 @@ const SURFACES = (film) => [
   { name: "film-cards", hash: `#/films/${film.id}/cards` },
   { name: "film-shots", hash: `#/films/${film.id}/shots`, ready: ".shot-row" },
   { name: "film-cut", hash: `#/films/${film.id}/cut`, ready: ".cut-row" },
+  // the kit's Motion capture screen: no takes in a fresh folder, so its empty state
+  { name: "mocap", hash: "#/mocap", ready: ".mocap .ui-empty" },
   // the engines' tabs come once the server has checked each engine
   { name: "ai", hash: "#/ai", ready: '[role="tab"]:has-text("Images")' },
   { name: "settings-general", hash: "#/settings/general" },
@@ -77,6 +79,13 @@ async function main() {
     await d.page.waitForSelector("#shot-action");
     await d.page.waitForTimeout(400);
     await d.screenshot(path.join(OUT_DIR, "shot-editor.png"));
+    // a character's card open: its description, its voice words, Their voice (none made yet) and the recording
+    console.log("→ card-editor (dialog)");
+    await d.navigate(`#/films/${film.id}/cards`);
+    await d.page.locator('[aria-label="Edit Mara"]').click();
+    await d.page.waitForSelector("#card-name");
+    await d.page.waitForTimeout(400);
+    await d.screenshot(path.join(OUT_DIR, "card-editor.png"));
   } finally {
     console.log("→ closing");
     await d.close();
