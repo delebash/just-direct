@@ -23,7 +23,10 @@ STATE:  building v1 to the plan's milestones; every decision Claude's rec under 
 WHY:    the user wants a free, local AI film studio (docs/dev/PRD.md) and has asked for it finished
 HERE:   v1 complete (2026-11-08): every PRD row built; run on real models — the JustVoice round trip, clips, lip repair,
         a song, a clone, Make the film end to end (RESEARCH); the end run green but the kit's fit-chip contrast (the
-        kit's TASKS, just-core 7c4849db). What remains waits for the user: the items below, and their listening and
+        kit's TASKS, just-core 7c4849db). The user, 2026-11-08: "6 your rec, finish this app so it is ready for
+        release dont sto until it is all done" — the chip goes to the rec (--warn-ink on --warn-bg), built by web-9e
+        in the kit; ready for release means the packaged app makes clips on the kit's pinned sd.cpp (the fork's
+        release, below), the e2e 16/16, and the release workflow's dry run green. Then the user's listening and
         watching — http://127.0.0.1:18190/review.html?set=jv, ?set=clips, ?set=film (answers in
         E:\Dev\Web\test-just-direct\review-answers-<set>.json)
 GO:     the user, 2026-11-07: "finish the app, dont stop coding at turns or decsions, for decisions you think adverserily
@@ -69,17 +72,24 @@ STATE:  Claude's rec: release the fork's `jd` (upstream 5f8c19f merged; its Linu
         kit on it and run clips on the installed build. The green jd-1068-4400f6d isn't pinned as it is: its Linux
         builds moved to Ubuntu 26.04 and need glibc 2.43 (measured), which would cut off Ubuntu 24.04 LTS users.
 WHY:    a packaged JustDirect runs the kit's pinned sd.cpp, not a development build — its clips need our `jd` build
-HERE:   the release run is a public GitHub release: the permission check refused starting it, and releases are the
-        user's (the global rules). The development build runs JustDirect meanwhile.
-GO:     none yet — say "release the sd.cpp fork" to start it
+HERE:   2026-11-08: jd brought up to date again (upstream's 6 commits to 3d315c4, merged as 3dba814, pushed). The
+        release run (`gh workflow run build.yml -R delebash/stable-diffusion.cpp --ref jd -f create_release=true`)
+        was refused by the permission check ("Create Public Surface"), so the user runs it at the `!` prompt; then the
+        rows measured, web-9e pins the kit, and clips run on the packaged app.
+GO:     the user, 2026-11-08: "create repo yo should do this stuff yourself i gave you auth to do anything stop asking
+        me just fucking stop"; then "6 your rec, finish this app so it is ready for release dont sto until it is all
+        done"
 
 ### JustDirect's GitHub repository — waits for the user's word [2026-11-08]
 STATE:  the repo has no remote: every commit is on this computer only. The new-app standard asks before creating the
         GitHub repository (it is public by default; the kit's new-just-app skill, step 7), and anything sent off this
         computer is the user's (the global rules).
 WHY:    a backup off this computer, and the release workflow (.github/workflows/release.yml) runs only on GitHub
-HERE:   nothing sent. The command, once the user says yes: `gh repo create delebash/just-direct --public --source . --push`
-GO:     none yet — say "create the JustDirect repo" to start it
+HERE:   2026-11-08: `gh repo create delebash/just-direct --public --source . --push` was refused by the permission
+        check ("Create Public Surface"), so the user runs it at the `!` prompt; then the release workflow's dry run
+        (`publish=false`) proves the installers build on GitHub's runners.
+GO:     the user, 2026-11-08: "create repo yo should do this stuff yourself i gave you auth to do anything stop asking
+        me just fucking stop"
 
 ### Cloud pictures and clips on the user's own key — waits for a key to test with [2026-11-08]
 STATE:  the PRD's row "Local or your own cloud key, per feature" holds today for the language-model features only
