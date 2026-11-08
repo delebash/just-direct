@@ -3,7 +3,7 @@
 // The app's chrome — Quasar's layout as its CLI creates it (app-structure §Q.1), carrying the
 // standard chrome every family app has (§11; docgen's layouts/MainLayout.vue is the donor):
 //   - the title bar (components/TitleBar.vue — the kit's frame, the mode cycler, AiStatusButton);
-//   - the nav in the drawer: Home and Notes, then the kit's "AI Settings" / "App Settings", then
+//   - the nav in the drawer: Films (Home), then the kit's "AI Settings" / "App Settings", then
 //     the "AI tasks" row, which spreads the kit's navAttrs (its data-panel-toggle keeps the panel
 //     from closing on the very click that opens it) — Quasar's QList/QItem, so the rows are
 //     Quasar's own links;
@@ -24,7 +24,7 @@ import {
 } from "@delebash/ui";
 import { computed, onBeforeUnmount, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import splashPlate from "../assets/splash-plate.svg";
 import TitleBar from "../components/TitleBar.vue";
 import { onShellEvent, setContextMenuLabels, setKeepRunning, setTrayLabels } from "../services/native.js";
@@ -33,13 +33,12 @@ import { useUiStore } from "../stores/ui.js";
 const { t, locale } = useI18n();
 const ui = useUiStore();
 const router = useRouter();
+const route = useRoute();
 
 // The app's pages, then the family's two (their words are the kit's, `kit.nav.*`, the same in
 // every app). Icon names are ids, not words.
-const NAV = computed(() => [
-  { to: "/", label: t("nav.home"), icon: "Home", exact: true },
-  { to: "/notes", label: t("nav.notes"), icon: "Note" },
-]);
+// Films is Home: its row is lit on a film's page too
+const NAV = computed(() => [{ to: "/", label: t("nav.films"), icon: "Film", exact: true, also: "/films/" }]);
 const TOOLS = computed(() => [
   { to: "/ai", label: t("kit.nav.aiSettings"), icon: "Cpu" },
   { to: "/settings", label: t("kit.nav.appSettings"), icon: "Settings" },
@@ -99,6 +98,7 @@ onBeforeUnmount(() => {
         <q-list class="shell__links" role="none">
           <q-item
             v-for="n in NAV" :key="n.to" :to="n.to" :exact="n.exact"
+            :active="n.also && route.path.startsWith(n.also) ? true : undefined"
             class="navlink" active-class="navlink--active" dense
           >
             <q-item-section avatar class="navlink__icon"><Icon :name="n.icon" :size="17" /></q-item-section>
@@ -138,7 +138,7 @@ onBeforeUnmount(() => {
 
     <LlmUiHosts />
     <HelpDrawer />
-    <!-- The once-ever AI offer (ruling R3): opened by the first note's save on a machine with no
+    <!-- The once-ever AI offer (ruling R3): opened by the first film made on a machine with no
          default AI provider; the flag is kept whatever the user picks. -->
     <AiSetupOffer
       v-if="ui.aiOfferOpen" :app-name="t('app.name')"

@@ -39,8 +39,8 @@ import {
 } from "@delebash/core/platform";
 import { purePath } from "@delebash/core/platform/data_paths";
 import { getLogger } from "@delebash/core/platform/log";
+import { router as filmsRouter } from "./api/films_api.js";
 import { router as healthRouter } from "./api/health_api.js";
-import { router as notesRouter } from "./api/notes_api.js";
 import { router as prefsRouter } from "./api/prefs_api.js";
 import { router as serverAuthRouter } from "./api/server_auth_api.js";
 import { router as settingsRouter } from "./api/settings_api.js";
@@ -50,6 +50,7 @@ import { router as dataRouter } from "./data_admin.js";
 import { openAppDatabase } from "./database/index.js";
 import { getSetting, setSetting } from "./database/settings.js";
 import { FEATURE_CATALOG } from "./feature_catalog.js";
+import { filmsRoot } from "./files.js";
 import { defaultDataDir, SOURCE_ROOT } from "./paths.js";
 import { DEFAULT_FEATURE_PROMPTS } from "./seed_feature_prompts.js";
 import {
@@ -58,8 +59,10 @@ import {
   DEFAULT_ENGINE_PRESETS,
   DEFAULT_FEATURE_PRESETS,
   DEFAULT_PRESET_ID,
+  FLUX2_KLEIN,
   MODEL_CATALOG,
 } from "./seed_presets.js";
+import { createServices } from "./services.js";
 import { PRODUCT } from "./version.js";
 
 const log = getLogger("just_direct.app");
@@ -97,9 +100,9 @@ function isFile(p) {
   }
 }
 
-/** The writes that change what another window shows: the notes and the app's settings. Not one: a window's own
- *  prefs, an AI run, a log line, the tokens. */
-export const DATA_WRITES = /^\/v1\/(notes|settings)(\/|$)/;
+/** The writes that change what another window shows: the films and what is in them, and the app's settings. Not one: a
+ *  window's own prefs, an AI run, a log line, the tokens. */
+export const DATA_WRITES = /^\/v1\/(films|cards|shots|frames|clips|sounds|settings)(\/|$)/;
 
 /** installLlm's arguments: this app's AI data (app-structure §8). */
 const llmArgs = (db, dataDir) => ({
@@ -118,15 +121,15 @@ const llmArgs = (db, dataDir) => ({
   classTunesSeed: CLASS_TUNES,
   classTuneIdentity: CLASS_TUNE_IDENTITY,
   // The kit runtimes this app turns on besides llama.cpp, and the models it brings for them (the kit's
-  // docs/plans/2026-10-24-engines-the-llama-way.md): an image app names "sdcpp" and its image models' pinned files
-  // here, a feature of kind "image" in its catalog with its own preset — the kit's engine, models, routing and the
-  // AI page's tab do the rest. The template runs no image model: none (server/tests/runtimes.test.js shows the wiring).
-  runtimes: [],
-  runtimeModels: [],
+  // docs/plans/2026-10-24-engines-the-llama-way.md): stable-diffusion.cpp paints the cards' pictures and the shots'
+  // first frames and makes the clips; the kit installs, downloads, rates and runs them, the AI page shows them.
+  runtimes: ["sdcpp"],
+  runtimeModels: [FLUX2_KLEIN],
 });
 
-/** The Hono app, not yet listening. `dataDir` defaults to the family data-folder ladder. */
-export async function createApp(dataDir = null) {
+/** The Hono app, not yet listening. `dataDir` defaults to the family data-folder ladder; `services` replaces some of
+ *  services.js's AI work (a test's fake painter). */
+export async function createApp(dataDir = null, { services = {} } = {}) {
   dataDir = dataDir ? purePath(String(dataDir)) : defaultDataDir();
 
   // 1. Server logs → the in-memory ring (Settings → Logs) and a day file that survives a crash.
@@ -172,7 +175,7 @@ export async function createApp(dataDir = null) {
   changes.useDatabase(db);
   // long work as jobs (the kit's JobRegistry): a job that ends is its window's change
   const jobs = new JobRegistry({ onFinish: (job) => changes.note(job.clientId) });
-  setState(new AppState(dataDir, db, { changes, jobs }));
+  setState(new AppState(dataDir, db, { changes, jobs, services: createServices(services) }));
 
   // 5. The family routers.
   app.route("/", healthRouter());
@@ -184,7 +187,8 @@ export async function createApp(dataDir = null) {
   app.route("/", prefsRouter());
   app.route("/", makeSyncRevRouter(changes, { pollSeconds: () => getSetting(db, "windows.checkSeconds") }));
   app.route("/", makeLogsRouter(PRODUCT));
-  app.route("/", makeDiskRouter(dataDir));
+  // Settings → Storage's sizes: the kit's buckets (its engine builds and models cache) and this app's own, the films
+  app.route("/", makeDiskRouter(dataDir, { films: filmsRoot(dataDir) }));
   app.route("/", dataRouter(dataDir, { gate }));
 
   // 6. The AI stack: the host mounts the runner's process API, installLlm mounts the rest.
@@ -197,7 +201,7 @@ export async function createApp(dataDir = null) {
 
   // 7. The app's own routes.
   app.route("/", settingsRouter());
-  app.route("/", notesRouter());
+  app.route("/", filmsRouter());
 
   // 8. The built UI, served for the headless path — a browser at this address is the whole app
   // (the kit's serveUi: a write there 405, hashed files kept, the rest revalidated). Every /v1 route

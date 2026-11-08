@@ -11,24 +11,110 @@
 export const MIGRATIONS = [
   {
     version: 1,
-    name: "notes and settings",
+    // the template's notes example was taken out before any database existed (2026-11-07): this is the first schema
+    name: "settings; films with their cards, shots, frames, clips and sounds",
     up: `
-      CREATE TABLE notes (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        body TEXT NOT NULL DEFAULT '',
-        pinned INTEGER NOT NULL DEFAULT 0 CHECK (pinned IN (0, 1)),
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      );
-      CREATE INDEX notes_by_updated ON notes (pinned, updated_at);
-
       -- The app's settings (one row per key, the value JSON), the renderer's preferences
       -- ("pref.<key>" rows, behind /v1/prefs) and the server's access tokens (the "auth" row).
       CREATE TABLE settings (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
       );
+
+      -- A film: its story, the words for its look, its picture size (every first frame and clip is painted at it).
+      CREATE TABLE films (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        story TEXT NOT NULL DEFAULT '',
+        look TEXT NOT NULL DEFAULT '',
+        width INTEGER NOT NULL,
+        height INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      -- What the film reuses in every shot: a character, a place, a prop or a look. Its picture is a file in the
+      -- film's folder (files.js); a character's voice is the words the voice model designs it from.
+      CREATE TABLE cards (
+        id TEXT PRIMARY KEY,
+        film_id TEXT NOT NULL REFERENCES films(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL CHECK (kind IN ('character', 'place', 'prop', 'look')),
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        voice TEXT NOT NULL DEFAULT '',
+        picture TEXT,
+        position INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX cards_by_film ON cards (film_id, kind, position);
+
+      -- A shot, in film order: what happens (action), how it is framed and moves, who and what is in it (card_ids,
+      -- JSON), its spoken line, how long it runs, how it joins the next. edited = changed by hand, which the planner's
+      -- revision keeps. frame_id and clip_id are the chosen first frame and clip; trim_in/trim_out cut the clip in
+      -- the film (seconds).
+      CREATE TABLE shots (
+        id TEXT PRIMARY KEY,
+        film_id TEXT NOT NULL REFERENCES films(id) ON DELETE CASCADE,
+        position INTEGER NOT NULL,
+        place_id TEXT,
+        card_ids TEXT NOT NULL DEFAULT '[]',
+        size TEXT NOT NULL DEFAULT '',
+        camera TEXT NOT NULL DEFAULT '',
+        action TEXT NOT NULL DEFAULT '',
+        line TEXT NOT NULL DEFAULT '',
+        speaker_id TEXT,
+        seconds REAL NOT NULL,
+        transition TEXT NOT NULL DEFAULT 'cut' CHECK (transition IN ('cut', 'dissolve', 'fade')),
+        edited INTEGER NOT NULL DEFAULT 0 CHECK (edited IN (0, 1)),
+        frame_id TEXT,
+        clip_id TEXT,
+        trim_in REAL NOT NULL DEFAULT 0,
+        trim_out REAL NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX shots_by_film ON shots (film_id, position);
+
+      -- A first frame painted for a shot; verdict holds the vision check's answer (JSON) and score its rank.
+      CREATE TABLE frames (
+        id TEXT PRIMARY KEY,
+        shot_id TEXT NOT NULL REFERENCES shots(id) ON DELETE CASCADE,
+        file TEXT NOT NULL,
+        seed INTEGER NOT NULL,
+        score REAL,
+        verdict TEXT,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX frames_by_shot ON frames (shot_id, created_at);
+
+      -- A clip made for a shot (an MP4 in the film's folder) and how it was made (recipe, JSON).
+      CREATE TABLE clips (
+        id TEXT PRIMARY KEY,
+        shot_id TEXT NOT NULL REFERENCES shots(id) ON DELETE CASCADE,
+        file TEXT NOT NULL,
+        seed INTEGER NOT NULL,
+        seconds REAL NOT NULL,
+        recipe TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX clips_by_shot ON clips (shot_id, created_at);
+
+      -- A sound: a shot's spoken line (kind line, shot_id set), or music or an effect placed in the cut at start
+      -- seconds; volume 0 to 1.
+      CREATE TABLE sounds (
+        id TEXT PRIMARY KEY,
+        film_id TEXT NOT NULL REFERENCES films(id) ON DELETE CASCADE,
+        shot_id TEXT REFERENCES shots(id) ON DELETE CASCADE,
+        kind TEXT NOT NULL CHECK (kind IN ('line', 'music', 'effect')),
+        prompt TEXT NOT NULL DEFAULT '',
+        file TEXT NOT NULL,
+        seconds REAL NOT NULL,
+        start REAL NOT NULL DEFAULT 0,
+        volume REAL NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX sounds_by_film ON sounds (film_id, kind);
     `,
   },
 ];

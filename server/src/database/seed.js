@@ -18,10 +18,21 @@ const log = getLogger("just_direct.seed");
 
 /** The app's settings and their first values — each key has its schema in schemas/settings.js. */
 export const SETTING_DEFAULTS = {
-  // Notes per page in the Notes list (Settings → General).
-  "notes.pageSize": 25,
-  // The largest text file Import a file takes, in KB (Settings → General).
-  "notes.maxImportKilobytes": 100,
+  // A new film's picture size (Settings → General): LTX-2.3's one-pass size on 8 GB.
+  "films.width": 1280,
+  "films.height": 704,
+  // The long side of a card's picture (Settings → General).
+  "cards.pictureSide": 1024,
+  // The largest picture file a card takes, in MB (Settings → General).
+  "cards.maxPictureMegabytes": 20,
+  // The words each kind of card's picture is painted from (Settings → Pictures): a character as a full-length reference
+  // on plain grey — what the first frames take as its reference (feasibility §J.2: one woman held across three scenes);
+  // a place empty of people, in the film's look; a prop alone on grey.
+  "cards.prompt.character":
+    "A full-length photograph of {name}: {description}. Standing, facing the camera, the whole body in frame from head to feet, arms relaxed, plain light grey studio background, soft even light, sharp focus.",
+  "cards.prompt.place": "{description}. A wide photograph of the place, with no people in it. {look}",
+  "cards.prompt.prop": "{description}. A photograph of the object alone on a plain light grey background, soft even light, sharp focus.",
+  "cards.prompt.look": "{description}. {look}",
   // How often a window looks for what other windows changed on this server, in seconds (Settings → General — the
   // kit's GET /v1/sync/rev `pollSeconds`).
   "windows.checkSeconds": 3,

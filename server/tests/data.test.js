@@ -21,16 +21,16 @@ beforeEach(async () => {
   seedWorkspace(getDb());
 });
 
-const titles = async () => (await client.get("/v1/notes")).json().items.map((n) => n.title);
+const titles = async () => (await client.get("/v1/films")).json().items.map((n) => n.title);
 
 test("backup, change, restore: the backup's rows come back", async () => {
-  await client.post("/v1/notes", { json: { title: "Before the backup" } });
+  await client.post("/v1/films", { json: { title: "Before the backup" } });
   const backup = await client.get("/v1/data/backup");
   expect(backup.statusCode).toBe(200);
   expect(backup.headers["content-type"]).toBe("application/zip");
   expect(backup.rawPayload.subarray(0, 2).toString()).toBe("PK");
 
-  await client.post("/v1/notes", { json: { title: "After the backup" } });
+  await client.post("/v1/films", { json: { title: "After the backup" } });
   expect(await titles()).toEqual(["After the backup", "Before the backup"]);
 
   const form = new FormData();
@@ -41,15 +41,15 @@ test("backup, change, restore: the backup's rows come back", async () => {
 });
 
 test("reset returns the first-run state but keeps the access tokens", async () => {
-  await client.post("/v1/notes", { json: { title: "Gone after reset" } });
-  await client.patch("/v1/settings", { json: { "notes.pageSize": 60 } });
+  await client.post("/v1/films", { json: { title: "Gone after reset" } });
+  await client.patch("/v1/settings", { json: { "cards.pictureSide": 768 } });
   await client.patch("/v1/prefs", { json: { aiOfferShown: true } });
   await client.put("/v1/server-auth", { json: { tokens: ["still-here"] } });
   const auth = { headers: { authorization: "Bearer still-here" } };
 
   expect((await client.post("/v1/data/reset", auth)).statusCode).toBe(200);
-  expect((await client.get("/v1/notes", auth)).json().items).toEqual([]);
-  expect((await client.get("/v1/settings", auth)).json()["notes.pageSize"]).toBe(25); // reseeded
+  expect((await client.get("/v1/films", auth)).json().items).toEqual([]);
+  expect((await client.get("/v1/settings", auth)).json()["cards.pictureSide"]).toBe(1024); // reseeded
   expect((await client.get("/v1/prefs", auth)).json()).toEqual({});
   expect(getSetting(getDb(), "auth").tokens).toEqual(["still-here"]);
   // the AI stack was reseeded too
@@ -94,13 +94,13 @@ async function rawBackup() {
 }
 
 test("a backup from an older version gets this one's settings seed when restored, not only at the next start", async () => {
-  deleteSetting(getDb(), "notes.pageSize"); // a setting the older version didn't have
+  deleteSetting(getDb(), "cards.pictureSide"); // a setting the older version didn't have
   const old = (await client.get("/v1/data/backup")).rawPayload;
   seedWorkspace(getDb());
   const form = new FormData();
   form.append("file", new Blob([old], { type: "application/zip" }), "backup.zip");
   expect((await client.app.request("http://testserver/v1/data/restore", { method: "POST", body: form, headers: { host: "testserver" } })).status).toBe(200);
-  expect(getSetting(getDb(), "notes.pageSize")).toBe(25);
+  expect(getSetting(getDb(), "cards.pictureSide")).toBe(1024);
 });
 
 test("a restore of something that isn't a backup is refused", async () => {

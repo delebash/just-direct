@@ -1,8 +1,14 @@
 # Getting started
 
-JustDirect is the family's reference app: the desktop window, its own server, the AI
-setup, settings, help and backups that every app in the family starts with — plus one small
-example area, [Notes](notes.md), that shows how the pieces fit together.
+JustDirect is a free AI film studio that runs on your own computer. You describe a story; its AI
+plans the shots, paints the cast, the places and the props once and reuses them, and makes each shot
+— and you can change any step by hand. Everything runs on your computer with the AI models it
+downloads; nothing is sent anywhere unless you connect an online AI service with your own key.
+How a film is made: [Your films](films.md).
+
+**What it needs.** A graphics card with 8 GB of memory is the least it runs on (an NVIDIA RTX 2070
+or newer), with 32 GB of the computer's memory. Pictures take under a minute; a clip of a few seconds
+takes several minutes on an 8 GB card, less on a bigger one.
 
 ## Installing it
 
@@ -22,7 +28,7 @@ a publisher's certificate, so the first time:
 
 ## Where your data lives
 
-Everything the app keeps — your notes, your settings, the AI engine and downloaded models, and
+Everything the app keeps — your films with their pictures and clips, your settings, the AI engines and downloaded models, and
 the logs — lives in **one data folder**. By default it is a `data` folder beside the app, so
 moving the app's folder moves everything with it. **Settings → Storage** shows the folder and can
 move it: **Change folder…** copies the data into a new **JustDirect** folder inside the one you
@@ -74,11 +80,11 @@ downloaded engines' settings).
    finishes in the background.
 2. If the window shows *"Can't reach the server"*, the server didn't start. See
    [Troubleshooting](troubleshooting.md).
-3. Open **Notes** and write your first note. When you save it, the app offers once to set up AI
-   — see [Set up the AI](ai-providers.md).
+3. Press **New film** and give it a title. When you create your first film, the app offers once to
+   set up its AI — see [Set up the AI](ai-providers.md). Each AI feature also says in place what it
+   still needs (its engine to install, its model to download) and offers it there.
 
 ## Getting around
 
-The sidebar has **Home**, **Notes**, **AI Settings**, **App Settings** and **AI tasks**, which
-opens the panel of running and recent AI work. The **?** beside a page's title opens its help
-page.
+The sidebar has **Films**, **AI Settings**, **App Settings** and **AI tasks**, which opens the panel
+of running and recent AI work. The **?** beside a page's title opens its help page.

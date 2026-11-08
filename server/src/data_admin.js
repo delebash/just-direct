@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Settings → Backups' server half: the kit's backup / restore / reset router (makeDataRouter, the
 // family's one implementation) over this app's database. One database, two table sets — the app's
-// (database/schema.js) and the shared LLM stack's — and no asset folders: everything the app keeps
-// is in the database.
+// (database/schema.js) and the shared LLM stack's — and one asset folder, `films/` (every film's
+// pictures, clips and sounds — files.js); a film's exports are made again from its clips and stay out.
 //
 // Reset is the first-run state: the runner stops first (no model keeps running under settings
 // that no longer exist), every table is dropped and created again — so a reset also recovers from
@@ -23,6 +23,7 @@ import { dbPath, recreateAppTables } from "./database/index.js";
 import { APP_TABLES } from "./database/schema.js";
 import { seedWorkspace } from "./database/seed.js";
 import { deleteSetting, getSetting, setSetting } from "./database/settings.js";
+import { filmsRoot, removeAllFilmDirs } from "./files.js";
 
 const log = getLogger("just_direct.data");
 
@@ -65,6 +66,8 @@ export async function resetWorkspace() {
   });
   llmDb.createAll(db);
   recreateAppTables(db, APP_TABLES);
+  // every film's files go with the films (a folder Windows holds is marked and swept at the next start)
+  await removeAllFilmDirs(getState().dataDir);
   if (auth !== undefined) setSetting(db, "auth", auth);
   seedWorkspace(db);
   // the data's new epoch: every other window reloads (the kit's ChangeCounter)
@@ -78,7 +81,7 @@ export const router = (dataDir, { gate } = {}) =>
     getDbPath: () => dbPath(dataDir),
     metadata: [APP_TABLES, LLM_TABLES],
     runReset: resetWorkspace,
-    assetDirs: () => ({}),
+    assetDirs: () => ({ films: filmsRoot(dataDir) }),
     ...keepAuth,
     // and the data's new epoch, in the same transaction as the restored rows (the backup's own row replaced)
     afterCopy: (h) => {

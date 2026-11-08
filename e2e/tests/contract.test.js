@@ -51,9 +51,10 @@ test("Settings builds its sections from settingsSections.js, with the kit's word
 });
 
 test("the form's rules are the route's schema, imported from the server package", () => {
-  const dialog = read("src/components/NoteDialog.vue");
-  assert.ok(dialog.includes('from "just-direct-server/schemas/notes.js"'), "NoteIn comes from the server package");
-  assert.ok(dialog.includes("schemaRules(NoteIn)"), "the rules are schemaRules(NoteIn)");
+  const dialog = read("src/components/film/CardDialog.vue");
+  assert.ok(dialog.includes('from "just-direct-server/schemas/films.js"'), "CardIn comes from the server package");
+  assert.ok(dialog.includes("schemaRules(CardIn)"), "the rules are schemaRules(CardIn)");
   assert.ok(dialog.includes("fieldErrors(") && dialog.includes("reportError("), "422s under their fields, the rest through reportError");
-  assert.ok(dialog.includes("runAiFeature("), "the AI feature runs through the kit's runner");
+  // the AI work is a server job run through the kit's runner (its task on the strip)
+  assert.ok(read("src/stores/films.js").includes("runServerJob("), "a card's painting runs through the kit's runServerJob");
 });

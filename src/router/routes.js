@@ -6,8 +6,10 @@
 import MainLayout from "../layouts/MainLayout.vue";
 
 const pages = [
+  // Home is the films
   { path: "", component: () => import("../pages/HomePage.vue") },
-  { path: "notes", component: () => import("../pages/NotesPage.vue") },
+  // a film, its tab in the address (Story, Cards …)
+  { path: "films/:id/:tab?", component: () => import("../pages/FilmPage.vue"), props: true },
   { path: "ai", component: () => import("../pages/AiPage.vue") },
   { path: "settings/:section?", component: () => import("../pages/SettingsPage.vue"), props: true },
   // anything else, inside the chrome, so the nav still works

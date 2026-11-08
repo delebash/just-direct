@@ -7,9 +7,10 @@ film — while you can take over any step by hand and the AI carries on from you
 
 A family app: the desktop app on the kit's shell, its own Node server (Hono) with a SQLite database,
 the AI stack, the standard chrome (title bar, AI tasks, Help, Settings, backups, logs), help pages
-and tests at every level — and, until the app's own screens replace it, the template's example area,
-**notes**. Plain JavaScript, `"type": "module"` everywhere; Vue SFCs; Quasar's components under the
-kit's (`@delebash/ui`).
+and tests at every level. Its engines are the kit's: stable-diffusion.cpp (our `jd` build) for
+pictures and clips, llama.cpp for planning and the first-frame check, audio.cpp for voices, music and
+effects, FFmpeg for the cut. Plain JavaScript, `"type": "module"` everywhere; Vue SFCs; Quasar's
+components under the kit's (`@delebash/ui`).
 
 `README.md` lists the layout and every difference from Quasar's default; `docs/dev/PRD.md` is what
 the app is for.
@@ -28,7 +29,7 @@ npm run lint           # Biome
 npm run i18n:lint      # no word written into a template or built in code (must be 0)
 npm run i18n:report    # keys used but missing from the English catalog (must be none)
 npm run test:server    # the server's tests, on Electron's Node
-npm run test:unit      # the renderer's tests (stores, the mounted Notes page, the kit's controls mounted, the boot smoke)
+npm run test:unit      # the renderer's tests (stores, the mounted films page, the kit's controls mounted, the boot smoke)
 npm test               # the e2e smoke on the unpacked desktop build (build:unpacked first)
 npm run screenshots    # every surface as a PNG in e2e/shots/
 npm run test:coverage  # coverage (Vitest's v8), no gate
@@ -46,7 +47,7 @@ and `npm run build:unpacked && npm test`.
 - **The server owns the data.** The renderer keeps nothing durable: it asks `/v1/*`. A value a user
   might change is a seeded row (`server/src/database/seed.js`) with a schema
   (`server/src/schemas/settings.js`), never a constant.
-- **SQL lives only in the stores** (`server/src/database/notes.js`, `settings.js`). A schema change is
+- **SQL lives only in the stores** (`server/src/database/films.js`, `settings.js`). A schema change is
   a new entry in `database/schema.js` `MIGRATIONS` — never an edit to an applied one.
 - **A route's schema is its form's rules.** `server/src/schemas/<area>.js` imports only
   `@delebash/core/platform/schema`, because the renderer imports it too
@@ -72,7 +73,9 @@ and `npm run build:unpacked && npm test`.
 | What this app is for | `docs/dev/PRD.md` |
 | Open work · ideas | `docs/dev/TASKS.md` · `docs/dev/IDEAS.md` |
 | What is already known | `docs/dev/RESEARCH.md` (the kit's: `../just-core/docs/dev/RESEARCH.md`) |
-| The example to copy | `server/src/{schemas,database,api}/notes*` · `src/pages/NotesPage.vue` · `src/components/NoteDialog.vue` · their tests |
+| A route, its schema, its store and its test | `server/src/{api,schemas,database}/films*` · `server/tests/films.test.js` |
+| A screen and its mounted test | `src/pages/HomePage.vue` · `src/pages/HomePage.test.js` (the kit's template's notes area is the family's reference) |
+| How v1 is built | `docs/plans/2026-11-07-v1.md` |
 
 ## The family rules
 

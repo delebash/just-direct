@@ -43,6 +43,6 @@ test("DELETE clears the preferences but never the settings or the access tokens"
   await client.patch("/v1/prefs", { json: { aiOfferShown: true } });
   expect((await client.delete("/v1/prefs", { headers: { authorization: "Bearer keep-me" } })).statusCode).toBe(204);
   expect((await client.get("/v1/prefs", { headers: { authorization: "Bearer keep-me" } })).json()).toEqual({});
-  expect(getSetting(getDb(), "notes.pageSize")).toBe(25);
+  expect(getSetting(getDb(), "cards.pictureSide")).toBe(1024);
   expect(getSetting(getDb(), "auth").tokens).toEqual(["keep-me"]);
 });

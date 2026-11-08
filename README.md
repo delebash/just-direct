@@ -23,19 +23,19 @@ Run it: `npm install` (then once `cd src-electron && npm install` and `cd e2e &&
 | `src-capacitor/` | the phone app's scaffold (Android, iOS), as Quasar generates it — no in-app server yet, so new apps are made without it (app-structure §Q.7) | `quasar build -m capacitor -T android` |
 | `build/launcher/` | the headless launcher `just-direct-server.cmd`: the installed exe (`justdirect.exe`) run as Node on its server package — never the exe's name (§Q.3) | copied beside the exe by the installer |
 | `e2e/` | the smoke suite and the screenshot capture over the real desktop app (Playwright's `_electron`), hermetic | `npm test` · `npm run screenshots` |
-| `docs/` | the Help pages (`toc.json`, the five the family requires + `notes.md`) and `docs/dev/` (README, PRD, TASKS, IDEAS, RESEARCH) | the kit's Help drawer; `whats-new.md` feeds Settings → Updates |
+| `docs/` | the Help pages (`toc.json`, the five the family requires + `films.md`) and `docs/dev/` (README, PRD, TASKS, IDEAS, RESEARCH) | the kit's Help drawer; `whats-new.md` feeds Settings → Updates |
 
 ### What every family app carries — where it is here
 
 | Part | Files |
 |---|---|
 | Server wiring (§Q.3, §8, §11, §14) | `server/src/app.js` (the order), `serve.js`, `version.js`, `paths.js`, `app_state.js`, `auth.js`, `data_admin.js`, `api/{health,server_auth,prefs,settings}_api.js` |
-| Data (§16) | `server/src/database/` — `schema.js` (migrations), `index.js` (open + migrate), `seed.js`, the stores `notes.js` and `settings.js` |
+| Data (§16) | `server/src/database/` — `schema.js` (migrations), `index.js` (open + migrate), `seed.js`, the stores `films.js` and `settings.js` |
 | Validation and errors (§15) | `server/src/schemas/` (shared with the forms), the kit's `input()`, `notFound`, problem+json with request ids |
 | The AI half (§8) | `server/src/feature_catalog.js`, `seed_feature_prompts.js`, `seed_presets.js` (presets, JustWrite's three general Gemma rows and their class tunes) |
 | The chrome (§11) | `src/layouts/MainLayout.vue`, `src/components/TitleBar.vue`, `src/pages/{AiPage,SettingsPage,ConnectionErrorPage}.vue`, `src/components/settings/`, `index.html`'s `#app-boot` plate |
 | Start-up (§Q.4) | `src/boot/i18n.js`, `src/boot/justdirect.js` |
-| Services and stores | `src/services/{native,helpDocs,appearance,settingsSections}.js`, `src/stores/{ui,settings,notes}.js` |
+| Services and stores | `src/services/{native,helpDocs,appearance,settingsSections}.js`, `src/stores/{ui,settings,films}.js` |
 | Tests (§18) | `server/tests/`, `src/**/*.test.js`, `src/boot.smoke.test.js`, `e2e/` |
 
 ## Commands
@@ -70,7 +70,7 @@ npm run release        # the release: installers + the update feed built on GitH
   them with `npm install --install-links` (real copies, production dependencies only).
 - **`server/` is an npm workspace** of the root: one `npm install`, one copy of what the renderer
   and the server share — and the renderer imports the server's request schemas by name
-  (`just-direct-server/schemas/notes.js`) for its forms.
+  (`just-direct-server/schemas/films.js`) for its forms.
 - **The server runs on Electron's own Node** (`scripts/node24.js`) — the runtime it ships on, the one
   its native modules (better-sqlite3) are built for. Its tests too.
 - **electron-builder**, not @electron/packager: NSIS installers (per user, the kit's

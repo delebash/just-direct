@@ -11,12 +11,13 @@
 import { FeatureCatalogEntry } from "@delebash/core/llm";
 
 export const FEATURE_CATALOG = [
-  // The Notes page's "Suggest a title" (pages/NotesPage.vue through the kit's runAiFeature): the
-  // action key is the feature key, so the Workbench shows this label for it.
+  // A card's picture (POST /v1/cards/:id/paint, a job): FLUX.2 [klein] 4B on the kit's stable-diffusion.cpp runtime,
+  // from the card's words and its kind's template (Settings → Pictures).
   FeatureCatalogEntry({
-    key: "notes.suggestTitle",
-    label: "Suggest a note title",
-    hint: "Suggests a short title for a note from what it says — the Suggest a title button in the note editor.",
-    group: "Notes",
+    key: "cards.paint",
+    label: "Paint a card's picture",
+    hint: "Paints the picture of a character, place, prop or look from its description — Paint on a film's Cards tab. Every shot that has the card uses its picture to keep it the same.",
+    group: "Cards",
+    kind: "image",
   }),
 ];

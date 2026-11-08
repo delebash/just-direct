@@ -2,9 +2,9 @@
 
 ## v0.0.1
 
-- The family's complete reference app: the desktop window on the family's shell, its own server
-  with a database and backups, the AI setup, settings, help, and tests at every level.
-- **Notes**, the example area: write, pin, filter and delete notes, and let the AI suggest a title.
-- **Settings → General**: how many notes a page of the list shows.
+- **Your films**: make a film with a title, a story and the words for its look, in a wide, tall or
+  square shape.
+- **Cards**: the characters, places, props and looks a film reuses in every shot — described in
+  words, with a picture the AI paints on your computer or you take from a file.
 - **More than one window**: the app open in several places at once shows each one's changes in the
   others by itself (**Settings → General → Other windows**).

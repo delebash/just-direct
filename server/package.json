@@ -10,6 +10,7 @@
     "./schemas/*.js": "./src/schemas/*.js"
   },
   "dependencies": {
-    "@delebash/core": "file:../../just-core/packages/core"
+    "@delebash/core": "file:../../just-core/packages/core",
+    "sharp": "^0.35.5"
   }
 }

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // The smoke suite — the REAL desktop app (Electron, the built UI from app://) driven through
 // Playwright (app-structure §10, §18). It asserts the CONTRACT, not pixels: the shell mounts, the
-// nav works, the AI status button and the AI-tasks toggle behave, a note is created through the
-// window and reaches the server, the once-ever AI offer comes once, Settings shows the family's
+// nav works, the AI status button and the AI-tasks toggle behave, a film and its card are made through the
+// window and reach the server, the once-ever AI offer comes once, Settings shows the family's
 // sections in their order. Hermetic (lib/driver.js): a temp data folder, the harness's own server,
 // the shell's <ID>_DEV_NO_SERVER=1. One launch shared by the tests, in order.
 //
@@ -39,7 +39,7 @@ test("the shell mounts: the title bar, the nav and the AI status button", async 
   await page.locator(".titlebar").waitFor();
   await page.locator(".shell__nav").waitFor();
   const labels = await page.locator(".shell__nav .navlink").allTextContents();
-  for (const word of ["Home", "Notes", "AI Settings", "App Settings", "AI tasks"]) {
+  for (const word of ["Films", "AI Settings", "App Settings", "AI tasks"]) {
     assert.ok(labels.some((l) => l.includes(word)), `the nav has "${word}" (${labels.join(" | ")})`);
   }
   assert.equal(await page.locator(".titlebar .ai-status-btn").count(), 1, "the kit's AiStatusButton is in the title bar");
@@ -49,10 +49,7 @@ test("the boot plate is gone once the app shows", async () => {
   assert.equal(await page.locator("#app-boot").count(), 0);
 });
 
-test("the nav works: Notes, AI Settings and App Settings open their pages", async () => {
-  await page.locator(".navlink", { hasText: "Notes" }).click();
-  await page.waitForURL(/#\/notes$/);
-  await page.locator(".pane-h1", { hasText: "Notes" }).waitFor();
+test("the nav works: AI Settings, App Settings and Films open their pages", async () => {
 
   await page.locator(".navlink", { hasText: "AI Settings" }).click();
   await page.waitForURL(/#\/ai$/);
@@ -61,6 +58,10 @@ test("the nav works: Notes, AI Settings and App Settings open their pages", asyn
   await page.locator(".navlink", { hasText: "App Settings" }).click();
   await page.waitForURL(/#\/settings/);
   await page.locator(".pane-h1", { hasText: "Settings" }).waitFor();
+
+  await page.locator(".navlink", { hasText: "Films" }).click();
+  await page.waitForURL(/#\/$/);
+  await page.locator(".pane-h1", { hasText: "Your films" }).waitFor();
 });
 
 test("the AI-tasks row is a real toggle: it opens, stays open, and a second click closes it", async () => {
@@ -90,28 +91,31 @@ test("Settings shows General, then the family's seven sections in canon order", 
   await page.locator(".ui-formgrid td", { hasText: VERSION }).waitFor(); // the version, from the server (the kit's AboutPanel)
 });
 
-test("a note is created through the window, saved by the server, and the AI offer comes once", async () => {
-  await d.navigate("#/notes");
-  await page.locator(".ui-empty", { hasText: "No notes yet" }).waitFor();
+test("a film and its card are made through the window, saved by the server, and the AI offer comes once", async () => {
+  await d.navigate("#/");
+  await page.locator(".ui-empty", { hasText: "No films yet" }).waitFor();
 
   // the form refuses an empty title before anything is sent
-  await page.locator(".ui-empty button", { hasText: "New note" }).click();
-  await page.locator("#note-title").waitFor();
-  await page.locator(".form__actions button", { hasText: "Save" }).click();
+  await page.locator(".ui-empty button", { hasText: "New film" }).click();
+  await page.locator("#film-title").waitFor();
+  await page.locator(".form__actions button", { hasText: "Create film" }).click();
   await page.locator(".ui-modal", { hasText: "Required" }).waitFor();
-  assert.deepEqual((await d.api("/notes")).items, []);
+  assert.deepEqual((await d.api("/films")).items, []);
 
-  await page.locator("#note-title").fill("From the real window");
-  await page.locator("#note-body").fill("Typed through Electron.");
-  await page.locator(".form__actions button", { hasText: "Save" }).click();
-  await page.locator("tr.ui-table-row", { hasText: "From the real window" }).waitFor();
+  await page.locator("#film-title").fill("From the real window");
+  await page.locator("#film-look").fill("moody 35mm film");
+  await page.locator(".form__actions button", { hasText: "Create film" }).click();
+  // the new film opens on its Story tab
+  await page.waitForURL(/#\/films\/[0-9a-f-]+$/);
+  await page.locator(".pane-h1", { hasText: "From the real window" }).waitFor();
 
-  const saved = (await d.api("/notes")).items;
+  const saved = (await d.api("/films")).items;
   assert.equal(saved.length, 1);
   assert.equal(saved[0].title, "From the real window");
-  assert.equal(saved[0].body, "Typed through Electron.");
+  assert.equal(saved[0].look, "moody 35mm film");
+  assert.deepEqual([saved[0].width, saved[0].height], [1280, 704]);
 
-  // the first note is this app's moment for the once-ever AI offer (no AI set up in a fresh folder)
+  // the first film is this app's moment for the once-ever AI offer (no AI set up in a fresh folder)
   const offer = page.locator(".ui-modal", { hasText: "Set up AI features" });
   await offer.waitFor();
   await offer.locator("button", { hasText: "Skip for now" }).click();
@@ -120,11 +124,26 @@ test("a note is created through the window, saved by the server, and the AI offe
   const kept = await waitFor(async () => (await d.api("/prefs")).aiOfferShown === true);
   assert.ok(kept, "the flag is kept by the server");
 
-  // a second note: no offer again
-  await page.locator(".pane-actions button", { hasText: "New note" }).click();
-  await page.locator("#note-title").fill("The second one");
-  await page.locator(".form__actions button", { hasText: "Save" }).click();
-  await page.locator("tr.ui-table-row", { hasText: "The second one" }).waitFor();
+  // a character card on the Cards tab; the painter's engine isn't installed in a fresh folder, and the tab says so
+  await page.locator('[role="tab"]', { hasText: "Cards" }).click();
+  await page.locator(".lu-needed", { hasText: "Painting a card's picture" }).waitFor();
+  await page.locator(".cards-kind button", { hasText: "Add a character" }).click();
+  await page.locator("#card-name").fill("Mara");
+  await page.locator("#card-description").fill("Sixty-one, grey braid, yellow oilskin coat");
+  await page.locator(".form__actions button", { hasText: "Add" }).click();
+  await page.locator(".card-tile", { hasText: "Mara" }).waitFor();
+  const cards = (await d.api(`/films/${saved[0].id}/cards`)).items;
+  assert.deepEqual(
+    cards.map((c) => [c.kind, c.name]),
+    [["character", "Mara"]],
+  );
+
+  // a second film: no offer again
+  await d.navigate("#/");
+  await page.locator(".pane-actions button", { hasText: "New film" }).click();
+  await page.locator("#film-title").fill("The second one");
+  await page.locator(".form__actions button", { hasText: "Create film" }).click();
+  await page.locator(".pane-h1", { hasText: "The second one" }).waitFor();
   await page.waitForTimeout(600);
   assert.equal(await page.locator(".ui-modal", { hasText: "Set up AI features" }).count(), 0, "the offer never comes twice");
 });
@@ -132,9 +151,9 @@ test("a note is created through the window, saved by the server, and the AI offe
 // The kit's second windows (2026-10-29, JustWrite's "Open in new window"): window.open of the app's own page is another
 // window of the app — the shell's preload bridge, its server — and any other window.open is refused.
 test("window.open of the app's own page opens another window of the app, which closes alone; a data: page is refused", async () => {
-  const [child] = await Promise.all([d.app.waitForEvent("window"), page.evaluate(() => void window.open("#/notes", "_blank", "noopener"))]);
+  const [child] = await Promise.all([d.app.waitForEvent("window"), page.evaluate(() => void window.open("#/settings/about", "_blank", "noopener"))]);
   await child.waitForSelector(".shell", { timeout: 30_000 });
-  assert.match(child.url(), /^app:\/\/justdirect\/.*#\/notes/);
+  assert.match(child.url(), /^app:\/\/justdirect\/.*#\/settings\/about/);
   assert.equal(await child.evaluate(() => typeof window.appShell?.invoke), "function", "the shell's preload ran in it");
   assert.equal(await child.evaluate(() => window.appShell.invoke("updateStatus").then((s) => typeof s.state)), "string", "the shell answers it");
   const open = d.app.windows().length;

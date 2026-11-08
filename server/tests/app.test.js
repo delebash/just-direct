@@ -47,7 +47,7 @@ test("routing by feature lists exactly this app's features, each on its preset",
   expect(routing.statusCode).toBe(200);
   const keys = (routing.json().features || []).map((f) => f.key);
   expect(keys).toEqual(FEATURE_CATALOG.map((f) => f.key));
-  expect(keys).toEqual(["notes.suggestTitle"]);
+  expect(keys).toEqual(["cards.paint"]);
 });
 
 test("the runner's cache lands in the app's data folder", () => {
@@ -93,18 +93,18 @@ test("health answers the family's base wire plus this app's extras", async () =>
 });
 
 test("bearer auth gates /v1 only once a token exists", async () => {
-  expect((await client.get("/v1/notes")).statusCode).toBe(200); // off by default
+  expect((await client.get("/v1/films")).statusCode).toBe(200); // off by default
 
   const r = await client.put("/v1/server-auth", { json: { tokens: ["s3cret"] } });
   expect(r.statusCode).toBe(200);
   try {
-    expect((await client.get("/v1/notes")).statusCode, "no header → 401").toBe(401);
-    expect((await client.get("/v1/notes", { headers: { authorization: "Bearer wrong" } })).statusCode, "bad token → 403").toBe(403);
-    expect((await client.get("/v1/notes", { headers: { authorization: "Bearer s3cret" } })).statusCode, "good token").toBe(200);
+    expect((await client.get("/v1/films")).statusCode, "no header → 401").toBe(401);
+    expect((await client.get("/v1/films", { headers: { authorization: "Bearer wrong" } })).statusCode, "bad token → 403").toBe(403);
+    expect((await client.get("/v1/films", { headers: { authorization: "Bearer s3cret" } })).statusCode, "good token").toBe(200);
   } finally {
     await client.put("/v1/server-auth", { json: { tokens: [] }, headers: { authorization: "Bearer s3cret" } });
   }
-  expect((await client.get("/v1/notes")).statusCode).toBe(200);
+  expect((await client.get("/v1/films")).statusCode).toBe(200);
 });
 
 test("the lockout escape: health and the token door stay open from this machine", async () => {
@@ -114,7 +114,7 @@ test("the lockout escape: health and the token door stay open from this machine"
   try {
     expect((await client.get("/v1/health", { from: "127.0.0.1" })).statusCode).toBe(200);
     expect((await client.get("/v1/server-auth", { from: "127.0.0.1" })).statusCode).toBe(200);
-    expect((await client.get("/v1/notes", { from: "127.0.0.1" })).statusCode, "the rest stays gated").toBe(401);
+    expect((await client.get("/v1/films", { from: "127.0.0.1" })).statusCode, "the rest stays gated").toBe(401);
   } finally {
     await client.put("/v1/server-auth", { json: { tokens: [] }, from: "127.0.0.1" });
   }
@@ -126,7 +126,7 @@ test("a token is stored trimmed and matches; one with other characters is refuse
   expect(r.statusCode).toBe(200);
   expect(r.json().tokens).toEqual(["s3cret"]);
   try {
-    expect((await client.get("/v1/notes", { headers: { authorization: "Bearer s3cret" } })).statusCode).toBe(200);
+    expect((await client.get("/v1/films", { headers: { authorization: "Bearer s3cret" } })).statusCode).toBe(200);
     r = await client.put("/v1/server-auth", { json: { tokens: ["ok", "café", "two words"] }, headers: { authorization: "Bearer s3cret" } });
     expect(r.statusCode).toBe(422);
     expect(r.json().errors.map((e) => e.loc)).toEqual([
@@ -157,7 +157,7 @@ test("the access tokens are checked by their schema and never logged", async () 
 
 test("a browser origin gets CORS headers (the dev server and the desktop window call this port directly)", async () => {
   for (const origin of ["http://localhost:1470", "app://justdirect"]) {
-    const r = await client.get("/v1/notes", { headers: { origin } });
+    const r = await client.get("/v1/films", { headers: { origin } });
     expect(r.statusCode).toBe(200);
     expect(r.headers["access-control-allow-origin"]).toBe(origin); // its own origin, never every origin
   }
@@ -176,7 +176,7 @@ test("an unrouted path answers 404 and still names its request id", async () => 
 test("behind a reverse proxy its public origin may write; any other origin may not", async () => {
   vi.stubEnv("JUST_DIRECT_ALLOWED_HOSTS", "testserver,paint.example.com");
   const c = testClient(await createApp(tmpDir()));
-  const write = (origin) => c.post("/v1/notes", { json: {}, headers: { origin } });
+  const write = (origin) => c.post("/v1/films", { json: {}, headers: { origin } });
   expect((await write("https://paint.example.com")).statusCode).not.toBe(403);
   expect((await write("https://evil.example")).statusCode).toBe(403);
 });

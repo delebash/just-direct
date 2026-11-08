@@ -5,7 +5,7 @@
 // route's own schema (`schemaRules(SettingsPatch)` from the server package), a 422 lands under its
 // field (`fieldErrors`), any other failure goes through `reportError`, Save is disabled while it
 // runs and sits on the row of the fields it saves — one card per group, each its own form.
-import { fieldErrors, reportError, schemaRules, UiButton, UiField, UiNumber } from "@delebash/ui";
+import { fieldErrors, reportError, schemaRules, UiButton, UiField, UiNumber, UiTextarea } from "@delebash/ui";
 import { SettingsPatch } from "just-direct-server/schemas/settings.js";
 import { nextTick, onMounted, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -15,15 +15,33 @@ const { t } = useI18n();
 const settings = useSettingsStore();
 
 const GROUPS = [
-  // the Notes card's settings: its list's page size, and the largest file Import a file takes
+  // a new film's picture size (wide; its tall and square shapes follow)
   {
-    id: "notes",
-    title: "settings.general.notesTitle",
-    hint: "settings.general.notesHint",
+    id: "films",
+    title: "settings.general.filmsTitle",
+    hint: "settings.general.filmsHint",
     fields: [
-      { key: "notes.pageSize", id: "setting-page-size", label: "settings.general.pageSize" },
-      { key: "notes.maxImportKilobytes", id: "setting-max-import", label: "settings.general.maxImportKilobytes" },
+      { key: "films.width", id: "setting-film-width", label: "settings.general.filmWidth", step: 64 },
+      { key: "films.height", id: "setting-film-height", label: "settings.general.filmHeight", step: 64 },
     ],
+  },
+  // a card's picture: the long side it is painted at, the largest file it takes
+  {
+    id: "cards",
+    title: "settings.general.cardsTitle",
+    hint: "settings.general.cardsHint",
+    fields: [
+      { key: "cards.pictureSide", id: "setting-picture-side", label: "settings.general.pictureSide", step: 64 },
+      { key: "cards.maxPictureMegabytes", id: "setting-max-picture", label: "settings.general.maxPictureMegabytes" },
+    ],
+  },
+  // the words each kind of card's picture is painted from
+  {
+    id: "prompts",
+    title: "settings.general.promptsTitle",
+    hint: "settings.general.promptsHint",
+    text: true,
+    fields: ["character", "place", "prop", "look"].map((k) => ({ key: `cards.prompt.${k}`, id: `setting-prompt-${k}`, label: `settings.general.prompt.${k}` })),
   },
   // how often a window looks for what other windows changed on the server (the kit's watchOtherWindows)
   {
@@ -80,12 +98,17 @@ async function save(group) {
 <template>
   <section v-for="group in GROUPS" :key="group.id" class="card">
     <h2>{{ t(group.title) }}</h2>
-    <p class="hint">{{ t(group.hint) }}</p>
-    <q-form class="form" greedy @submit="save(group)" @keydown.enter.capture="(e) => (enterFrom = e.target)">
-      <div class="form__row">
+    <p class="hint">{{ t(group.hint, { name: "{name}", description: "{description}", look: "{look}" }) }}</p>
+    <q-form class="form" greedy @submit="save(group)" @keydown.enter.capture="(e) => !group.text && (enterFrom = e.target)">
+      <div :class="group.text ? 'form' : 'form__row'">
         <UiField v-for="f in group.fields" :key="f.key" :label="t(f.label)" layout="block" :for="f.id">
+          <UiTextarea
+            v-if="group.text" :id="f.id" v-model="draft[f.key]" width="prose" :rows="2" auto-resize :disabled="!loaded" lazy-rules
+            :rules="rules[f.key]" :error="!!serverErrors[f.key]" :error-message="serverErrors[f.key]"
+            @update:model-value="serverErrors = {}"
+          />
           <UiNumber
-            :id="f.id" v-model="draft[f.key]" width="num" :disabled="!loaded" lazy-rules
+            v-else :id="f.id" v-model="draft[f.key]" width="num" :step="f.step" :disabled="!loaded" lazy-rules
             :rules="rules[f.key]" :error="!!serverErrors[f.key]" :error-message="serverErrors[f.key]"
             @update:model-value="serverErrors = {}"
           />

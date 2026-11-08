@@ -44,14 +44,14 @@ function send(method, path, { headers = {}, body } = {}) {
 }
 
 test("a read from the dev server's origin gets its CORS answer", async () => {
-  const r = await send("GET", "/v1/notes", { headers: { origin: "http://localhost:1470" } });
+  const r = await send("GET", "/v1/films", { headers: { origin: "http://localhost:1470" } });
   expect(r.status).toBe(200);
   expect(r.headers["access-control-allow-origin"]).toBe("http://localhost:1470");
 });
 
 test("the desktop window's preflight and JSON write go through", async () => {
   const origin = "app://justdirect";
-  const pre = await send("OPTIONS", "/v1/notes", {
+  const pre = await send("OPTIONS", "/v1/films", {
     headers: { origin, "access-control-request-method": "POST", "access-control-request-headers": "content-type" },
   });
   expect(pre.status).toBeLessThan(300);
@@ -59,7 +59,7 @@ test("the desktop window's preflight and JSON write go through", async () => {
   expect(String(pre.headers["access-control-allow-methods"])).toMatch(/POST/);
 
   const body = JSON.stringify({ title: "Through the socket" });
-  const r = await send("POST", "/v1/notes", { headers: { origin, "content-type": "application/json", "content-length": Buffer.byteLength(body) }, body });
+  const r = await send("POST", "/v1/films", { headers: { origin, "content-type": "application/json", "content-length": Buffer.byteLength(body) }, body });
   expect(r.status).toBe(201);
   expect(r.headers["access-control-allow-origin"]).toBe(origin);
   expect(JSON.parse(r.text).title).toBe("Through the socket");
@@ -67,7 +67,7 @@ test("the desktop window's preflight and JSON write go through", async () => {
 
 test("an error answer carries CORS too, so the browser sees the error and not a CORS block", async () => {
   const body = JSON.stringify({});
-  const r = await send("POST", "/v1/notes", {
+  const r = await send("POST", "/v1/films", {
     headers: { origin: "http://127.0.0.1:1470", "content-type": "application/json", "content-length": Buffer.byteLength(body) },
     body,
   });
@@ -91,5 +91,5 @@ test("a page that renamed itself to reach this computer (DNS rebinding) is refus
   expect(r.status).toBe(403);
   expect(JSON.parse(r.text).type).toMatch(/host-not-allowed$/);
   // this computer's own names still answer
-  expect((await send("GET", "/v1/notes", { headers: { host: `localhost:${served.port}` } })).status).toBe(200);
+  expect((await send("GET", "/v1/films", { headers: { host: `localhost:${served.port}` } })).status).toBe(200);
 });

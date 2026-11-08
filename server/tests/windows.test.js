@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Several windows on one server — the kit's ChangeCounter as this app wires it (app.js, data_admin.js): each
-// window's writes to the notes and the settings counted apart, so GET /v1/sync/rev answers each window the OTHERS'
+// window's writes to the films and the settings counted apart, so GET /v1/sync/rev answers each window the OTHERS'
 // changes (the kit's watchOtherWindows then reads the page again); the data's epoch is new after a reset and a
 // restore, so every window reloads; how often a window asks is the app's setting.
 import { beforeEach, expect, test } from "vitest";
@@ -25,11 +25,11 @@ const count = async (who) => Number((await ask(who)).rev.split(":")[1]);
 
 test("a window's own writes never move its counter; another window's do; a read, a refused write and a pref don't", async () => {
   const [a0, b0] = [await count(A), await count(B)];
-  expect((await client.post("/v1/notes", { json: { title: "Mine" }, headers: A })).statusCode).toBe(201);
+  expect((await client.post("/v1/films", { json: { title: "Mine" }, headers: A })).statusCode).toBe(201);
   expect(await count(A)).toBe(a0);
   expect(await count(B)).toBe(b0 + 1);
-  await client.post("/v1/notes", { json: { title: "" }, headers: A }); // refused (422): no change
-  await client.get("/v1/notes", { headers: A });
+  await client.post("/v1/films", { json: { title: "" }, headers: A }); // refused (422): no change
+  await client.get("/v1/films", { headers: A });
   await client.patch("/v1/prefs", { json: { aiOfferShown: true }, headers: A }); // a window's own pref
   expect(await count(B)).toBe(b0 + 1);
   await client.patch("/v1/settings", { json: { "windows.checkSeconds": 7 }, headers: B });

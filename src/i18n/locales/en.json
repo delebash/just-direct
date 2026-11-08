@@ -1,12 +1,11 @@
 {
   "app": {
     "name": "JustDirect",
-    "mark": "Di",
+    "mark": "JD",
     "couldNotStart": "The app could not start: {error}"
   },
   "nav": {
-    "home": "Home",
-    "notes": "Notes"
+    "films": "Films"
   },
   "tray": {
     "urlCopied": "Server address copied",
@@ -16,7 +15,7 @@
     "theme": "Theme: {mode} — click to change"
   },
   "connectionError": {
-    "need": "keep your notes and run its AI features",
+    "need": "keep your films and make their pictures, clips and sounds",
     "devHint": "Development: `npm run dev` starts it, or run it yourself with `npm run server`, then retry.",
     "portTaken": "Another program is using port {port}. Close it, then press {retry}.",
     "portOtherUser": "Another person signed in to this computer has the app open, on port {port}. One copy runs at a time: they can quit theirs (its tray icon), then press {retry}.",
@@ -26,67 +25,114 @@
   "notFound": {
     "title": "There's no page here",
     "message": "The address doesn't match any page of the app.",
-    "home": "Go to Home"
-  },
-  "home": {
-    "title": "Welcome",
-    "lede": "This is the family's reference app: everything a new app starts with, and one small example area to show how the pieces fit.",
-    "notes": {
-      "title": "Notes",
-      "body": "Write short notes, pin the ones you need, and let the AI suggest a title.",
-      "open": "Open Notes"
-    },
-    "ai": {
-      "title": "AI",
-      "body": "Set up a local model or connect an online provider. The app's AI features run on what you choose.",
-      "open": "Open AI Settings"
-    },
-    "help": {
-      "title": "Help",
-      "body": "How the app works, how to set up the AI, and what to do when something goes wrong.",
-      "open": "Read Getting started"
-    }
+    "home": "Go to your films"
   },
   "ai": {
     "eyebrow": "AI",
     "title": "Providers, models and usage"
   },
-  "notes": {
-    "title": "Notes",
-    "new": "New note",
-    "import": "Import a file…",
-    "imported": "“{title}” imported",
-    "loadFailed": "Couldn't load your notes: {reason}",
+  "films": {
+    "title": "Your films",
+    "loadFailed": "Couldn't load your films: {reason}",
     "empty": {
-      "title": "No notes yet",
-      "message": "Your notes are kept by the app's server, in its data folder."
+      "title": "No films yet",
+      "message": "Start a film from a story idea. Its AI plans the shots, and you can change anything it does."
     },
-    "filter": "Filter notes",
-    "noMatch": "No note matches the filter.",
-    "pinned": "Pinned",
-    "edit": "Edit “{title}”",
-    "columns": {
+    "open": "Open “{title}”",
+    "more": "More for “{title}”",
+    "counts": "{cards} cards · {shots} shots",
+    "new": {
+      "button": "New film",
+      "title": "New film",
+      "create": "Create film"
+    },
+    "fields": {
       "title": "Title",
-      "changed": "Changed"
+      "story": "Story",
+      "storyHint": "A sentence, a page or a whole script. The AI plans the shots from it, and only from it.",
+      "look": "Look",
+      "lookHint": "How the film looks, in a few words — “moody 35mm film, overcast light”. Every picture of the film is painted with them.",
+      "shape": "Shape"
+    },
+    "shape": {
+      "wide": "Wide · {w}×{h}",
+      "tall": "Tall · {w}×{h}",
+      "square": "Square · {s}×{s}"
     },
     "delete": {
-      "action": "Delete “{title}”",
-      "title": "Delete this note?",
-      "message": "“{title}” and everything in it will be deleted. This can't be undone.",
-      "confirm": "Delete note"
+      "action": "Delete film",
+      "title": "Delete this film?",
+      "message": "“{title}” and everything in it — its cards, shots, pictures, clips and sounds — will be deleted. This can't be undone.",
+      "confirm": "Delete film"
+    }
+  },
+  "film": {
+    "size": "{w} × {h}",
+    "gone": "This film was deleted in another window.",
+    "backToFilms": "Back to your films",
+    "loadFailed": "Couldn't load this film: {reason}",
+    "tabs": {
+      "label": "The film's work",
+      "story": "Story",
+      "cards": "Cards"
+    }
+  },
+  "cards": {
+    "kinds": {
+      "character": "Characters",
+      "place": "Places",
+      "prop": "Props",
+      "look": "Looks"
     },
-    "form": {
-      "newTitle": "New note",
-      "editTitle": "Edit note",
-      "title": "Title",
-      "body": "Note",
-      "pinned": "Pin to the top of the list"
+    "hints": {
+      "character": "Who is in the film. A character's picture keeps their face and clothes the same in every shot.",
+      "place": "Where the shots happen. A place's picture keeps the set the same.",
+      "prop": "Objects that matter to the story, kept the same wherever they appear.",
+      "look": "A style shown as a picture, for shots that should share it."
     },
-    "suggest": {
-      "button": "Suggest a title",
-      "hint": "Ask the AI for a title from what the note says",
-      "needsBody": "Write the note first — the title is suggested from it",
-      "task": "Suggesting a title"
+    "empty": {
+      "character": "No characters yet.",
+      "place": "No places yet.",
+      "prop": "No props yet.",
+      "look": "No looks yet."
+    },
+    "add": {
+      "character": "Add a character",
+      "place": "Add a place",
+      "prop": "Add a prop",
+      "look": "Add a look"
+    },
+    "addButton": "Add",
+    "edit": "Edit {name}",
+    "editTitle": "{name}",
+    "fields": {
+      "name": "Name",
+      "description": "Description",
+      "descriptionHint": {
+        "character": "How they look: age, build, hair, clothes — the picture is painted from these words.",
+        "place": "What the place looks like, its light and its time of day.",
+        "prop": "What the object looks like: its shape, colour and material.",
+        "look": "The style: the light, the colours, the film stock, the mood."
+      },
+      "voice": "Voice",
+      "voiceHint": "How they sound — “a low, weathered woman's voice, calm and dry”. Their lines are spoken in it."
+    },
+    "picture": "Picture",
+    "noPicture": "No picture yet",
+    "pictureAfterAdd": "Add the card first; then paint its picture or take one from a file.",
+    "paint": "Paint",
+    "paintAgain": "Paint again",
+    "painting": "Painting…",
+    "paintFeature": "Painting a card's picture",
+    "paintTask": "Painting {name}",
+    "paintFailed": "{name}'s picture didn't finish",
+    "fromFile": "From a file…",
+    "takeOff": "Take off",
+    "delete": {
+      "action": "Delete",
+      "title": "Delete this card?",
+      "message": "“{name}” and its picture will be deleted. Shots that use it keep their own pictures and clips. This can't be undone.",
+      "confirm": "Delete card"
     }
   },
   "settings": {
@@ -95,23 +141,35 @@
       "general": "General"
     },
     "general": {
-      "notesTitle": "Notes",
-      "notesHint": "How the Notes list shows your notes.",
-      "pageSize": "Notes per page",
-      "maxImportKilobytes": "Largest file to import (KB)",
+      "filmsTitle": "Films",
+      "filmsHint": "A new film's picture size, as wide (its tall and square shapes follow). Every first frame and clip is painted at the film's size; both sides are steps of 64.",
+      "filmWidth": "Width (pixels)",
+      "filmHeight": "Height (pixels)",
+      "cardsTitle": "Card pictures",
+      "cardsHint": "The long side a card's picture is painted at, and the largest picture file a card takes.",
+      "pictureSide": "Long side (pixels)",
+      "maxPictureMegabytes": "Largest picture file (MB)",
       "windowsTitle": "Other windows",
       "windowsHint": "The app open in more than one place at once — the desktop app, a browser on this server, a phone: how often each one looks for what the others changed. It shows their changes by itself.",
-      "checkSeconds": "Look for other windows' changes every (seconds)"
+      "checkSeconds": "Look for other windows' changes every (seconds)",
+      "promptsTitle": "The words pictures are painted from",
+      "promptsHint": "Each kind of card's picture is painted from these words: {name} is the card's name, {description} its description and {look} the film's look.",
+      "prompt": {
+        "character": "A character",
+        "place": "A place",
+        "prop": "A prop",
+        "look": "A look"
+      }
     },
     "appearanceHint": "How the app looks — applied at once and kept by the app.",
     "accentNote": "The default, 166°, is green.",
-    "backupsHint": "A backup holds everything the app keeps: your notes, your settings and your AI setup. Downloaded models aren't in it — they download again.",
+    "backupsHint": "A backup holds everything the app keeps: your films with their pictures, clips and sounds, your settings and your AI setup. Downloaded models aren't in it — they download again. Exported films aren't in it — they are made again from the clips.",
     "logsHint": "What the server and this window reported, newest last.",
     "storage": {
-      "saves": "your notes"
+      "saves": "your films"
     },
     "about": {
-      "blurb": "The family's reference app: the shell, the server, the AI stack, settings, help and tests every family app starts with."
+      "blurb": "A free AI film studio on your own computer: the AI plans the shots, paints the cast, sets and props, makes the clips with their voices, music and sound, and joins them into a film — and you can change any step."
     }
   }
 }

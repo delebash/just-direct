@@ -16,8 +16,14 @@ afterEach(() => {
 // Today's default of EVERY setting. A change here means a default changed: add the OLD fingerprint to
 // PREVIOUS_DEFAULTS (so installs still holding it get the new one), then update this line.
 const TODAY = {
-  "notes.pageSize": "b7a56873cd771f2c",
-  "notes.maxImportKilobytes": "ad57366865126e55",
+  "films.width": "6f13d39f5c466596",
+  "films.height": "e4e5494084228759",
+  "cards.pictureSide": "e39eef82f61b21e2",
+  "cards.maxPictureMegabytes": "f5ca38f748a1d6ea",
+  "cards.prompt.character": "864e7a68afac8683",
+  "cards.prompt.place": "c639ed750f83ea61",
+  "cards.prompt.prop": "895aa78746aa882d",
+  "cards.prompt.look": "65e0bd3396eee9b8",
   "windows.checkSeconds": "4e07408562bedb8b",
 };
 
@@ -31,11 +37,11 @@ test("a setting still at an earlier default takes today's; an edited one, and to
   open.push(db);
   seedSettings(db);
   expect(upgradeSettings(db)).toEqual([]); // a fresh install holds today's
-  // as an install made before a change would: an earlier page size, and the owner's own import limit
-  setSetting(db, "notes.pageSize", 20);
-  setSetting(db, "notes.maxImportKilobytes", 300);
-  const previous = { "notes.pageSize": [fingerprint(20)], "notes.maxImportKilobytes": [fingerprint(50)] };
-  expect(upgradeToToday(db, { defaults: SETTING_DEFAULTS, previous, getSetting, setSetting })).toEqual(["notes.pageSize"]);
-  expect(getSetting(db, "notes.pageSize")).toBe(25);
-  expect(getSetting(db, "notes.maxImportKilobytes")).toBe(300);
+  // as an install made before a change would: an earlier picture side, and the owner's own picture limit
+  setSetting(db, "cards.pictureSide", 768);
+  setSetting(db, "cards.maxPictureMegabytes", 50);
+  const previous = { "cards.pictureSide": [fingerprint(768)], "cards.maxPictureMegabytes": [fingerprint(10)] };
+  expect(upgradeToToday(db, { defaults: SETTING_DEFAULTS, previous, getSetting, setSetting })).toEqual(["cards.pictureSide"]);
+  expect(getSetting(db, "cards.pictureSide")).toBe(1024);
+  expect(getSetting(db, "cards.maxPictureMegabytes")).toBe(50);
 });

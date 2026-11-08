@@ -6,11 +6,25 @@
 
 import { opt, strictObject, T } from "@delebash/core/platform/schema";
 
+/** A picture side: sd.cpp's LTX wants multiples of 64 (schemas/films.js). */
+const Side = T.Integer({ minimum: 384, maximum: 1920, multipleOf: 64 });
+/** The words a card's picture is painted from: {name}, {description} and {look} are filled in. */
+const PromptTemplate = T.String({ minLength: 1, maxLength: 600 });
+
 export const SETTINGS = {
-  // Notes per page in the Notes list.
-  "notes.pageSize": T.Integer({ minimum: 5, maximum: 100 }),
-  // The largest text file Import a file takes, in KB (a note holds up to 20,000 characters).
-  "notes.maxImportKilobytes": T.Integer({ minimum: 1, maximum: 1024 }),
+  // A new film's picture size (every first frame and clip is painted at it): 1280×704 is LTX-2.3's one-pass size on
+  // 8 GB (feasibility §J.3).
+  "films.width": Side,
+  "films.height": Side,
+  // The long side of a card's picture (a character is 3:4, a prop square, a place or a look the film's shape).
+  "cards.pictureSide": T.Integer({ minimum: 512, maximum: 1536, multipleOf: 64 }),
+  // The largest picture a card takes from a file, in MB.
+  "cards.maxPictureMegabytes": T.Integer({ minimum: 1, maximum: 100 }),
+  // The words each kind of card's picture is painted from.
+  "cards.prompt.character": PromptTemplate,
+  "cards.prompt.place": PromptTemplate,
+  "cards.prompt.prop": PromptTemplate,
+  "cards.prompt.look": PromptTemplate,
   // How often a window looks for what other windows changed on this server, in seconds.
   "windows.checkSeconds": T.Integer({ minimum: 1, maximum: 60 }),
 };

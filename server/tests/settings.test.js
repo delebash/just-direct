@@ -22,21 +22,27 @@ test("every setting has a schema and a seeded first value", async () => {
 });
 
 test("a change is kept, and a reseed never overwrites it", async () => {
-  const r = await client.patch("/v1/settings", { json: { "notes.pageSize": 50 } });
+  const r = await client.patch("/v1/settings", { json: { "cards.maxPictureMegabytes": 50 } });
   expect(r.statusCode).toBe(200);
-  expect(r.json()["notes.pageSize"]).toBe(50);
+  expect(r.json()["cards.maxPictureMegabytes"]).toBe(50);
   expect(seedSettings(getDb())).toBe(0);
-  expect((await client.get("/v1/settings")).json()["notes.pageSize"]).toBe(50);
+  expect((await client.get("/v1/settings")).json()["cards.maxPictureMegabytes"]).toBe(50);
 });
 
 test("a value outside its schema is a 422 with the limit", async () => {
-  const r = await client.patch("/v1/settings", { json: { "notes.pageSize": 500 } });
+  const r = await client.patch("/v1/settings", { json: { "cards.maxPictureMegabytes": 500 } });
   expect(r.statusCode).toBe(422);
   expect(r.json().errors).toEqual([
-    { loc: ["body", "notes.pageSize"], msg: "Input should be less than or equal to 100", type: "less_than_equal", ctx: { le: 100 } },
+    { loc: ["body", "cards.maxPictureMegabytes"], msg: "Input should be less than or equal to 100", type: "less_than_equal", ctx: { le: 100 } },
   ]);
-  const half = await client.patch("/v1/settings", { json: { "notes.pageSize": 7.5 } });
+  const half = await client.patch("/v1/settings", { json: { "cards.maxPictureMegabytes": 7.5 } });
   expect(half.json().errors[0].type).toBe("int_from_float");
+  // a picture side that isn't a step of 64 (sd.cpp's sizes)
+  const side = await client.patch("/v1/settings", { json: { "films.width": 1000 } });
+  expect(side.statusCode).toBe(422);
+  expect(side.json().errors[0].loc).toEqual(["body", "films.width"]);
+  // a picture's words can't be empty
+  expect((await client.patch("/v1/settings", { json: { "cards.prompt.prop": "" } })).statusCode).toBe(422);
 });
 
 test("a key that isn't a setting is refused, and the prefs and tokens are not reachable here", async () => {

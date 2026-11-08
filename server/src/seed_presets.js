@@ -27,22 +27,22 @@ export const DEFAULT_ENGINE_PRESETS = [
     think: false,
     samplers: { min_p: "0.05" },
   },
-  // Short, factual answers — a note's title. Low temperature, no thinking: it's latency-bound.
+  // A card's picture: FLUX.2 [klein] 4B on the kit's sd.cpp runtime, with the recipe measured for it (house-paint's
+  // RESEARCH §9–§10: 4 steps, guidance 1, strength 1, euler). No seed here: each picture gets a new one (the route's),
+  // so Paint again paints another.
   {
-    id: "p_short",
-    name: "Short answers",
-    provider_id: "local-llamacpp",
-    model: "",
-    temperature: 0.3,
-    top_p: 0.9,
+    id: "p_cards",
+    name: "Card pictures",
+    provider_id: "local-sdcpp",
+    model: "flux2-klein-4b",
+    kind: "image",
+    params: { steps: 4, cfg: 1, strength: 1, sampler: "euler" },
     position: 1,
-    think: false,
-    samplers: { min_p: "0.05" },
   },
 ];
 
 export const DEFAULT_FEATURE_PRESETS = {
-  "notes.suggestTitle": "p_short",
+  "cards.paint": "p_cards",
 };
 
 export const DEFAULT_PRESET_ID = "p_general";
@@ -199,4 +199,46 @@ export const CLASS_TUNE_IDENTITY = {
   "gemma-4-26b-a4b-qat": { hf_repo: "unsloth/gemma-4-26B-A4B-it-qat-GGUF", quant: "UD-Q4_K_XL" },
   "gemma-4-12b-qat": { hf_repo: "unsloth/gemma-4-12B-it-qat-GGUF", quant: "UD-Q4_K_XL" },
   "gemma-4-e4b-qat": { hf_repo: "unsloth/gemma-4-E4B-it-qat-GGUF", quant: "UD-Q4_K_XL" },
+};
+
+// ── The picture model, for the kit's stable-diffusion.cpp runtime (installLlm `runtimeModels`): FLUX.2 [klein] 4B —
+// house-paint's row (its seed_presets.js FLUX2_KLEIN), the same pinned files and hashes, so a computer that has
+// house-paint shares the download through the family's cache. All three files Apache-2.0, pinned to the Hugging Face
+// commit they were checked at; `sha256` the LFS object id. It holds a card's picture and a shot's first frame with up
+// to three references (cast, place, prop) at 1280×704 in 45–49 s on an 8 GB card, 7.1–7.2 GB of it, and about 15 GB of
+// the computer's memory (feasibility §J.2); peak 6.41 GB for a picture without references.
+export const FLUX2_KLEIN = {
+  runtime: "sdcpp",
+  id: "flux2-klein-4b",
+  name: "FLUX.2 [klein] 4B",
+  license: "Apache-2.0",
+  files: [
+    {
+      slot: "diffusion_model",
+      repo: "leejet/FLUX.2-klein-4B-GGUF",
+      revision: "3b1f5a9dc3abb32238b053aeb3d823c30afdacbd",
+      path: "flux-2-klein-4b-Q8_0.gguf",
+      sha256: "0bba6951258ec8f92d51114a8fa13e66828297bfff58a738f52729b3ef66fa28",
+      bytes: 4300629440,
+    },
+    {
+      slot: "llm",
+      repo: "unsloth/Qwen3-4B-GGUF",
+      revision: "22c9fc8a8c7700b76a1789366280a6a5a1ad1120",
+      path: "Qwen3-4B-Q8_0.gguf",
+      sha256: "eed555233267a33c7e8ee31682762cc7751b3f6d224039086e0e846f05fffa5d",
+      bytes: 4280405792,
+    },
+    {
+      slot: "vae",
+      repo: "black-forest-labs/FLUX.2-klein-4B",
+      revision: "e7b7dc27f91deacad38e78976d1f2b499d76a294",
+      path: "vae/diffusion_pytorch_model.safetensors",
+      sha256: "ca70d2202afe6415bdbcb8793ba8cd99fd159cfe6192381504d6c4d3036e0f04",
+      bytes: 168120878,
+    },
+  ],
+  peakVramMb: 7200,
+  minRamMb: 15 * 1024,
+  refSpeed: { cuda12: 30, cpu: 900 },
 };

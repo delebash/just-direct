@@ -24,7 +24,7 @@ export const useUiStore = defineStore("ui", {
       applyAppearance(this.appearance);
       if (this.locale && LOCALE_CODES.includes(this.locale)) i18n.global.locale.value = this.locale;
     },
-    /** The once-ever AI offer, at this app's first-note moment (pages/NotesPage.vue, after a note is
+    /** The once-ever AI offer, at this app's first-film moment (pages/HomePage.vue, after a film is
      *  created — docgen's is Setup's first save, JustWrite's the first project): shown only when no
      *  AI provider is the default at all — an online default is AI too (§11). */
     async maybeOfferAiSetup() {
