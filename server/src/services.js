@@ -3,7 +3,8 @@
 // is the donor). Each one is the kit's own run — the feature's preset picks the engine and model (app-structure §19):
 // nothing here starts an engine or names a model.
 
-import { buildLlmConfig, runAction, runImageFeature, runVideoFeature, stores } from "@delebash/core/llm";
+import { buildLlmConfig, runAction, stores } from "@delebash/core/llm";
+import { runImageFeature, runVideoFeature } from "@delebash/core/llm/image_dispatch";
 import { runAudioFeature, withSpeechModel } from "@delebash/core/llm/speech_dispatch";
 import { ApiError } from "@delebash/core/platform/errors";
 import { wavSeconds } from "@delebash/core/runner/audiocpp";
