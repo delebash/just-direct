@@ -95,8 +95,19 @@ export function shotsText(shots, byId) {
 
 const str = { type: "string" };
 const oneOf = (values) => ({ enum: values.length ? values : [""] });
+/** Words the model must write: a string at least `min` characters long. */
+const words = (min) => ({ type: "string", minLength: min });
+const NONE = Object.freeze({ enum: [""] });
 
+/** The cards pass's answer. A character carries its voice words and no other card has any — held by the schema, as
+ *  `anyOf` two card shapes: the prompt alone left every character's voice "" on real runs (2026-11-08). */
 export function cardsSchema() {
+  const card = (kinds, voice) => ({
+    type: "object",
+    additionalProperties: false,
+    required: ["kind", "name", "description", "voice"],
+    properties: { kind: { enum: kinds }, name: str, description: words(3), voice },
+  });
   return {
     type: "object",
     additionalProperties: false,
@@ -105,37 +116,34 @@ export function cardsSchema() {
       cards: {
         type: "array",
         maxItems: 24,
-        items: {
-          type: "object",
-          additionalProperties: false,
-          required: ["kind", "name", "description", "voice"],
-          properties: { kind: { enum: [...CARD_KINDS] }, name: str, description: str, voice: str },
-        },
+        items: { anyOf: [card(["character"], words(10)), card(CARD_KINDS.filter((k) => k !== "character"), NONE)] },
       },
     },
   };
 }
 
+/** A shot of the shots and revise passes. A shot with a line has its speaker, its delivery and its feeling, and one
+ *  without has none of them — held by the schema, as `anyOf` the two shapes (the prompt alone left a line's delivery and
+ *  feeling "" on one of two real plans, 2026-11-08). With no character to speak, only the shape without. */
 function shotItem(refs, placeRefs, speakerRefs, withNumber = null) {
-  const props = {
-    place: oneOf([...placeRefs, ""]),
-    cards: refs.length ? { type: "array", maxItems: 8, items: { enum: refs } } : { type: "array", maxItems: 0 },
-    size: { enum: [...SIZES] },
-    camera: str,
-    action: str,
-    line: str,
-    speaker: oneOf([...speakerRefs, ""]),
-    delivery: str,
-    emotion: { enum: ["", ...EMOTIONS] },
-    seconds: { type: "integer", minimum: 2, maximum: 10 },
-    transition: { enum: [...TRANSITIONS] },
+  const shape = (spoken) => {
+    const props = {
+      ...(withNumber ? { number: { enum: withNumber } } : {}),
+      place: oneOf([...placeRefs, ""]),
+      cards: refs.length ? { type: "array", maxItems: 8, items: { enum: refs } } : { type: "array", maxItems: 0 },
+      size: { enum: [...SIZES] },
+      camera: str,
+      action: words(3),
+      line: spoken ? words(1) : NONE,
+      speaker: spoken ? { enum: speakerRefs } : NONE,
+      delivery: spoken ? words(3) : NONE,
+      emotion: spoken ? { enum: [...EMOTIONS] } : NONE,
+      seconds: { type: "integer", minimum: 2, maximum: 10 },
+      transition: { enum: [...TRANSITIONS] },
+    };
+    return { type: "object", additionalProperties: false, required: Object.keys(props), properties: props };
   };
-  const required = ["place", "cards", "size", "camera", "action", "line", "speaker", "delivery", "emotion", "seconds", "transition"];
-  if (withNumber) {
-    props.number = { enum: withNumber };
-    required.unshift("number");
-  }
-  return { type: "object", additionalProperties: false, required, properties: props };
+  return speakerRefs.length ? { anyOf: [shape(true), shape(false)] } : shape(false);
 }
 
 const refsOf = (cards, byId, kinds) => cards.filter((c) => !kinds || kinds.includes(c.kind)).map((c) => byId.get(c.id));

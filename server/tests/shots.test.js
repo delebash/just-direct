@@ -123,13 +123,26 @@ describe("the planner", () => {
     expect(runs[0].variables.cards).toContain('"card":"mara"');
     expect(runs[1].variables.maxShots).toBe(24);
     expect(runs[1].maxTokens).toBe(12000);
-    const schema = JSON.parse(runs[1].jsonSchema);
-    expect(schema.properties.shots.items.properties.cards.items.enum).toEqual(["mara", "teo", "hollow_pier", "brass_ticket"]);
-    expect(schema.properties.shots.items.properties.place.enum).toEqual(["hollow_pier", ""]);
-    expect(schema.properties.shots.items.properties.speaker.enum).toEqual(["mara", "teo", ""]);
-    // how a line is said: words, and one of JustVoice's emotion labels
-    expect(schema.properties.shots.items.properties.emotion.enum).toEqual(["", "neutral", "happy", "sad", "angry", "fearful", "whispered", "shouted", "sarcastic", "contemptuous"]);
-    expect(schema.properties.shots.items.required).toEqual(expect.arrayContaining(["delivery", "emotion"]));
+    // the cards pass: a character must carry its voice words, no other card any (two shapes, the model picks one)
+    const [character, other] = JSON.parse(runs[0].jsonSchema).properties.cards.items.anyOf;
+    expect(character.properties.kind.enum).toEqual(["character"]);
+    expect(character.properties.voice.minLength).toBe(10);
+    expect(other.properties.kind.enum).toEqual(["place", "prop", "look"]);
+    expect(other.properties.voice.enum).toEqual([""]);
+    // the shots pass: a shot with a line, or one without
+    const [talking, silent] = JSON.parse(runs[1].jsonSchema).properties.shots.items.anyOf;
+    for (const shape of [talking, silent]) {
+      expect(shape.properties.cards.items.enum).toEqual(["mara", "teo", "hollow_pier", "brass_ticket"]);
+      expect(shape.properties.place.enum).toEqual(["hollow_pier", ""]);
+      expect(shape.required).toEqual(Object.keys(shape.properties));
+    }
+    // with a line: who says it (a character), how in words, and one of JustVoice's emotion labels — none of them empty
+    expect(talking.properties.line.minLength).toBe(1);
+    expect(talking.properties.speaker.enum).toEqual(["mara", "teo"]);
+    expect(talking.properties.delivery.minLength).toBe(3);
+    expect(talking.properties.emotion.enum).toEqual(["neutral", "happy", "sad", "angry", "fearful", "whispered", "shouted", "sarcastic", "contemptuous"]);
+    // without: none of them
+    for (const k of ["line", "speaker", "delivery", "emotion"]) expect(silent.properties[k].enum).toEqual([""]);
 
     const cards = (await client.get(`/v1/films/${film.id}/cards`)).json().items;
     expect(cards.map((c) => [c.kind, c.name])).toEqual([
@@ -216,7 +229,9 @@ describe("the planner", () => {
     expect(run.action).toBe("plan.revise");
     expect(run.variables).toMatchObject({ number: 2, editable: "3, 5" });
     expect(run.variables.change).toContain("The user says: There is no thermos.");
-    expect(JSON.parse(run.jsonSchema).properties.shots.items.properties.number.enum).toEqual([3, 5]);
+    // each shape a shot can take (with a line or without) is numbered only as the shots it may change
+    const items = JSON.parse(run.jsonSchema).properties.shots.items;
+    for (const shape of items.anyOf ?? [items]) expect(shape.properties.number.enum).toEqual([3, 5]);
     const after = await listShots(film.id);
     expect(after.map((s) => s.action)).toEqual([
       "Teo boards.",
