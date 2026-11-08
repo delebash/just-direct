@@ -146,7 +146,13 @@ the run — through JustDirect's own routes, JustVoice headless on 17494, the ca
   overlooking a dark sea at dusk."; the ferry story's stay right ("A rain-soaked wooden pier at dawn, with sun shining
   through the rain.", "The bow of an old green ferry."). Kept. Still empty with the prompt asking: **every character's
   voice** (4 of 4) and **one of two lines' delivery and feeling** (the other: "softly", "whispered"). The schema
-  allowed ""; it now holds them (b973eed) — to be measured.
+  allowed "".
+- **The schema holding them, measured** (10:00–10:07 UTC, both stories again under b973eed's `anyOf` shapes): the
+  shots' shapes work — both lines carried their delivery and feeling ("quietly; happy", "solemnly; sad"). The cards'
+  didn't: every voice came back "Not provided." (the length rule met with filler), and the cards fell to 3 a story
+  where the prompt alone made 8 and 9 — the lighthouse, the sea, the ferry and every prop gone. Kept the shots' shapes;
+  the cards schema is the 09:37 one again, a voice optional (JustVoice describes a voice from the card's looks, as it
+  did for Mara). The two passes are separate calls, so the pair wasn't planned together again.
 
 ### The voices round trip through JustVoice's server (2026-11-08, 06:43–06:47 UTC)
 

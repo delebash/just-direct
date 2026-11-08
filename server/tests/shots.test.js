@@ -123,12 +123,12 @@ describe("the planner", () => {
     expect(runs[0].variables.cards).toContain('"card":"mara"');
     expect(runs[1].variables.maxShots).toBe(24);
     expect(runs[1].maxTokens).toBe(12000);
-    // the cards pass: a character must carry its voice words, no other card any (two shapes, the model picks one)
-    const [character, other] = JSON.parse(runs[0].jsonSchema).properties.cards.items.anyOf;
-    expect(character.properties.kind.enum).toEqual(["character"]);
-    expect(character.properties.voice.minLength).toBe(10);
-    expect(other.properties.kind.enum).toEqual(["place", "prop", "look"]);
-    expect(other.properties.voice.enum).toEqual([""]);
+    // the cards pass: one card shape, a voice optional — held by the schema, the model filled it with "Not provided."
+    // and made a third of the cards (2026-11-08)
+    const card = JSON.parse(runs[0].jsonSchema).properties.cards.items;
+    expect(card.anyOf).toBeUndefined();
+    expect(card.properties.kind.enum).toEqual(["character", "place", "prop", "look"]);
+    expect(card.properties.voice).toEqual({ type: "string" });
     // the shots pass: a shot with a line, or one without
     const [talking, silent] = JSON.parse(runs[1].jsonSchema).properties.shots.items.anyOf;
     for (const shape of [talking, silent]) {

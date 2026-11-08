@@ -99,15 +99,11 @@ const oneOf = (values) => ({ enum: values.length ? values : [""] });
 const words = (min) => ({ type: "string", minLength: min });
 const NONE = Object.freeze({ enum: [""] });
 
-/** The cards pass's answer. A character carries its voice words and no other card has any — held by the schema, as
- *  `anyOf` two card shapes: the prompt alone left every character's voice "" on real runs (2026-11-08). */
+/** The cards pass's answer. A character's voice stays optional here: held by the schema (`anyOf` a character with
+ *  voice words or another card with none), the model wrote "Not provided." to fill it and made 3 cards where it had
+ *  made 8 and 9 — the places' setting and every prop gone (measured 2026-11-08, RESEARCH). An empty voice is JustVoice's
+ *  to describe from the card's looks (voices.js `whoTheyAre`). */
 export function cardsSchema() {
-  const card = (kinds, voice) => ({
-    type: "object",
-    additionalProperties: false,
-    required: ["kind", "name", "description", "voice"],
-    properties: { kind: { enum: kinds }, name: str, description: words(3), voice },
-  });
   return {
     type: "object",
     additionalProperties: false,
@@ -116,7 +112,12 @@ export function cardsSchema() {
       cards: {
         type: "array",
         maxItems: 24,
-        items: { anyOf: [card(["character"], words(10)), card(CARD_KINDS.filter((k) => k !== "character"), NONE)] },
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["kind", "name", "description", "voice"],
+          properties: { kind: { enum: [...CARD_KINDS] }, name: str, description: str, voice: str },
+        },
       },
     },
   };
