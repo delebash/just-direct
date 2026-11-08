@@ -43,6 +43,8 @@ function fakeFetch(input, init = {}) {
   }
   if (p === "/v1/mocap/takes/t1/run" && method === "POST") return Promise.resolve(json({ id: "job-take", state: "running", progress: 0 }, 202));
   if (p === "/v1/jobs/job-take") return Promise.resolve(json({ id: "job-take", state: "done", progress: 1, result: { ...server.take } }));
+  // a take's job still running (a stopped take continued)
+  if (p === "/v1/jobs/job-running") return Promise.resolve(json({ id: "job-running", kind: "mocap", key: "t1", state: "running", progress: 0.48, message: "head points: already done", startedAt: new Date().toISOString() }));
   return Promise.resolve(json({}));
 }
 
@@ -90,4 +92,30 @@ test("the takes: one captured, its files to save, its foot contacts; Capture aga
   await settle();
   const run = server.calls.find(([m, p]) => m === "POST" && p === "/v1/mocap/takes/t1/run");
   expect(run?.[2]).toMatchObject({ fresh: true });
+});
+
+test("Pick in the picture: the click is a fraction of the video itself, not of the frame around it", async () => {
+  server.take = { ...TAKE, state: "new", files: [], options: { person: [0.1, 0.1] } };
+  wrapper = mount(MocapArea, { attachTo: document.body, global: { plugins: plugins() } });
+  await settle();
+  const frame = document.body.querySelector(".take__frame");
+  const video = frame.querySelector("video");
+  // the frame stretched to its column (580 px), the video 480 px wide from the frame's left: the case that put the
+  // click on the man walking behind the guitarist (2026-11-08)
+  frame.getBoundingClientRect = () => ({ left: 100, top: 200, width: 580, height: 270, right: 680, bottom: 470 });
+  video.getBoundingClientRect = () => ({ left: 100, top: 200, width: 480, height: 270, right: 580, bottom: 470 });
+  await new DOMWrapper(frame).trigger("click", { clientX: 340, clientY: 335 });
+  await settle();
+  const pin = frame.querySelector(".take__pin");
+  expect([pin.style.left, pin.style.top]).toEqual(["50%", "50%"]);
+});
+
+test("a stopped take continued: one button says Capturing…, the other keeps its words, both held", async () => {
+  server.take = { ...TAKE, state: "cancelled", files: [], job: { id: "job-running", kind: "mocap", key: "t1", state: "running", progress: 0.48 } };
+  wrapper = mount(MocapArea, { attachTo: document.body, global: { plugins: plugins() } });
+  await settle();
+  const buttons = [...document.body.querySelectorAll(".take__actions button")];
+  expect(buttons.filter((b) => b.textContent.includes("Capturing…"))).toHaveLength(1);
+  const again = buttons.find((b) => b.textContent.includes("Capture again from the start"));
+  expect(again.getAttribute("aria-disabled") ?? String(again.disabled)).toMatch(/true/);
 });

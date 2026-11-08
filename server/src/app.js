@@ -18,6 +18,7 @@ import { statSync } from "node:fs";
 import path from "node:path";
 import { installLlm, makeImageJobsRouter, makeMocapRouter, runnerRouter } from "@delebash/core/llm";
 import { MOCAP_MODELS } from "@delebash/core/runner/config";
+import { devBuildOverrides } from "@delebash/core/runner/dev_build";
 import {
   bearerAuth,
   CAPACITOR_ORIGINS,
@@ -54,7 +55,6 @@ import { router as soundsRouter } from "./api/sounds_api.js";
 import { AppState, setState } from "./app_state.js";
 import { readAuth } from "./auth.js";
 import { router as dataRouter } from "./data_admin.js";
-import { runtimeExeOverrides } from "./dev_builds.js";
 import { openAppDatabase } from "./database/index.js";
 import { getSetting, setSetting } from "./database/settings.js";
 import { FEATURE_CATALOG } from "./feature_catalog.js";
@@ -144,8 +144,10 @@ const llmArgs = (db, dataDir) => ({
   // JustDirect … the screen lives in the kit, so JustStage can share it")
   runtimes: ["sdcpp", "audiocpp", "ffmpeg", "mocap"],
   runtimeModels: [FLUX2_KLEIN, LTX_23, STABLE_AUDIO_MUSIC, STABLE_AUDIO_EFFECTS, ACE_STEP_SONGS, LATENTSYNC, ...MOCAP_MODELS],
-  // a development build of our sd.cpp or audio.cpp fork in place of the installed one (dev_builds.js — the variables)
-  runtimeExeOverrides: runtimeExeOverrides(),
+  // a development build of our sd.cpp or audio.cpp fork in place of the installed one (the kit's runner/dev_build.js):
+  // JUST_DIRECT_SDCPP_BUILD and JUST_DIRECT_AUDIOCPP_BUILD name the build's bin folder (…\stable-diffusion.cpp\build-jd\bin,
+  // …\audio.cpp\build\jv-dev\bin); a packaged app ignores them
+  runtimeExeOverrides: devBuildOverrides({ sdcpp: "JUST_DIRECT_SDCPP_BUILD", audiocpp: "JUST_DIRECT_AUDIOCPP_BUILD" }),
 });
 
 /** The Hono app, not yet listening. `dataDir` defaults to the family data-folder ladder; `services` replaces some of

@@ -74,7 +74,7 @@ five sentences, two characters, one line. *measured*.
   with its model's load. **Heard by the user:** the music "Use with edits" — guitar and strings yes, quiet and hopeful
   mostly, it doesn't swell toward the end; the effect "Use with edits" — mostly a hammer on wood, more strikes wanted,
   no rain under it.
-- **Not run then:** clips and the export. They run on the `jd` development build (`server/src/dev_builds.js`); no
+- **Not run then:** clips and the export. They run on the `jd` development build (then `server/src/dev_builds.js`; the kit's `runner/dev_build.js` since 2026-11-08); no
   release is needed (the user, 2026-11-07).
 
 ### The first clips run (2026-11-08, the `jd` development build)

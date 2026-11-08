@@ -31,7 +31,11 @@ HERE:   v1 complete (2026-11-08): every PRD row built; run on real models — th
         E:\Dev\Web\test-just-direct\review-answers-<set>.json)
 GO:     the user, 2026-11-07: "finish the app, dont stop coding at turns or decsions, for decisions you think adverserily
         multiple times on each decision you need to make and take your own rec, do not stop to ask me to make decsions,
-        complete the app until all bugs features things you find our think of to do are donel, finish the app"
+        complete the app until all bugs features things you find our think of to do are donel, finish the app"; and
+        2026-11-08, on the finish list for JustDirect and Motion capture: "would you please for the last time make your
+        own damn decisions after you think adverserially until you dont change your mind. finish this app!!! you can
+        talk to any session family releae ect, make sure you rethink these recs until you dont flip you decison go
+        finish it!!!" — the decisions and the checklist: the plan's "THE FINISH GO"
 PLAN:   docs/plans/2026-11-07-v1.md
 
 ### Character voices: what JustDirect speaks with [2026-11-07]
