@@ -279,7 +279,7 @@
     "talking": "drawn to its voice",
     "lips": {
       "action": "Repair lips",
-      "hint": "Redraws the mouth to match the line's voice, as a new clip (LatentSync — its face models are for non-commercial research only). Many minutes a clip on an 8 GB card.",
+      "hint": "Repair lips redraws the mouth to match the line's voice, as a new clip as long as the old one (LatentSync — its face models are for non-commercial research only). It needs a face turned toward the camera: on a face in profile it can draw a mouth in the air beside it — then Use this one on the old clip. Many minutes a clip on an 8 GB card.",
       "task": "Lips for shot {n}"
     },
     "delete": {

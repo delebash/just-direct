@@ -40,7 +40,7 @@ function fakeFetch(input, init = {}) {
   const body = typeof init.body === "string" ? JSON.parse(init.body) : undefined;
   server.calls.push([method, url.pathname, body, init.headers?.["If-Match"] ?? init.headers?.["if-match"]]);
   const p = url.pathname;
-  if (p === "/v1/settings") return Promise.resolve(json({ "films.width": 1280, "films.height": 704 }));
+  if (p === "/v1/settings") return Promise.resolve(json({ "films.width": 1280, "films.height": 704, "clips.lipRepair": server.lipRepair }));
   if (p === "/v1/films/f1" && method === "GET") return Promise.resolve(json(server.film));
   if (p === "/v1/films/f1" && method === "PATCH") {
     server.film = { ...server.film, ...body, version: `"v${++server.n}"` };
@@ -137,7 +137,15 @@ function fakeFetch(input, init = {}) {
   }
   if (p === "/v1/jobs/job-carry") return Promise.resolve(json({ id: "job-carry", state: "done", progress: 1, result: { why: "Teo keeps the coat.", changed: ["s3"] } }));
   // a shot's clips; the kit's motion capture takes (just-core llm/mocap_api.js), a take's pose file, a guide video added
-  if (/^\/v1\/shots\/s\d+\/clips$/.test(p) && method === "GET") return Promise.resolve(json({ items: [] }));
+  if (/^\/v1\/shots\/s\d+\/clips$/.test(p) && method === "GET") return Promise.resolve(json({ items: server.clips }));
+  // lip repair on a talking clip (a job): a new clip as long as the old one, chosen
+  if (/^\/v1\/clips\/k\d+\/lips$/.test(p) && method === "POST") return Promise.resolve(json({ id: "job-lips", state: "running", progress: 0 }, 202));
+  if (p === "/v1/jobs/job-lips") {
+    const fixed = clip({ id: "k2", recipe: { mode: "lips", talking: true, frames: 97, fps: 24, repairedFrom: "k1" } });
+    if (!server.clips.some((c) => c.id === "k2")) server.clips = [fixed, ...server.clips];
+    server.shots = server.shots.map((s) => ({ ...s, clipId: "k2" }));
+    return Promise.resolve(json({ id: "job-lips", state: "done", progress: 1, result: { clip: fixed, shot: server.shots[0] } }));
+  }
   if (p === "/v1/mocap/takes") return Promise.resolve(json({ takes: server.takes }));
   if (p === "/v1/mocap/takes/t1/files/pose") return Promise.resolve(new Response(new Blob([new Uint8Array([0, 0, 0, 24])], { type: "video/mp4" })));
   if (/^\/v1\/shots\/s\d+\/guide$/.test(p) && method === "POST") {
@@ -153,6 +161,7 @@ const shot = (n, action) => ({
   seconds: 4, transition: "cut", edited: false, frameId: null, clipId: null, clipSeconds: null, trimIn: 0, trimOut: 0, version: `"s${n}"`,
 });
 const sound = (s) => ({ filmId: "f1", shotId: null, start: 0, volume: 1, file: `${s.id}.wav`, audioUrl: `/v1/sounds/${s.id}/audio`, ...s });
+const clip = (c) => ({ shotId: "s1", seed: 1, seconds: 97 / 24, file: `${c.id}.webm`, videoUrl: `/v1/clips/${c.id}/video`, chosen: false, ...c });
 
 let wrapper;
 let router;
@@ -190,7 +199,7 @@ const settle = async () => {
 };
 
 beforeEach(() => {
-  server = { calls: [], n: 1, film: { id: "f1", title: "The Last Ferry", story: "", look: "", width: 1280, height: 704, version: '"v1"' }, cards: [], shots: [], sounds: [], takes: [], guideFile: null, exported: null, route: { configured: true } };
+  server = { calls: [], n: 1, film: { id: "f1", title: "The Last Ferry", story: "", look: "", width: 1280, height: 704, version: '"v1"' }, cards: [], shots: [], sounds: [], takes: [], guideFile: null, clips: [], lipRepair: false, exported: null, route: { configured: true } };
   reported.length = 0;
   // the kit keeps resolved routes for the session: each test asks its own server
   useResolvedRoute().invalidateRoutes();
@@ -369,6 +378,27 @@ test("Shots: a motion capture take's pose leads a clip; a take captured before t
   expect(server.guideFile.name).toBe("Walk to the door-pose.mp4");
   expect(server.guideFile.type).toBe("video/mp4");
   expect(text()).toContain("Guide video: 24 frames");
+  expect(reported).toEqual([]);
+});
+
+test("Shots: Repair lips only once Settings offers it; it says what it needs, runs as a job, and the repaired clip is listed", async () => {
+  server.film.story = "x";
+  server.shots = [{ ...shot(1, "Mara looks at Teo."), line: "The last crossing.", clipId: "k1", clipSeconds: 97 / 24 }];
+  server.clips = [clip({ id: "k1", chosen: true, recipe: { mode: "one", talking: true, frames: 97, fps: 24 } })];
+  await mountPage("/films/f1/shots");
+  await click(document.querySelector('[aria-label="Shot 1\'s clip"]'));
+  expect(byText("button", "Repair lips")).toBeUndefined();
+  expect(text()).not.toContain("needs a face turned toward the camera");
+  // turned on in Settings
+  server.lipRepair = true;
+  await wrapper.unmount();
+  await mountPage("/films/f1/shots");
+  await click(document.querySelector('[aria-label="Shot 1\'s clip"]'));
+  expect(text()).toContain("It needs a face turned toward the camera");
+  await click(byText("button", "Repair lips"));
+  await settle();
+  expect(server.calls.some((c) => c[0] === "POST" && c[1] === "/v1/clips/k1/lips")).toBe(true);
+  expect(text()).toContain("4 s · Lips repaired");
   expect(reported).toEqual([]);
 });
 

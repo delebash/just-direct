@@ -108,12 +108,21 @@ export function lipFramesMax(width, height) {
   return Math.floor((constants.MAX_STRING_LENGTH * 0.97) / perFrame);
 }
 
-/** FFmpeg's arguments for a repaired clip: LatentSync's raw frames (`raw`, rgb24, `width`×`height` at `fps`) and the line's
- *  voice they were drawn to (`voice`, a WAV — a talking shot's sound in the cut is its line's, cut.js) → a WebM at `out`. */
-export function lipClipArgs({ raw, width, height, fps, voice }, out) {
+/** FFmpeg's arguments that fit the line's voice (`voice`, a WAV) to a clip of `seconds`: silence after it, or the rest
+ *  cut, as a WAV at `out`. LatentSync makes as many frames as its voice lasts and plays the clip back and forth to
+ *  fill a longer one (audio.cpp `src/community_models/latentsync/pipeline.cpp`, its output frames from the voice's
+ *  length): fitted, the repaired clip is the clip's own length and a repair never moves the shot's timing or trims. */
+export function fitVoiceArgs(voice, seconds, out) {
+  return ["-v", "error", "-y", "-i", voice, "-af", "apad", "-t", seconds.toFixed(3), "-c:a", "pcm_s16le", out];
+}
+
+/** FFmpeg's arguments for a repaired clip: LatentSync's raw frames (`raw`, rgb24, `width`×`height` at `fps`), the first
+ *  `frames` of them (the clip's own count), and the fitted voice they were drawn to (`voice`, a WAV — a talking shot's
+ *  sound in the cut is its line's, cut.js) → a WebM at `out`. */
+export function lipClipArgs({ raw, width, height, fps, frames, voice }, out) {
   return [
     ...["-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", `${width}x${height}`, "-r", String(fps), "-i", raw, "-i", voice],
-    ...["-map", "0:v:0", "-map", "1:a:0", "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "30", "-deadline", "good", "-cpu-used", "4"],
+    ...["-map", "0:v:0", "-map", "1:a:0", "-frames:v", String(frames), "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "30", "-deadline", "good", "-cpu-used", "4"],
     ...["-row-mt", "1", "-pix_fmt", "yuv420p", "-c:a", "libopus", "-shortest", out],
   ];
 }

@@ -193,12 +193,13 @@ async function remove(c) {
             <UiButton v-if="current.clipId !== c.id" intent="primary" size="small" :label="t('clips.use')" @click="choose(c)" />
             <UiButton
               v-if="lipsOffered && c.recipe.talking" intent="secondary" size="small" focusable-when-disabled
-              :disabled="!!films.clipping[shot.id] || films.clippingFilm" :label="t('clips.lips.action')" :title="t('clips.lips.hint')" @click="repairLips(c)"
+              :disabled="!!films.clipping[shot.id] || films.clippingFilm" :label="t('clips.lips.action')" @click="repairLips(c)"
             />
             <UiButton intent="ghost" size="small" :label="t('clips.delete.action')" @click="remove(c)" />
           </div>
         </li>
       </ul>
+      <p v-if="lipsOffered && items.some((c) => c.recipe.talking)" class="hint">{{ t("clips.lips.hint") }}</p>
     </div>
   </AppModal>
 </template>

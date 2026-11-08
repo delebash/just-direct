@@ -23,7 +23,7 @@ import { getLogger } from "@delebash/core/platform/log";
 import { ffmpegExe, runFfmpeg } from "@delebash/core/runner/ffmpeg";
 import sharp from "sharp";
 import { getDb, getState } from "../app_state.js";
-import { clipPrompt, fitGuide, frameCount, guideFilter, half, LONG_TAKE_HIRES, lipClipArgs, lipFramesMax, modeOf, pathFrames, wavSeconds } from "../clips.js";
+import { clipPrompt, fitGuide, fitVoiceArgs, frameCount, guideFilter, half, LONG_TAKE_HIRES, lipClipArgs, lipFramesMax, modeOf, pathFrames, wavSeconds } from "../clips.js";
 import * as clips from "../database/clips.js";
 import * as films from "../database/films.js";
 import * as frames from "../database/frames.js";
@@ -243,7 +243,8 @@ export function router() {
     if (!ffmpegExe()) throw new ApiError(409, "engine-not-installed", "FFmpeg isn't installed", "Install FFmpeg on the AI page's FFmpeg tab — the repaired clip is made with it.");
     const { width, height, frames, fps } = clip.recipe;
     const most = lipFramesMax(width, height);
-    if (frames > most) {
+    // LatentSync's answer carries one frame more than the clip (below)
+    if (frames + 1 > most) {
       throw new ApiError(409, "too-long", "This clip is too long to repair", `Lip repair takes up to ${(most / fps).toFixed(1)} s of a ${width}×${height} clip; this one is ${(frames / fps).toFixed(1)} s.`);
     }
     const job = getState().jobs.start(
@@ -252,27 +253,30 @@ export function router() {
         update({ filmId: film.id, shotId: shot.id, clipId: clip.id });
         progress(0.02, "repairing");
         const { dataDir } = getState();
-        const voice = filmFile(dataDir, film.id, "sounds", voiceName);
         const seed = randomInt(2147483647);
-        const request = {
-          audio_base64: (await readFile(voice)).toString("base64"),
-          options: {
-            reference_video_file: filmFile(dataDir, film.id, "clips", clipName),
-            fps,
-            num_inference_steps: setting("clips.lipSteps"),
-            guidance_scale: setting("clips.lipGuidance"),
-            seed,
-          },
-        };
-        // many minutes a clip on an 8 GB card (about 100 s a second of clip on a large one, the kit's RESEARCH): the
-        // engine is given three hours before the request is called failed
-        const result = await getState().services.makeAudio("clips.lips", request, { timeout: 3 * 3600 });
-        signal.throwIfAborted();
-        const art = (result?.artifacts ?? []).find((a) => a?.meta?.format === "rgb24" && a?.payload);
-        if (!art) throw new ApiError(502, "no-frames", "The repaired frames came back empty", "Try again.");
-        const size = { width: Number(art.meta.width), height: Number(art.meta.height), frames: Number(art.meta.frames), fps: Number(art.meta.fps) || fps };
         const work = newWorkDir(dataDir);
         try {
+          // the line's voice fitted to the clip's length, so LatentSync draws the whole clip and no more
+          const voice = path.join(work, "voice.wav");
+          await runFfmpeg(fitVoiceArgs(filmFile(dataDir, film.id, "sounds", voiceName), frames / fps, voice), { signal });
+          const request = {
+            audio_base64: (await readFile(voice)).toString("base64"),
+            options: {
+              reference_video_file: filmFile(dataDir, film.id, "clips", clipName),
+              fps,
+              num_inference_steps: setting("clips.lipSteps"),
+              guidance_scale: setting("clips.lipGuidance"),
+              seed,
+            },
+          };
+          // many minutes a clip on an 8 GB card (about 100 s a second of clip on a large one, the kit's RESEARCH): the
+          // engine is given three hours before the request is called failed
+          const result = await getState().services.makeAudio("clips.lips", request, { timeout: 3 * 3600 });
+          signal.throwIfAborted();
+          const art = (result?.artifacts ?? []).find((a) => a?.meta?.format === "rgb24" && a?.payload);
+          if (!art) throw new ApiError(502, "no-frames", "The repaired frames came back empty", "Try again.");
+          // LatentSync's count runs one past a voice that fills the clip (its feature2chunks): the clip's own count kept
+          const size = { width: Number(art.meta.width), height: Number(art.meta.height), frames: Math.min(Number(art.meta.frames), frames), fps: Number(art.meta.fps) || fps };
           const raw = path.join(work, "frames.rgb");
           writeFileSync(raw, Buffer.from(String(art.payload), "base64"));
           progress(0.95, "joining");

@@ -55,6 +55,11 @@ long to repair": lip repair takes about 6 seconds of a 1280 × 704 clip at most,
 long as its line — give the shot a shorter line (or split it over two shots), or keep the clip as LTX-2.3
 drew it.
 
+**A repaired clip has a mouth floating beside the face.** Lip repair finds a face turned toward the camera; a
+face seen in profile — two people facing each other, side-on — is outside what it handles, and it can draw a
+mouth in the air in front of it. The old clip is kept: press **Use this one** on it, then **Delete** the
+repaired one. For a talking shot you want repaired, plan the speaker facing the camera.
+
 **The first frames weren't checked.** The vision model (Qwen3-VL 8B) isn't set up: the frames are painted and
 the first one used. Download it on the AI page to have the best of each set chosen for you.
 

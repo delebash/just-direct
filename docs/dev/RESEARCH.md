@@ -85,6 +85,25 @@ five sentences, two characters, one line. *measured*.
   busy but never cleared the idle timer armed at the server's start (sd.cpp's idle time: 300 s, `runner/runtimes.js`).
   Fixed in just-core e15a3f71 with a test (`tests/runtime_server.test.js`). *code*.
 
+### The second clips run (2026-11-08, 06:50–07:12 UTC, the `jd` and `jv-dev` development builds)
+
+`real-run-clips.js --part clips` on the first run's film, the card to itself (501 MiB used at the start, 20 GB RAM
+free). Files in `E:\Dev\Web\test-just-direct\real-run-2026-11-07\`; frames looked at in `look\`. *measured* / *seen*.
+
+- **The idle fix holds:** the one-pass clip (shot 1, 1280×704, 97 frames at 24 fps) took 412 s; the talking clip
+  (shot 6, Mara's JustVoice line driving it) 397 s — both past sd.cpp's 300 s idle time, neither stopped.
+- **The clips look right:** Mara (yellow oilskin, grey braid, captain's cap) and Teo (red hoodie) hold their cards'
+  looks; the one-pass shot barely moves (a static wide shot, as planned).
+- **Lip repair ran (492 s) and failed on this shot:** Mara is in profile, facing Teo; LatentSync drew a pink mouth in
+  the air in front of her face from about frame 24 on, her own mouth unchanged (`look\lips-face-b.png` against
+  `look\talk-face-b.png`). LatentSync aligns a frontal face (SCRFD and 106 landmarks); a side-on face is outside it.
+  The window and the help now say so.
+- **Lip repair shortened the shot:** 83 frames came back for a 97-frame clip, and the join stopped at the voice's end
+  (3.37 s for a 4.0 s shot). audio.cpp's LatentSync makes as many frames as its voice lasts, plus one, and plays the
+  clip back and forth past its end (`src/community_models/latentsync/pipeline.cpp:83-85, 120-123`). Fixed: the voice
+  is padded or cut to the clip's length first and the clip's own frame count kept (`clips.js` `fitVoiceArgs`).
+- **The export:** 7.5 s, the 2 shots with clips (10 without, left out), H.264 and AAC, in 5 s.
+
 ### The voices round trip through JustVoice's server (2026-11-08, 06:43–06:47 UTC)
 
 Run by `real-run-clips.js --part voices` (the scratchpad) against JustVoice e23e09a8 on its development audio.cpp
