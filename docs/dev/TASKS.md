@@ -21,19 +21,20 @@
 ### Finish the app [2026-11-07]
 STATE:  building v1 to the plan's milestones; every decision Claude's rec under the go, recorded in the plan with its attack
 WHY:    the user wants a free, local AI film studio (docs/dev/PRD.md) and has asked for it finished
-HERE:   milestones 1–7 built, and since: lip repair, fades, Make the film, the App Settings help page (2026-11-08).
-        Not yet on real models: clips, the export, lip repair (the first clips run found the kit's idle-timer bug,
-        fixed). Open: the voices from JustVoice (its client API, being built by its session), the sd.cpp fork merged and
-        rebuilt then pinned, milestone 8 — the plan's "Where it stands" and "Next"
+HERE:   milestones 1–7 built, and since (2026-11-08): lip repair, fades, Make the film, the App Settings help page,
+        the voices from JustVoice, the kit's Motion capture screen and a take's pose as a shot's guide. Not yet on real
+        models: the JustVoice round trip, clips, the export, lip repair (the first clips run found the kit's idle-timer
+        bug, fixed) — they run on the card in turn with the other sessions. Then milestone 8 (the end run) — the plan's
+        "Where it stands" and "Next"
 GO:     the user, 2026-11-07: "finish the app, dont stop coding at turns or decsions, for decisions you think adverserily
         multiple times on each decision you need to make and take your own rec, do not stop to ask me to make decsions,
         complete the app until all bugs features things you find our think of to do are donel, finish the app"
 PLAN:   docs/plans/2026-11-07-v1.md
 
 ### Character voices: what JustDirect speaks with [2026-11-07]
-STATE:  decided (the user, 2026-11-08: "any decisions are yours to make"), built 2026-11-08 against JustVoice's sent
-        shapes — the plan docs/plans/2026-11-08-justvoice-voices.md "Build steps"; waits for JustVoice's contract
-        fixtures and its client API's build, then a real run. The user: "do we use jv or just take what we need and put
+STATE:  decided (the user, 2026-11-08: "any decisions are yours to make"), built 2026-11-08 on JustVoice's client
+        API and its contract fixtures (JustVoice 29eb8380; JustDirect b4712eb) — the plan
+        docs/plans/2026-11-08-justvoice-voices.md "Build steps"; next a real round trip on the card. The user: "do we use jv or just take what we need and put
         it in just direct"; then,
         on the kit rec: "if you move it all to kit donest that defeat the purpose of jv … i thought we had headless
         server for this exact reason, we built jv for video gamaes, for podcast, why wouldnt it work well for just
@@ -53,9 +54,9 @@ WHY:    the user's review: both lines "Not usable", "does not sound like a women
 HERE:   JustDirect's own speech path is gone (the Qwen3 rows, services.speak/voiceCheck, the voice-model settings);
         justvoice.js (the client), voices.js (a card's voice made once, a line with its delivery, a film's lines as one
         batch after freeCard), migration 6 (cards.voice_id/voice_info, shots.delivery/emotion), the card's Their voice,
-        the shot's How it's said and Feeling, the Shots tab's banner, Make the film's voices step, help. JustVoice's
-        session builds its half (its client API); the per-line WAV address of a batch is asked of it. Unverified until
-        the end run.
+        the shot's How it's said and Feeling, the Shots tab's banner, Make the film's voices step, help; the client
+        checked against JustVoice's own fixtures, a card's voice tagged "Words changed" when its words move on.
+        Unverified until the end run.
 GO:     the user, 2026-11-08: "there is a jv session running i fyou need to have it do any code changes jv needs, your
         rec think on it adverserily ... any decisions are yours to make"
 PLAN:   docs/plans/2026-11-07-v1.md "The voice decision"
@@ -69,6 +70,14 @@ WHY:    a packaged JustDirect runs the kit's pinned sd.cpp, not a development bu
 HERE:   the release run is a public GitHub release: the permission check refused starting it, and releases are the
         user's (the global rules). The development build runs JustDirect meanwhile.
 GO:     none yet — say "release the sd.cpp fork" to start it
+
+### JustDirect's GitHub repository — waits for the user's word [2026-11-08]
+STATE:  the repo has no remote: every commit is on this computer only. The new-app standard asks before creating the
+        GitHub repository (it is public by default; the kit's new-just-app skill, step 7), and anything sent off this
+        computer is the user's (the global rules).
+WHY:    a backup off this computer, and the release workflow (.github/workflows/release.yml) runs only on GitHub
+HERE:   nothing sent. The command, once the user says yes: `gh repo create delebash/just-direct --public --source . --push`
+GO:     none yet — say "create the JustDirect repo" to start it
 
 ### Cloud pictures and clips on the user's own key — waits for a key to test with [2026-11-08]
 STATE:  the PRD's row "Local or your own cloud key, per feature" holds today for the language-model features only
