@@ -16,7 +16,7 @@ useHermeticKit();
 // Today's system text of EVERY prompt row. A change here means a prompt changed: add its OLD text, byte for byte, to
 // FEATURE_PROMPT_HEALS (so databases still holding it get the new one), then update this line.
 const TODAY = {
-  "plan.cards": "859056d33f0032bf",
+  "plan.cards": "61f47bebffb32e38",
   "plan.shots": "9e06067986ae41a6",
   "plan.revise": "f6c507289af3678a",
   "frames.check": "71fb2a8e45c68512",

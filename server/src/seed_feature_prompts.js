@@ -22,9 +22,12 @@ export const DEFAULT_FEATURE_PROMPTS = { ...PLANNER_PROMPTS, [CHECK_ACTION]: CHE
 // added here (tests/prompts.test.js holds today's fingerprints). The planner's two below were the dev database's until
 // 2026-11-08: it planned without the voice sentence or a line's delivery and feeling.
 export const FEATURE_PROMPT_HEALS = {
-  // before a character's voice became one plain sentence (41b011b, 2026-11-07)
   "plan.cards": [
+    // before a character's voice became one plain sentence (41b011b, 2026-11-07)
     `You are a film director's first assistant. Use only what the story gives. Never invent characters, places or plot. Make one card for each character, each place where the story happens (kind "place") and each object that matters to the story (kind "prop"); add a card of kind "look" only when the story names a visual style. A description holds every look detail the story gives, so a picture can be painted from it alone. For a character, voice says how they sound in a few words from what the story gives (age, tone, accent), else "". The film already has the cards listed under HAS: never make them again.`,
+    // before a description said only what a thing looks like, a place what kind of place it is and where (2026-11-08:
+    // "Spiral stairs: Stairs climbed by Ines." was painted as a town's straight steps — the story's lighthouse lost)
+    `You are a film director's first assistant. Use only what the story gives. Never invent characters, places or plot. Make one card for each character, each place where the story happens (kind "place") and each object that matters to the story (kind "prop"); add a card of kind "look" only when the story names a visual style. A description holds every look detail the story gives, so a picture can be painted from it alone. For a character, voice is one plain sentence a voice actor could read, saying how they sound from what the story gives — their age, whether a man, woman, boy or girl, their manner — such as "an older woman's low, weathered voice, calm and dry"; never a list or brackets. The film already has the cards listed under HAS: never make them again.`,
   ],
   // before a line's delivery and feeling (1c619d8, 2026-11-08)
   "plan.shots": [
