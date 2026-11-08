@@ -4,7 +4,8 @@
 // needs, then the shots — a server job on the AI tasks strip); planning again replaces the shots, so it asks first,
 // naming what goes with them. Each shot is edited by hand in ShotDialog; after a hand edit the tab offers to carry the
 // change into the later shots nobody changed by hand (the planner's revision), with a note in the user's own words.
-import { confirmDialog, EmptyState, Icon, LuEngineNeeded, pushToast, reportError, UiBanner, UiButton, UiInput, UiServerImage, UiTag } from "@delebash/ui";
+// A shot's line is spoken in its speaker's voice (Speak); a clip made after it moves the mouth to that voice.
+import { confirmDialog, EmptyState, Icon, LuEngineNeeded, pushToast, reportError, serverUrl, UiBanner, UiButton, UiInput, UiServerImage, UiTag } from "@delebash/ui";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useFilmsStore } from "../../stores/films.js";
@@ -53,6 +54,30 @@ async function paintAllFrames() {
     const r = await films.paintAllFrames(t("frames.allTask", { title: films.film.title }), { all: !missingFrames.value });
     framesDone(r);
     if (r) pushToast({ kind: "success", title: t("frames.allDone", { n: r.shots }) });
+  } catch (e) {
+    if (e?.name !== "AbortError") reportError(e);
+  }
+}
+
+// the lines with a speaker that have no voice yet — what Speak lines speaks
+const unspoken = computed(() => films.shots.filter((s) => s.line.trim() && s.speakerId && !films.lineOf(s.id)).length);
+const hasLines = computed(() => films.shots.some((s) => s.line.trim()));
+/** The spoken line no longer says the shot's words (the line was changed after it was spoken). */
+const stale = (s) => {
+  const line = films.lineOf(s.id);
+  return !!line && line.prompt !== s.line.trim();
+};
+async function speak(shot) {
+  try {
+    await films.speakLine(shot, t("voices.task", { n: shot.position + 1 }));
+  } catch (e) {
+    if (e?.name !== "AbortError") reportError(e);
+  }
+}
+async function speakAll() {
+  try {
+    const r = await films.speakAllLines(t("voices.allTask", { title: films.film.title }));
+    if (r) pushToast({ kind: "success", title: t("voices.allDone", { n: r.spoken }) });
   } catch (e) {
     if (e?.name !== "AbortError") reportError(e);
   }
@@ -147,6 +172,13 @@ async function move(shot, by) {
         <template #icon><Icon name="Image" :size="14" /></template>
       </UiButton>
       <UiButton
+        v-if="hasLines" intent="secondary" focusable-when-disabled :disabled="films.speakingFilm || !unspoken"
+        :label="films.speakingFilm ? t('voices.speaking') : unspoken ? t('voices.speakAll', { n: unspoken }) : t('voices.allSpoken')"
+        :title="t('voices.speakAllHint')" @click="speakAll"
+      >
+        <template #icon><Icon name="Mic" :size="14" /></template>
+      </UiButton>
+      <UiButton
         v-if="films.shots.length" intent="secondary" focusable-when-disabled :disabled="films.clippingFilm"
         :label="films.clippingFilm ? t('clips.making') : missingClips ? t('clips.makeAll', { n: missingClips }) : t('clips.makeAllAgain')"
         :title="t('clips.makeAllHint')" @click="makeAllClips"
@@ -192,6 +224,10 @@ async function move(shot, by) {
           <p v-if="s.line" class="shot-row__line">
             <span class="muted">{{ nameOf(s.speakerId) || t("shots.someone") }}:</span> “{{ s.line }}”
           </p>
+          <div v-if="s.line && films.lineOf(s.id)" class="shot-row__voice">
+            <audio controls preload="none" crossorigin="anonymous" :src="serverUrl(films.lineOf(s.id).audioUrl)" :aria-label="t('voices.play', { n: i + 1 })" />
+            <UiTag v-if="stale(s)" intent="danger" :value="t('voices.staleTag')" :title="t('voices.staleHint')" />
+          </div>
           <p v-if="s.cardIds.length" class="shot-row__cards muted">{{ s.cardIds.map(nameOf).filter(Boolean).join(" · ") }}</p>
         </div>
         <div class="shot-row__actions">
@@ -200,6 +236,12 @@ async function move(shot, by) {
             :aria-label="t('frames.paintOne', { n: i + 1 })" :title="films.framing[s.id] ? t('frames.painting') : t('frames.paintOne', { n: i + 1 })" @click="paintFrames(s)"
           >
             <template #icon><Icon name="Sparkle" :size="14" /></template>
+          </UiButton>
+          <UiButton
+            v-if="s.line" intent="ghost" size="icon" focusable-when-disabled :disabled="!!films.speaking[s.id] || films.speakingFilm"
+            :aria-label="t('voices.speakOne', { n: i + 1 })" :title="films.speaking[s.id] ? t('voices.speaking') : t('voices.speakOne', { n: i + 1 })" @click="speak(s)"
+          >
+            <template #icon><Icon name="Mic" :size="14" /></template>
           </UiButton>
           <UiButton intent="ghost" size="icon" :aria-label="t('clips.open', { n: i + 1 })" :title="films.clipping[s.id] ? t('clips.making') : t('clips.open', { n: i + 1 })" @click="clipsOf = s">
             <template #icon><Icon name="Play" :size="14" /></template>
@@ -240,5 +282,7 @@ async function move(shot, by) {
 .shot-row__head { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .shot-row__action, .shot-row__line, .shot-row__cards { margin: 0; overflow-wrap: anywhere; }
 .shot-row__cards { font-size: 12.5px; }
+.shot-row__voice { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.shot-row__voice audio { height: 32px; width: 280px; max-width: 100%; }
 .shot-row__actions { display: flex; gap: 2px; }
 </style>

@@ -5,7 +5,7 @@
 // route's own schema (`schemaRules(SettingsPatch)` from the server package), a 422 lands under its
 // field (`fieldErrors`), any other failure goes through `reportError`, Save is disabled while it
 // runs and sits on the row of the fields it saves — one card per group, each its own form.
-import { fieldErrors, reportError, schemaRules, UiButton, UiField, UiNumber, UiTextarea, UiToggle } from "@delebash/ui";
+import { fieldErrors, reportError, schemaRules, UiButton, UiField, UiInput, UiNumber, UiTextarea, UiToggle } from "@delebash/ui";
 import { SettingsPatch } from "just-direct-server/schemas/settings.js";
 import { nextTick, onMounted, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -66,6 +66,29 @@ const GROUPS = [
     fields: [
       { key: "clips.fps", id: "setting-clip-fps", label: "settings.general.clipFps" },
       { key: "clips.maxGuideMegabytes", id: "setting-clip-guide", label: "settings.general.clipGuideMegabytes" },
+    ],
+  },
+  // the lines' voices: the voice design model, the lines' language, the voice of a speaker whose card has none
+  {
+    id: "voices",
+    title: "settings.general.voicesTitle",
+    hint: "settings.general.voicesHint",
+    text: true,
+    fields: [
+      { key: "voices.model", id: "setting-voice-model", label: "settings.general.voiceModel", type: "line" },
+      { key: "voices.language", id: "setting-voice-language", label: "settings.general.voiceLanguage", type: "line" },
+      { key: "voices.default", id: "setting-voice-default", label: "settings.general.voiceDefault", type: "text" },
+    ],
+  },
+  // music and sound effects: their lengths when none is asked, and the steps each is made in
+  {
+    id: "sounds",
+    title: "settings.general.soundsTitle",
+    hint: "settings.general.soundsHint",
+    fields: [
+      { key: "sounds.musicSeconds", id: "setting-music-seconds", label: "settings.general.musicSeconds" },
+      { key: "sounds.effectSeconds", id: "setting-effect-seconds", label: "settings.general.effectSeconds" },
+      { key: "sounds.steps", id: "setting-sound-steps", label: "settings.general.soundSteps" },
     ],
   },
   // the words each kind of card's picture is painted from
@@ -141,6 +164,11 @@ async function save(group) {
         <UiField v-for="f in group.fields" :key="f.key" :label="t(f.label)" layout="block" :for="f.id">
           <UiTextarea
             v-if="f.type === 'text'" :id="f.id" v-model="draft[f.key]" width="prose" :rows="2" auto-resize :disabled="!loaded" lazy-rules
+            :rules="rules[f.key]" :error="!!serverErrors[f.key]" :error-message="serverErrors[f.key]"
+            @update:model-value="serverErrors = {}"
+          />
+          <UiInput
+            v-else-if="f.type === 'line'" :id="f.id" v-model="draft[f.key]" width="name" :disabled="!loaded" lazy-rules
             :rules="rules[f.key]" :error="!!serverErrors[f.key]" :error-message="serverErrors[f.key]"
             @update:model-value="serverErrors = {}"
           />

@@ -12,7 +12,7 @@ import path from "node:path";
 import { Hono, input } from "@delebash/core/platform";
 import { ApiError, notFound } from "@delebash/core/platform/errors";
 import { getLogger } from "@delebash/core/platform/log";
-import { runFfmpeg } from "@delebash/core/runner/ffmpeg";
+import { ffmpegReadiness, runFfmpeg } from "@delebash/core/runner/ffmpeg";
 import { getDb, getState } from "../app_state.js";
 import * as clips from "../database/clips.js";
 import { SETTING_DEFAULTS } from "../database/seed.js";
@@ -54,6 +54,7 @@ export function router() {
     const film = mustFilm(c.req.valid("param").id);
     const withClips = shots.listShots(getDb(), film.id).filter((s) => s.clipId);
     if (!withClips.length) throw new ApiError(409, "no-clips", "No shot has a clip yet", "Make the shots' clips first — the film is joined from them.");
+    if (!ffmpegReadiness().ready) throw new ApiError(409, "engine-not-installed", "FFmpeg isn't installed", "Install FFmpeg on the AI page's FFmpeg tab — the film is joined with it.");
     const job = getState().jobs.start(
       { kind: "export", key: film.id, label: film.title, failTitle: "The film wasn't joined", clientId: clientOf(c) },
       async ({ signal, progress, update }) => {

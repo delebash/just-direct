@@ -18,7 +18,7 @@ import { getLogger } from "@delebash/core/platform/log";
 import { checkIfMatch, etagOf } from "@delebash/core/platform/versions";
 import { getDb, getState } from "../app_state.js";
 import * as films from "../database/films.js";
-import { clipFiles } from "../database/clips.js";
+import { clipFiles, getClip } from "../database/clips.js";
 import { frameFiles } from "../database/frames.js";
 import { SETTING_DEFAULTS } from "../database/seed.js";
 import { getSetting } from "../database/settings.js";
@@ -49,7 +49,9 @@ const setting = (key) => getSetting(getDb(), key) ?? SETTING_DEFAULTS[key];
 const clientOf = (c) => c.req.header("x-client-id") || null;
 
 const SHOT_CHANGED = { type: "shot-changed", title: "This shot was changed in another window", detail: "Your change wasn't saved — the shot is shown as it is now" };
-export const shotOut = (shot) => ({ ...shot, version: etagOf(shot) });
+/** A shot as the screens read it: with its chosen clip's length (`clipSeconds`, null without one — the Cut tab's trims)
+ *  and its version. */
+export const shotOut = (shot) => ({ ...shot, clipSeconds: shot.clipId ? (getClip(getDb(), shot.clipId)?.seconds ?? null) : null, version: etagOf(shot) });
 
 export function mustShot(id, ifMatch = undefined) {
   const shot = shots.getShot(getDb(), id);

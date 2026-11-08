@@ -75,7 +75,98 @@
       "label": "The film's work",
       "story": "Story",
       "cards": "Cards",
-      "shots": "Shots"
+      "shots": "Shots",
+      "cut": "Cut"
+    }
+  },
+  "voices": {
+    "task": "Speak shot {n}'s line",
+    "allTask": "Speak the lines of {title}",
+    "allDone": "{n} lines spoken",
+    "speakOne": "Speak shot {n}'s line",
+    "speakAll": "Speak lines ({n})",
+    "allSpoken": "Every line spoken",
+    "speakAllHint": "Speaks every line that has a speaker and no voice yet, each in its speaker's voice (the voice on the character's card). Speak a line before its clip is made: the clip's mouth moves to that voice.",
+    "speaking": "Speaking…",
+    "play": "Shot {n}'s line, spoken",
+    "staleTag": "Words changed",
+    "staleHint": "The line was changed after it was spoken: speak it again to hear the new words, then make the clip again."
+  },
+  "cut": {
+    "empty": {
+      "title": "Nothing to cut yet",
+      "message": "The cut is the film's shots in order, each with its clip. Plan or add shots and make their clips on the Shots tab.",
+      "toShots": "Go to the shots"
+    },
+    "total": "{n} of {of} shots in the film · {s} s",
+    "shotsHeading": "The shots",
+    "plays": "Plays {s} s of its {of} s clip",
+    "noClip": "No clip yet — left out of the film",
+    "toShots": "Make it on the Shots tab",
+    "trimIn": "Trim start (s)",
+    "trimOut": "Trim end (s)",
+    "intoNext": "Into the next shot",
+    "transitions": {
+      "cut": "Cut",
+      "dissolve": "Dissolve",
+      "fade": "Fade through black"
+    },
+    "timeline": {
+      "label": "The film's timeline: {n} shots, {s} s",
+      "piece": "Shot {n} · {s} s"
+    },
+    "export": {
+      "label": "The exported film",
+      "button": "Export the film",
+      "running": "Exporting…",
+      "hint": "Joins every shot that has a clip, in order, with its trims, transitions, lines, music and effects, into one MP4 video.",
+      "needsClips": "Make the shots' clips first — the film is joined from them.",
+      "task": "Export {title}",
+      "done": "The film is exported: {s} s, {n} shots",
+      "skipped": "{n} shots without a clip were left out.",
+      "alt": "The exported film",
+      "made": "Exported {when}",
+      "save": "Save the film…",
+      "download": "Download the film",
+      "saveTitle": "Save the film",
+      "fileKind": "MP4 video",
+      "saved": "Saved to {path}",
+      "downloaded": "The film is in your Downloads folder"
+    },
+    "sounds": {
+      "heading": "Music and sound effects",
+      "lede": "Laid over the whole film from a start time, at a volume — the AI makes each one from your words. The shots' spoken lines are on the Shots tab.",
+      "kind": "Music or a sound effect",
+      "kinds": {
+        "music": "Music",
+        "effect": "Sound effect",
+        "line": "Line"
+      },
+      "prompt": "What it sounds like",
+      "musicPlaceholder": "A slow, tense string swell under rain",
+      "effectPlaceholder": "Two swords clash and ring",
+      "seconds": "Length (s)",
+      "secondsDefault": "Default",
+      "start": "Starts at (s)",
+      "volume": "Volume",
+      "make": "Make it",
+      "makingMore": "Making… make another",
+      "musicFeature": "Making music",
+      "effectFeature": "Making a sound effect",
+      "musicTask": "Music for {title}",
+      "effectTask": "A sound effect for {title}",
+      "musicDone": "The music is made: {s} s",
+      "effectDone": "The sound effect is made: {s} s",
+      "madeWith": "Made with {model}",
+      "none": "No music or sound effects yet.",
+      "play": "Play: {what}",
+      "length": "{s} s",
+      "delete": {
+        "action": "Delete {what}",
+        "title": "Delete this sound?",
+        "message": "“{what}” is taken out of the film and deleted. This can't be undone.",
+        "confirm": "Delete sound"
+      }
     }
   },
   "frames": {
@@ -345,7 +436,17 @@
       "frameCandidates": "Frames a shot gets",
       "frameReferences": "Card pictures with each",
       "framePixels": "Pixels in each card picture",
-      "frameCheck": "Check them and keep the best"
+      "frameCheck": "Check them and keep the best",
+      "voicesTitle": "Voices",
+      "voicesHint": "The lines are spoken by a voice design model: it makes a voice from words — the voice on the character's card, or the default voice below for a speaker without one. The model is downloaded on the AI page's Speech tab.",
+      "voiceModel": "Voice model",
+      "voiceLanguage": "Language the lines are in",
+      "voiceDefault": "Default voice",
+      "soundsTitle": "Music and sound effects",
+      "soundsHint": "How long a piece of music or a sound effect is when you don't say, and the steps each is made in (more steps take longer; 8 is what was tested).",
+      "musicSeconds": "Music length (s)",
+      "effectSeconds": "Sound effect length (s)",
+      "soundSteps": "Steps"
     },
     "appearanceHint": "How the app looks — applied at once and kept by the app.",
     "accentNote": "The default, 166°, is green.",

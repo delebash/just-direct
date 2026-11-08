@@ -3,7 +3,7 @@
 // cards. The server owns them (family rule 2); this holds what the screens show and calls /v1/films and /v1/cards
 // through the kit's transport. A failed call throws the kit's Error (§15) and the page decides how to show it.
 // Long work (a card's picture painted) is a server job on the AI tasks strip (the kit's runServerJob).
-import { del, get, patch as patchJson, post, postForm, runServerJob } from "@delebash/ui";
+import { del, get, patch as patchJson, post, postForm, runServerJob, saveUrlAs } from "@delebash/ui";
 import { defineStore } from "pinia";
 
 const enc = encodeURIComponent;
@@ -37,10 +37,23 @@ export const useFilmsStore = defineStore("films", {
     // shots whose clip is being made: id → true; the whole film's
     clipping: {},
     clippingFilm: false,
+    // the film's sounds: the shots' spoken lines, its music and its effects
+    sounds: [],
+    // shots whose line is being spoken: id → true; the whole film's; music or effects being made (how many)
+    speaking: {},
+    speakingFilm: false,
+    makingSounds: 0,
+    // the film's latest export ({file, createdAt, name, videoUrl}) or null, and whether one is being made
+    exported: null,
+    exporting: false,
   }),
   getters: {
     cardsOf: (state) => (kind) => state.cards.filter((c) => c.kind === kind),
     cardById: (state) => (id) => state.cards.find((c) => c.id === id) ?? null,
+    /** The shot's spoken line, or null. */
+    lineOf: (state) => (shotId) => state.sounds.find((s) => s.kind === "line" && s.shotId === shotId) ?? null,
+    /** The music and effects laid over the film, in start order. */
+    laidSounds: (state) => state.sounds.filter((s) => s.kind !== "line"),
   },
   actions: {
     async load() {
@@ -63,7 +76,7 @@ export const useFilmsStore = defineStore("films", {
       if (this.film?.id === film.id) this.film = null;
     },
 
-    /** Open a film: it, its cards and its shots. */
+    /** Open a film: it, its cards, its shots and its sounds. */
     async open(id) {
       if (this.film?.id !== id) {
         this.film = null;
@@ -71,14 +84,102 @@ export const useFilmsStore = defineStore("films", {
         this.cardsLoaded = false;
         this.shots = [];
         this.shotsLoaded = false;
+        this.sounds = [];
+        this.exported = null;
       }
-      const [film, cards, shots] = await Promise.all([get(`/v1/films/${enc(id)}`), get(`/v1/films/${enc(id)}/cards`), get(`/v1/films/${enc(id)}/shots`)]);
+      const [film, cards, shots, sounds] = await Promise.all([
+        get(`/v1/films/${enc(id)}`),
+        get(`/v1/films/${enc(id)}/cards`),
+        get(`/v1/films/${enc(id)}/shots`),
+        get(`/v1/films/${enc(id)}/sounds`),
+      ]);
       this.film = film;
       this.cards = cards.items;
       this.cardsLoaded = true;
       this.shots = shots.items;
       this.shotsLoaded = true;
+      this.sounds = sounds.items;
       return film;
+    },
+    async loadSounds() {
+      this.sounds = (await get(`/v1/films/${enc(this.film.id)}/sounds`)).items;
+    },
+    /** Speak a shot's line in its speaker's voice (a server job); it replaces the line spoken before. */
+    async speakLine(shot, label) {
+      this.speaking = { ...this.speaking, [shot.id]: true };
+      try {
+        const done = await runServerJob({ start: () => post(`/v1/shots/${enc(shot.id)}/line`, {}), feature: "voices.line", label, meta: { shotId: shot.id } });
+        return done?.result ?? null;
+      } finally {
+        const { [shot.id]: _, ...rest } = this.speaking;
+        this.speaking = rest;
+        await this.loadSounds().catch(() => {});
+      }
+    },
+    /** Speak every line that has a speaker and no voice yet (a server job). */
+    async speakAllLines(label) {
+      this.speakingFilm = true;
+      try {
+        const done = await runServerJob({ start: () => post(`/v1/films/${enc(this.film.id)}/lines`, {}), feature: "voices.line", label, meta: { filmId: this.film.id } });
+        return done?.result ?? null;
+      } finally {
+        this.speakingFilm = false;
+        await this.loadSounds().catch(() => {});
+      }
+    },
+    /** Make music or a sound effect from words (a server job): `{kind, prompt, seconds?, start?}`, placed in the cut. */
+    async makeSound(input, label) {
+      this.makingSounds += 1;
+      try {
+        const feature = input.kind === "music" ? "sounds.music" : "sounds.effect";
+        const done = await runServerJob({ start: () => post(`/v1/films/${enc(this.film.id)}/sounds`, input), feature, label, meta: { filmId: this.film.id } });
+        return done?.result ?? null;
+      } finally {
+        this.makingSounds -= 1;
+        await this.loadSounds().catch(() => {});
+      }
+    },
+    /** A sound's place in the cut: `{start?, volume?}`. */
+    async saveSound(sound, changes) {
+      const saved = await patchJson(`/v1/sounds/${enc(sound.id)}`, changes);
+      this.sounds = this.sounds.map((s) => (s.id === saved.id ? saved : s));
+      return saved;
+    },
+    async deleteSound(sound) {
+      await del(`/v1/sounds/${enc(sound.id)}`);
+      this.sounds = this.sounds.filter((s) => s.id !== sound.id);
+    },
+    /** The film's latest export, or null when it has none yet. */
+    async loadExport() {
+      try {
+        this.exported = await get(`/v1/films/${enc(this.film.id)}/export`);
+      } catch (e) {
+        if (e?.status !== 404) throw e;
+        this.exported = null;
+      }
+      return this.exported;
+    },
+    /** Join the film into one MP4 (a server job): every shot with a clip, in order, its sounds laid over. */
+    async exportFilm(label) {
+      this.exporting = true;
+      try {
+        const done = await runServerJob({
+          start: () => post(`/v1/films/${enc(this.film.id)}/export`, {}),
+          feature: "cut.export",
+          label,
+          meta: { filmId: this.film.id },
+          describe: (job, pct) => (job.message ? `${job.message} · ${pct}%` : `${pct}%`),
+        });
+        return done?.result ?? null;
+      } finally {
+        this.exporting = false;
+        await this.loadExport().catch(() => {});
+      }
+    },
+    /** Save the export where the user picks (the desktop app's Save dialog; a browser's Downloads). */
+    async saveExport(opts = {}) {
+      if (!this.exported) return null;
+      return saveUrlAs(`/v1/films/${enc(this.film.id)}/export/video`, this.exported.name, { filterExt: "mp4", ...opts });
     },
     async loadShots() {
       this.shots = (await get(`/v1/films/${enc(this.film.id)}/shots`)).items;

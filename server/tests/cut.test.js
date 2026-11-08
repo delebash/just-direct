@@ -55,6 +55,21 @@ describe("the arguments", () => {
   });
 });
 
+describe("the refusals", () => {
+  test("without FFmpeg the export is refused before any job starts, saying where to install it", async () => {
+    const client = testClient(await createApp(tmpDir()));
+    seedWorkspace(getDb());
+    const film = (await client.post("/v1/films", { json: { title: "No tool" } })).json();
+    const shot = (await client.post(`/v1/films/${film.id}/shots`, { json: { action: "one" } })).json();
+    const clip = addClip(getDb(), { shotId: shot.id, file: "a.webm", seed: 1, seconds: 3, recipe: {} });
+    updateShot(getDb(), shot.id, { clipId: clip.id });
+    const r = await client.post(`/v1/films/${film.id}/export`, { json: {} });
+    expect(r.statusCode).toBe(409);
+    expect(r.json()).toMatchObject({ title: "FFmpeg isn't installed" });
+    expect((await client.get("/v1/jobs?kind=export")).json().jobs).toHaveLength(0);
+  });
+});
+
 const FFMPEG =
   process.env.JD_TEST_FFMPEG || "E:\\Dev\\Web\\test-just-direct\\ai-cache\\kit-ffmpeg\\ffmpeg\\9.0.2\\cpu\\ffmpeg-9.0.2-essentials_build\\bin\\ffmpeg.exe";
 const FFPROBE = path.join(path.dirname(FFMPEG), process.platform === "win32" ? "ffprobe.exe" : "ffprobe");

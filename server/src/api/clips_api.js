@@ -33,6 +33,7 @@ import * as sounds from "../database/sounds.js";
 import { fileName, filmDir, filmFile, removeFile, writeWhole } from "../files.js";
 import { IdParams } from "../schemas/films.js";
 import { ChooseClip, FilmClipsIn } from "../schemas/clips.js";
+import { SECONDS_MAX } from "../schemas/shots.js";
 import { mustFilm } from "./films_api.js";
 import { mustShot, shotOut } from "./shots_api.js";
 
@@ -71,7 +72,8 @@ async function clipRequest(film, shot) {
       audio = null;
     }
   }
-  const seconds = audio ? Math.max(shot.seconds, wavSeconds(audio) + 0.3) : shot.seconds;
+  // long enough for the line, never past the longest clip LTX makes
+  const seconds = audio ? Math.min(SECONDS_MAX, Math.max(shot.seconds, wavSeconds(audio) + 0.3)) : shot.seconds;
   const count = frameCount(seconds, fps);
   const mode = modeOf(shot, count);
   const request = {

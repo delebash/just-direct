@@ -56,6 +56,27 @@ Licences: LTX-2.3 and its add-ons are under the LTX-2 Community License — free
 for anyone under US$10 million a year in revenue, with no rights claimed in what you make. Its text
 part, Gemma 3, is under Google's Gemma Terms of Use, which allow commercial use.
 
+## Speak a shot's line
+
+**Speak** on a shot with a line, or **Speak lines** ([Your films](films.md#voices)). The line is spoken
+by **Qwen3-TTS VoiceDesign 1.7B** (Apache-2.0, about 2.8 GB to download) on the audio.cpp engine. It
+makes a voice from words: the **Voice** written on the speaking character's card, or the default
+voice in **App Settings → General → Voices**. The engine and the model are installed on the AI page's
+**Speech** tab; which model speaks is **Voice model** in the same Settings group.
+
+A clip made after its line is spoken is drawn to that voice: the clip model hears it and moves the
+mouth with it.
+
+## Make music and sound effects
+
+**Make it** on a film's Cut tab ([Your films](films.md#music-and-sound-effects)). Music runs on the
+**Music** preset with **Stable Audio 3 Medium** (about 3.6 GB to download); sound effects on the
+**Sound effects** preset with **Stable Audio 3 Small SFX** (about 1.7 GB). Both run on the audio.cpp
+engine, each in a few seconds once loaded; the Cut tab offers the engine and the model the first time.
+
+Licence: the Stability AI Community License — free for commercial use for a person or business under
+US$1 million a year in revenue.
+
 ## Changing what a feature runs on
 
 Select the feature under **Routing by feature**: its preset can be pointed at another model, and its

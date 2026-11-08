@@ -85,6 +85,8 @@ describe("a shot's clip", () => {
     expect(video.headers["content-type"]).toBe("video/webm");
     expect(video.body).toBe("webm-1");
     expect(readdirSync(path.join(filmDir(dataDir, film.id), "clips"))).toHaveLength(1);
+    // the shot carries its chosen clip's length (the Cut tab's trims)
+    expect((await client.get(`/v1/films/${film.id}/shots`)).json().items[0].clipSeconds).toBeCloseTo(97 / 24);
   });
 
   test("a long take past 5 s: half size, then the x2 upscale pass to the film's size, the first frame made small", async () => {
@@ -108,6 +110,16 @@ describe("a shot's clip", () => {
     expect(made[0].frames).toBe(frameCount(4.5, 24)); // 4.2 s and a breath
     expect(made[0].prompt).toContain('Mara says: "This is the last crossing, for good."');
     expect(done.result.clip.recipe).toMatchObject({ talking: true });
+  });
+
+  test("talking: a line longer than the longest clip makes the longest clip, never more", async () => {
+    const { film, shot } = await filmWithShot({ line: "A very long speech.", seconds: 3 });
+    const dir = path.join(filmDir(dataDir, film.id), "sounds");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "long.wav"), wav(20));
+    addSound(getDb(), { filmId: film.id, shotId: shot.id, kind: "line", file: "long.wav", seconds: 20 });
+    await makeClip(shot.id);
+    expect(made[0].frames).toBe(frameCount(13, 24));
   });
 
   test("drawn paths: the Motion Track LoRA with a frame per clip frame; none drawn is a refusal", async () => {

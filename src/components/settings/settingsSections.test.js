@@ -99,7 +99,7 @@ const text = () => document.body.textContent;
 const button = (words) => [...document.body.querySelectorAll("button")].find((b) => b.textContent.includes(words));
 
 beforeEach(() => {
-  server = { calls: [], auth: { tokens: [], requireForLoopback: false }, disk: { modelsCache: 2e9, spawnLogs: 1e6, total: 3e9, diskFree: 5e10 }, clear: { ok: true }, settings: { "films.width": 1280, "films.height": 704, "cards.pictureSide": 1024, "cards.maxPictureMegabytes": 20, "cards.prompt.character": "A full-length photograph of {name}: {description}.", "cards.prompt.place": "{description}. {look}", "cards.prompt.prop": "{description}.", "cards.prompt.look": "{description}. {look}", "planner.maxShots": 24, "planner.maxTokens": 12000, "planner.wordsPerSecond": 2.5, "frames.candidates": 3, "frames.maxReferences": 3, "frames.referencePixels": 262144, "frames.check": true, "frames.prompt": "{size} {action} {cards} {look}", "clips.fps": 24, "clips.prompt": "{action} {camera} {cards} {line} {look}", "clips.negative": "", "clips.maxGuideMegabytes": 200, "windows.checkSeconds": 3 } };
+  server = { calls: [], auth: { tokens: [], requireForLoopback: false }, disk: { modelsCache: 2e9, spawnLogs: 1e6, total: 3e9, diskFree: 5e10 }, clear: { ok: true }, settings: { "films.width": 1280, "films.height": 704, "cards.pictureSide": 1024, "cards.maxPictureMegabytes": 20, "cards.prompt.character": "A full-length photograph of {name}: {description}.", "cards.prompt.place": "{description}. {look}", "cards.prompt.prop": "{description}.", "cards.prompt.look": "{description}. {look}", "planner.maxShots": 24, "planner.maxTokens": 12000, "planner.wordsPerSecond": 2.5, "frames.candidates": 3, "frames.maxReferences": 3, "frames.referencePixels": 262144, "frames.check": true, "frames.prompt": "{size} {action} {cards} {look}", "clips.fps": 24, "clips.prompt": "{action} {camera} {cards} {line} {look}", "clips.negative": "", "clips.maxGuideMegabytes": 200, "voices.model": "qwen3-vd-1.7b-q8", "voices.language": "English", "voices.default": "A natural, clear adult voice, calm and unhurried.", "sounds.musicSeconds": 30, "sounds.effectSeconds": 6, "sounds.steps": 8, "windows.checkSeconds": 3 } };
   Object.assign(shell, { version: "", root: null, picked: null, relocated: [], keepRunning: [], oldCopies: [], removed: [], forgotten: [], oldCopiesAsked: [], usedDefault: 0 });
   setServerToken(""); // a token a test's window kept (the Server panel) isn't the next test's
   vi.stubGlobal("fetch", vi.fn(fakeFetch));
@@ -424,7 +424,17 @@ describe("General", () => {
   test("a card per group, each saving only its own fields from the Save on its row", async () => {
     await mountSettings("general");
     const cards = [...document.body.querySelectorAll("section.card")].filter((c) => c.querySelector("form"));
-    expect(cards.map((c) => c.querySelector("h2").textContent)).toEqual(["Films", "Card pictures", "Planning", "First frames", "Clips", "The words pictures are painted from", "Other windows"]);
+    expect(cards.map((c) => c.querySelector("h2").textContent)).toEqual([
+      "Films",
+      "Card pictures",
+      "Planning",
+      "First frames",
+      "Clips",
+      "Voices",
+      "Music and sound effects",
+      "The words pictures are painted from",
+      "Other windows",
+    ]);
     const box = document.getElementById("setting-check-seconds");
     expect(box.value).toBe("3");
     box.value = "10";
@@ -433,9 +443,22 @@ describe("General", () => {
     const saves = cards.map((c) => [...c.querySelectorAll("button")].find((b) => b.textContent.trim() === "Save"));
     expect(saves[0].getAttribute("aria-disabled")).toBe("true"); // nothing changed on the Films card
     // the words' card shows the placeholders as they are typed, not filled in
-    expect(cards[5].querySelector(".hint").textContent).toContain("{description}");
-    await new DOMWrapper(saves[6]).trigger("click");
+    expect(cards[7].querySelector(".hint").textContent).toContain("{description}");
+    await new DOMWrapper(saves[8]).trigger("click");
     await flushPromises();
     expect(server.calls.filter((c) => c[0] === "PATCH" && c[1] === "/v1/settings").map((c) => c[2])).toEqual([{ "windows.checkSeconds": 10 }]);
+  });
+
+  test("the voice model is a line of text, saved as written", async () => {
+    await mountSettings("general");
+    const box = document.getElementById("setting-voice-model");
+    expect(box.tagName).toBe("INPUT");
+    box.value = "qwen3-vd-1.7b-q4";
+    box.dispatchEvent(new Event("input"));
+    await flushPromises();
+    const card = box.closest("section.card");
+    await new DOMWrapper([...card.querySelectorAll("button")].find((b) => b.textContent.trim() === "Save")).trigger("click");
+    await flushPromises();
+    expect(server.calls.filter((c) => c[0] === "PATCH" && c[1] === "/v1/settings").map((c) => c[2])).toEqual([{ "voices.model": "qwen3-vd-1.7b-q4" }]);
   });
 });
