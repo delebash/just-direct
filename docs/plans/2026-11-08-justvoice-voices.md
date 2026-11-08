@@ -73,9 +73,13 @@ word may still read "Separate licence" (Breeze).
 
 ## Build steps (Claude's, 2026-11-08 — built against the shapes above; aligned to the fixtures when they land)
 
-Where they stand: 1–10 built and committed, unverified until the end run; the batch's per-line WAV address
-(`GET /v1/audio/speech/batch/<job>/lines/<id>.wav`, or a `url` per line) asked of JustVoice's session — the client
-takes either.
+Where they stand: 1–10 built and committed, unverified until the end run. JustVoice's contract landed (its main
+3d5b2020; fixtures from 29eb8380, copied into `server/tests/fixtures/justvoice/`), and the client follows its changes:
+each batch line has a `url`; the character voice's result has `audition` (the line it says, kept as the card's
+`voiceInfo.auditionLine`) and `audition_url` (`/v1/voices/<id>/clip.wav`); a batch is deleted once its lines are
+fetched (`DELETE /v1/audio/speech/batch/<job>`); a model refused under `commercial_use` is a 409 on the POST itself;
+the clone's row names its model (`model_name`). JustVoice's defaults: Qwen3-TTS VoiceDesign designs, VoxCPM2 clones
+(both "Yes").
 
 Picks, each attacked: (a) a line with no speaker isn't spoken (a refusal names it: choose who says it) — the
 default-voice setting goes, since a JustVoice voice is made per character; (b) a shot gains **delivery** (words: "whispered,

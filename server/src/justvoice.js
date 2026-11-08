@@ -109,18 +109,24 @@ export function justVoice(base, { fetchFn = fetch } = {}) {
      *  couldn't speak has its `error` and no `wav`). `lines`: `[{id, voice, input, instructions, emotion, seed}]`. */
     async speakBatch(lines, { signal, onProgress } = {}) {
       const job = await (await call("POST", "/v1/audio/speech/batch", { json: { lines, release: true }, signal, what: "speak the lines" })).json();
-      const result = await follow(job, { signal, onProgress, what: "speak the lines" });
-      const out = [];
-      for (const line of result?.lines ?? []) {
-        if (line.error) {
-          out.push({ id: line.id, wav: null, seconds: 0, error: String(line.error) });
-          continue;
+      try {
+        const result = await follow(job, { signal, onProgress, what: "speak the lines" });
+        const out = [];
+        for (const line of result?.lines ?? []) {
+          if (line.error) {
+            out.push({ id: line.id, wav: null, seconds: 0, error: String(line.error) });
+            continue;
+          }
+          const url = line.url || `/v1/audio/speech/batch/${encodeURIComponent(job.id)}/lines/${encodeURIComponent(line.id)}.wav`;
+          const r = await call("GET", url.startsWith("http") ? url.slice(root.length) : url, { signal, what: "send a line" });
+          out.push({ id: line.id, wav: Buffer.from(await r.arrayBuffer()), seconds: Number(line.seconds) || 0, error: null });
         }
-        const url = line.url || `/v1/audio/speech/batch/${encodeURIComponent(job.id)}/lines/${encodeURIComponent(line.id)}.wav`;
-        const r = await call("GET", url.startsWith("http") ? url.slice(root.length) : url, { signal, what: "send a line" });
-        out.push({ id: line.id, wav: Buffer.from(await r.arrayBuffer()), seconds: Number(line.seconds) || 0, error: null });
+        return out;
+      } finally {
+        // the batch's files kept until fetched, then let go (JustVoice's client API: an ended job's batch stays until
+        // deleted, or a day)
+        await call("DELETE", `/v1/audio/speech/batch/${encodeURIComponent(job.id)}`, { what: "forget the batch" }).catch(() => {});
       }
-      return out;
     },
     /** A voice cloned from a recording (a WAV) → JustVoice's voice row. */
     async cloneVoice({ name, wav, transcript, language, gender }, { signal } = {}) {

@@ -2,8 +2,12 @@
 // JustVoice's client (justvoice.js) against a stand-in JustVoice server in its client API's shapes (docs/plans/
 // 2026-11-08-justvoice-voices.md): who asks on every call, a voice job followed to its end, a line in OpenAI's speech
 // shape, a batch's lines each fetched, a clone, a delete that finds nothing, JustVoice not answering, a cancel.
+import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 import { justVoice } from "../src/justvoice.js";
+
+// JustVoice's own fixtures (fixtures/justvoice/README.md): its contract test holds its server to the same files
+const fixture = (name) => JSON.parse(readFileSync(new URL(`./fixtures/justvoice/${name}.json`, import.meta.url), "utf8"));
 
 const BASE = "http://127.0.0.1:17494";
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
@@ -23,6 +27,49 @@ function server(routes) {
   };
   return { calls, fetchFn };
 }
+
+describe("JustVoice's client, on JustVoice's own fixtures", () => {
+  test("a character's voice: the request as JustVoice's fixture has it, its result as it answers", async () => {
+    const s = server({
+      "POST /v1/character-voices": () => json({ id: "cv1", kind: "character-voice", state: "done", progress: 1, result: fixture("character-voice.result") }, 202),
+    });
+    const r = await justVoice(BASE, { fetchFn: s.fetchFn }).characterVoice(fixture("character-voice.request"));
+    expect(s.calls[0].body).toEqual(fixture("character-voice.request"));
+    expect(r).toMatchObject({ voice_id: expect.any(String), audition_url: "/v1/voices/voice_0123456789abcdef0123456789abcdef/clip.wav", clone: { commercial: "Yes" } });
+  });
+
+  test("a line: the body JustVoice's fixture has", async () => {
+    const s = server({ "POST /v1/audio/speech": () => wavBytes(8) });
+    const { input, voice, instructions, emotion, seed } = fixture("speech.request");
+    await justVoice(BASE, { fetchFn: s.fetchFn }).speak({ voice, input, instructions, emotion, seed });
+    expect(s.calls[0].body).toEqual(fixture("speech.request"));
+  });
+
+  test("a batch: its lines fetched from the urls JustVoice gives, then the batch let go", async () => {
+    const result = fixture("speech-batch.result");
+    for (const line of result.lines) line.url = line.url.replace("<job id>", "b9");
+    const s = server({
+      "POST /v1/audio/speech/batch": () => json({ id: "b9", kind: "speech-batch", state: "done", progress: 1, result }, 202),
+      "GET /v1/audio/speech/batch/b9/lines/sc1-l1.wav": () => wavBytes(11),
+      "GET /v1/audio/speech/batch/b9/lines/sc1-l2.wav": () => wavBytes(12),
+      "DELETE /v1/audio/speech/batch/b9": () => json({}, 200),
+    });
+    const { lines } = fixture("speech-batch.request");
+    const out = await justVoice(BASE, { fetchFn: s.fetchFn }).speakBatch(lines);
+    expect(s.calls[0].body).toEqual(fixture("speech-batch.request"));
+    expect(out.map((l) => [l.id, l.wav.length, l.seconds])).toEqual([
+      ["sc1-l1", 11, 2.4],
+      ["sc1-l2", 12, 2.9],
+    ]);
+    expect(s.calls.at(-1).key).toBe("DELETE /v1/audio/speech/batch/b9");
+  });
+
+  test("a clone: JustVoice's voice row back, its model's name and licence with it", async () => {
+    const s = server({ "POST /v1/voices/clone": () => json(fixture("voice.row"), 201) });
+    const row = await justVoice(BASE, { fetchFn: s.fetchFn }).cloneVoice({ name: "Inspector Maigret", wav: Buffer.from("RIFF"), transcript: "", language: "en-US" });
+    expect(row).toMatchObject({ id: expect.any(String), model: "voxcpm2", model_name: "VoxCPM2", made_by: "JustDirect", licence: { commercial: "Yes" } });
+  });
+});
 
 describe("JustVoice's client", () => {
   test("health: its client API's version; nothing answering is null", async () => {

@@ -83,7 +83,7 @@ export async function ensureVoice(film, card, { signal, onProgress } = {}) {
     const wav = await readFile(filmFile(dataDir, film.id, "cards", sample));
     const row = await jv.cloneVoice({ name: `${card.name} · ${film.title}`, wav, transcript: card.voiceSampleText.trim(), language }, { signal });
     voiceId = row.id;
-    info = { source: "recording", clone: licenceOf({ ...(row.licence ?? {}), model: row.model, name: row.model }) };
+    info = { source: "recording", clone: licenceOf({ ...(row.licence ?? {}), model: row.model, name: row.model_name ?? row.model }) };
   } else {
     const r = await jv.characterVoice(
       {
@@ -97,7 +97,16 @@ export async function ensureVoice(film, card, { signal, onProgress } = {}) {
       { signal, onProgress },
     );
     voiceId = r.voice_id;
-    info = { source: "made", description: r.description ?? "", gender: r.gender ?? null, describedBy: r.described_by ?? null, design: licenceOf(r.design), clone: licenceOf(r.clone) };
+    info = {
+      source: "made",
+      description: r.description ?? "",
+      gender: r.gender ?? null,
+      describedBy: r.described_by ?? null,
+      design: licenceOf(r.design),
+      clone: licenceOf(r.clone),
+      // the line it was designed speaking — what its audition says
+      auditionLine: r.audition ?? "",
+    };
     if (r.audition_url) {
       const name = `${card.id}-audition-${randomUUID().slice(0, 8)}.wav`;
       await writeWhole(filmFile(dataDir, film.id, "cards", name), await jv.fetchFile(r.audition_url, { signal }));

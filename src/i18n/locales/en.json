@@ -444,6 +444,7 @@
       "task": "{name}'s voice",
       "play": "{name}'s voice, as JustVoice auditioned it",
       "described": "Made from: “{words}”",
+      "auditioned": "It says: “{line}”",
       "fromRecording": "Made from the recording below.",
       "licence": "{name} — selling what it makes: {word}",
       "unknown": "not said"

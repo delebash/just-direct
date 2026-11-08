@@ -230,6 +230,7 @@ async function remove() {
           <h3 class="card-dialog__sample-title">{{ t("cards.voice.title") }}</h3>
           <template v-if="current.voiceId">
             <audio v-if="current.voiceAuditionUrl" controls preload="none" crossorigin="anonymous" :src="serverUrl(current.voiceAuditionUrl)" :aria-label="t('cards.voice.play', { name: current.name })" />
+            <p v-if="voiceInfo.auditionLine" class="hint">{{ t("cards.voice.auditioned", { line: voiceInfo.auditionLine }) }}</p>
             <p v-if="voiceInfo.description" class="hint">{{ t("cards.voice.described", { words: voiceInfo.description }) }}</p>
             <p v-else-if="voiceInfo.source === 'recording'" class="hint">{{ t("cards.voice.fromRecording") }}</p>
             <p v-for="m in [voiceInfo.design, voiceInfo.clone].filter(Boolean)" :key="m.model || m.name" class="hint">{{ licenceLine(m) }}</p>
