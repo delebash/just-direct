@@ -39,6 +39,17 @@ says what it needs in its message instead: install audio.cpp and download the vo
 **Export the film: "FFmpeg isn't installed".** The film is joined with FFmpeg: install it on the AI page's
 **FFmpeg** tab, or name your own FFmpeg there.
 
+**Make the film: "Something the film needs isn't installed".** The message names what's missing — the
+picture model, the clip model or FFmpeg — before anything starts: install each on the AI page, then press
+**Make the film** again. If a run stops part way (a clip failed, or you stopped it on the **AI tasks**
+strip), **Make the film** again carries on from where it stopped: it never makes again what is already there.
+
+**Repair lips isn't on a talking clip.** It's off until you turn on **Offer lip repair on talking clips** in
+**App Settings → General → Clips** (its face models are for non-commercial research only). "This clip is too
+long to repair": lip repair takes about 6 seconds of a 1280 × 704 clip at most, and a talking clip runs as
+long as its line — give the shot a shorter line (or split it over two shots), or keep the clip as LTX-2.3
+drew it.
+
 **The first frames weren't checked.** The vision model (Qwen3-VL 8B) isn't set up: the frames are painted and
 the first one used. Download it on the AI page to have the best of each set chosen for you.
 

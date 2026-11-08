@@ -21,9 +21,10 @@
 ### Finish the app [2026-11-07]
 STATE:  building v1 to the plan's milestones; every decision Claude's rec under the go, recorded in the plan with its attack
 WHY:    the user wants a free, local AI film studio (docs/dev/PRD.md) and has asked for it finished
-HERE:   milestones 1–7 built (films and cards, the planner, first frames, clips, voices, music and effects, the cut and
-        its export); not run yet on real models. Next: lip repair, a real end-to-end run, the kit's sd.cpp pin on our
-        release, milestone 8 — the plan's "Where it stands" and "Next"
+HERE:   milestones 1–7 built, and since: lip repair, fades, Make the film, the App Settings help page (2026-11-08).
+        Not yet on real models: clips, the export, lip repair (the first clips run found the kit's idle-timer bug,
+        fixed). Open: the voices from JustVoice (its client API, being built by its session), the sd.cpp fork merged and
+        rebuilt then pinned, milestone 8 — the plan's "Where it stands" and "Next"
 GO:     the user, 2026-11-07: "finish the app, dont stop coding at turns or decsions, for decisions you think adverserily
         multiple times on each decision you need to make and take your own rec, do not stop to ask me to make decsions,
         complete the app until all bugs features things you find our think of to do are donel, finish the app"
