@@ -9,12 +9,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1<% if (ctx.mode.cordova || ctx.mode.capacitor) { %>, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover<% } %>">
     <!-- The family's CSP (app-structure §Q.5). The page talks to its own server — beside it on the
          desktop (http://127.0.0.1:17500), a paired device or a server over the network — so
-         connect/img/media allow http(s); scripts stay 'self' only. In development Quasar's HMR also
+         connect/img/media allow http(s); scripts stay 'self', with WebAssembly allowed to compile
+         ('wasm-unsafe-eval' — never JavaScript's eval) for Motion capture's live tracking (MediaPipe)
+         and the phone's SQLite. In development Quasar's HMR also
          needs its websocket (the dev server listens on 127.0.0.1). The desktop shell sends its own,
          stricter CSP header for app://; both apply there. -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'<% if (ctx.mode.capacitor) { %> 'wasm-unsafe-eval'<% } %>; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http: https:; media-src 'self' data: blob: http: https:; font-src 'self' data:; connect-src 'self' http: https:<% if (ctx.dev) { %> ws://localhost:* ws://127.0.0.1:*<% } %>; worker-src 'self' blob:;"
+      content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http: https:; media-src 'self' data: blob: http: https:; font-src 'self' data:; connect-src 'self' http: https:<% if (ctx.dev) { %> ws://localhost:* ws://127.0.0.1:*<% } %>; worker-src 'self' blob:;"
     />
 
     <link rel="icon" type="image/png" sizes="128x128" href="icons/favicon-128x128.png">
