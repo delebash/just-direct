@@ -17,6 +17,7 @@ import { getLogger } from "@delebash/core/platform/log";
 import { checkIfMatch, etagOf } from "@delebash/core/platform/versions";
 import { getDb, getState } from "../app_state.js";
 import * as films from "../database/films.js";
+import { frameFiles } from "../database/frames.js";
 import { SETTING_DEFAULTS } from "../database/seed.js";
 import { getSetting } from "../database/settings.js";
 import * as shots from "../database/shots.js";
@@ -36,6 +37,7 @@ import {
 } from "../planner.js";
 import { IdParams } from "../schemas/films.js";
 import { CarryIn, PlanIn, ShotIn, ShotOrder, ShotPatch } from "../schemas/shots.js";
+import { fileName, filmFile, removeFile } from "../files.js";
 import { mustFilm } from "./films_api.js";
 
 const log = getLogger("just_direct.shots");
@@ -60,6 +62,16 @@ function checkCards(filmId, body) {
   for (const id of body.cardIds ?? []) if (!cards.has(id)) throw bad("cardIds", `There is no card ${id} in this film.`);
   if (body.placeId && cards.get(body.placeId)?.kind !== "place") throw bad("placeId", "The place must be one of the film's places.");
   if (body.speakerId && cards.get(body.speakerId)?.kind !== "character") throw bad("speakerId", "Who speaks must be one of the film's characters.");
+}
+
+/** The files the work on `shotIds` made (their first frames), as [part, name] — read before the shots go. */
+const workFiles = (shotIds) => frameFiles(getDb(), shotIds).map((n) => ["frames", n]);
+/** Remove a film's work files (a stray one left is harmless). */
+async function removeWork(filmId, files) {
+  for (const [part, name] of files) {
+    const ok = fileName(name, part === "clips" ? "mp4" : part === "sounds" ? "wav" : "png");
+    if (ok) await removeFile(filmFile(getState().dataDir, filmId, part, ok));
+  }
 }
 
 /** Run one planner pass: the action, its variables, its schema for this run → the parsed answer. */
@@ -106,10 +118,14 @@ export function router() {
     return c.json(shotOut(shot));
   });
 
-  app.delete("/v1/shots/:id", input({ params: IdParams }), (c) => {
+  app.delete("/v1/shots/:id", input({ params: IdParams }), async (c) => {
     const { id } = c.req.valid("param");
-    mustShot(id, c.req.header("if-match") ?? null);
+    const shot = mustShot(id, c.req.header("if-match") ?? null);
+    // its work stops first, and its files go after it
+    for (const job of getState().jobs?.list() ?? []) if (job.data?.shotId === id) getState().jobs.cancel(job.id);
+    const files = workFiles([id]);
     if (!shots.deleteShot(getDb(), id)) throw notFound(`There is no shot with the id ${id}.`);
+    await removeWork(shot.filmId, files);
     return c.body(null, 204);
   });
 
@@ -143,7 +159,9 @@ export function router() {
         const shotsAnswer = await pass(ACTIONS.shots, { story, cards: cardsText(cards, byId), maxShots }, shotsSchema(cards, byId, maxShots), { signal });
         signal.throwIfAborted();
         const planned = shotsFrom(shotsAnswer, cards, refs, { wordsPerSecond: setting("planner.wordsPerSecond") });
+        const files = workFiles(shots.listShots(getDb(), film.id).map((s) => s.id));
         const saved = shots.replaceShots(getDb(), film.id, planned);
+        await removeWork(film.id, files);
         log.info(`film ${film.id} planned: ${saved.length} shots, ${added.length} new cards`);
         return { cardsAdded: added.length, shots: saved.length };
       },

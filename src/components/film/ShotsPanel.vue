@@ -4,10 +4,11 @@
 // needs, then the shots — a server job on the AI tasks strip); planning again replaces the shots, so it asks first,
 // naming what goes with them. Each shot is edited by hand in ShotDialog; after a hand edit the tab offers to carry the
 // change into the later shots nobody changed by hand (the planner's revision), with a note in the user's own words.
-import { confirmDialog, EmptyState, Icon, pushToast, reportError, UiBanner, UiButton, UiInput, UiTag } from "@delebash/ui";
+import { confirmDialog, EmptyState, Icon, LuEngineNeeded, pushToast, reportError, UiBanner, UiButton, UiInput, UiServerImage, UiTag } from "@delebash/ui";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useFilmsStore } from "../../stores/films.js";
+import FramesDialog from "./FramesDialog.vue";
 import ShotDialog from "./ShotDialog.vue";
 
 const emit = defineEmits(["go"]);
@@ -19,6 +20,32 @@ const editing = ref(false);
 // the shot changed by hand that can be carried forward, and the user's note on it
 const changed = ref(null);
 const note = ref("");
+// the shot whose first frames are open
+const framesOf = ref(null);
+const ratio = computed(() => films.film.width / films.film.height);
+const missingFrames = computed(() => films.shots.filter((s) => !s.frameId).length);
+
+/** What a frames job's end says: how many were checked, or why the check didn't run. */
+function framesDone(r) {
+  if (!r) return;
+  if (r.checkSkipped) pushToast({ kind: "warning", title: t("frames.checkSkipped"), description: r.checkSkipped });
+}
+async function paintFrames(shot) {
+  try {
+    framesDone(await films.paintFrames(shot, t("frames.task", { n: shot.position + 1 })));
+  } catch (e) {
+    if (e?.name !== "AbortError") reportError(e);
+  }
+}
+async function paintAllFrames() {
+  try {
+    const r = await films.paintAllFrames(t("frames.allTask", { title: films.film.title }), { all: !missingFrames.value });
+    framesDone(r);
+    if (r) pushToast({ kind: "success", title: t("frames.allDone", { n: r.shots }) });
+  } catch (e) {
+    if (e?.name !== "AbortError") reportError(e);
+  }
+}
 
 const nameOf = (id) => films.cardById(id)?.name ?? "";
 const hasStory = computed(() => !!films.film?.story?.trim());
@@ -101,8 +128,17 @@ async function move(shot, by) {
       <UiButton intent="secondary" :label="t('shots.add')" @click="editing = null">
         <template #icon><Icon name="Plus" :size="14" /></template>
       </UiButton>
+      <UiButton
+        v-if="films.shots.length" intent="secondary" focusable-when-disabled :disabled="films.framingFilm"
+        :label="films.framingFilm ? t('frames.painting') : missingFrames ? t('frames.paintAll', { n: missingFrames }) : t('frames.paintAllAgain')"
+        :title="t('frames.paintAllHint')" @click="paintAllFrames"
+      >
+        <template #icon><Icon name="Image" :size="14" /></template>
+      </UiButton>
       <span v-if="films.shots.length" class="muted">{{ t("shots.total", { n: films.shots.length, s: films.shots.reduce((a, s) => a + s.seconds, 0) }) }}</span>
     </div>
+
+    <LuEngineNeeded v-if="films.shots.length" feature="frames.paint" :label="t('frames.feature')" />
 
     <UiBanner v-if="changed" intent="info" class="shots-panel__carry">
       <span>{{ t("shots.carry.offer", { n: changed.position + 1 }) }}</span>
@@ -121,6 +157,10 @@ async function move(shot, by) {
     <ol v-else class="shot-list">
       <li v-for="(s, i) in films.shots" :key="s.id" class="shot-row">
         <span class="shot-row__n" aria-hidden="true">{{ i + 1 }}</span>
+        <button type="button" class="shot-row__frame" :aria-label="t('frames.open', { n: i + 1 })" @click="framesOf = s">
+          <UiServerImage v-if="s.frameId" :path="`/v1/frames/${s.frameId}/picture`" :ratio="ratio" fit="cover" :alt="t('frames.alt', { n: i + 1 })" />
+          <span v-else class="shot-row__noframe" :style="{ aspectRatio: ratio }"><Icon name="Image" :size="18" /></span>
+        </button>
         <div class="shot-row__body">
           <div class="shot-row__head">
             <strong>{{ s.size ? t(`shots.sizes.${s.size.replace(/[ -]/g, "_")}`) : t("shots.noSize") }}</strong>
@@ -135,6 +175,12 @@ async function move(shot, by) {
           <p v-if="s.cardIds.length" class="shot-row__cards muted">{{ s.cardIds.map(nameOf).filter(Boolean).join(" · ") }}</p>
         </div>
         <div class="shot-row__actions">
+          <UiButton
+            intent="ghost" size="icon" focusable-when-disabled :disabled="!!films.framing[s.id] || films.framingFilm"
+            :aria-label="t('frames.paintOne', { n: i + 1 })" :title="films.framing[s.id] ? t('frames.painting') : t('frames.paintOne', { n: i + 1 })" @click="paintFrames(s)"
+          >
+            <template #icon><Icon name="Sparkle" :size="14" /></template>
+          </UiButton>
           <UiButton intent="ghost" size="icon" :disabled="i === 0" :aria-label="t('shots.moveUp', { n: i + 1 })" :title="t('shots.moveUp', { n: i + 1 })" @click="move(s, -1)">
             <template #icon><Icon name="ArrowUp" :size="14" /></template>
           </UiButton>
@@ -152,6 +198,7 @@ async function move(shot, by) {
     </ol>
 
     <ShotDialog v-if="editing !== false" :shot="editing" @saved="onSaved" @close="editing = false" />
+    <FramesDialog v-if="framesOf" :shot="framesOf" @close="framesOf = null" />
   </div>
 </template>
 
@@ -162,6 +209,9 @@ async function move(shot, by) {
 .shot-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-width: 980px; }
 .shot-row { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--surface); }
 .shot-row__n { font-weight: 700; min-width: 24px; color: var(--muted); padding-top: 1px; }
+.shot-row__frame { all: unset; box-sizing: border-box; width: 160px; flex: 0 0 160px; cursor: pointer; border-radius: 6px; overflow: hidden; }
+.shot-row__frame:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.shot-row__noframe { display: grid; place-items: center; width: 100%; background: var(--surface-2); color: var(--muted); }
 .shot-row__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .shot-row__head { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .shot-row__action, .shot-row__line, .shot-row__cards { margin: 0; overflow-wrap: anywhere; }

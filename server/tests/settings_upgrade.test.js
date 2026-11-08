@@ -27,6 +27,11 @@ const TODAY = {
   "planner.maxShots": "c2356069e9d1e79c",
   "planner.maxTokens": "c5d1866aabc15dda",
   "planner.wordsPerSecond": "b8736b9999090496",
+  "frames.candidates": "4e07408562bedb8b",
+  "frames.maxReferences": "4e07408562bedb8b",
+  "frames.referencePixels": "54faea9b3eeffce2",
+  "frames.check": "b5bea41b6c623f7c",
+  "frames.prompt": "fb613ab9128df2c0",
   "windows.checkSeconds": "4e07408562bedb8b",
 };
 

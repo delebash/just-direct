@@ -41,4 +41,19 @@ export const FEATURE_CATALOG = [
     hint: "After you change a shot by hand, rewrites the later shots your change affects — a prop that's gone, a coat now worn — and leaves the ones you changed yourself.",
     group: "Planning",
   }),
+  // A shot's first frames (POST /v1/shots/:id/frames, POST /v1/films/:id/frames — jobs; frames.js): painted with the
+  // shot's cards' pictures as references, then checked by a vision model and the best kept.
+  FeatureCatalogEntry({
+    key: "frames.paint",
+    label: "Paint a shot's first frame",
+    hint: "Paints the first frame of a shot from its words, with its characters', place's and props' pictures so they look the same as everywhere else — First frames on a film's Shots tab.",
+    group: "First frames",
+    kind: "image",
+  }),
+  FeatureCatalogEntry({
+    key: "frames.check",
+    label: "Check a first frame",
+    hint: "Looks at each first frame painted for a shot — is everyone and everything there, anyone who shouldn't be, stray lettering, a distorted hand — and keeps the best one. Needs a model that can see pictures.",
+    group: "First frames",
+  }),
 ];

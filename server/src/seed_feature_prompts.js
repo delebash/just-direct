@@ -11,6 +11,7 @@
 // The planner's three rows are planner.js's (the prompts its test passed with); each run sends the
 // schema it builds from the film.
 
+import { CHECK_ACTION, CHECK_PROMPT } from "./frames.js";
 import { PLANNER_PROMPTS } from "./planner.js";
 
-export const DEFAULT_FEATURE_PROMPTS = { ...PLANNER_PROMPTS };
+export const DEFAULT_FEATURE_PROMPTS = { ...PLANNER_PROMPTS, [CHECK_ACTION]: CHECK_PROMPT };

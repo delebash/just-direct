@@ -78,6 +78,36 @@
       "shots": "Shots"
     }
   },
+  "frames": {
+    "feature": "Painting a shot's first frame",
+    "title": "Shot {n}'s first frames",
+    "alt": "Shot {n}'s first frame",
+    "open": "Shot {n}'s first frames",
+    "paintOne": "Paint shot {n}'s first frames",
+    "paintAll": "Paint first frames ({n})",
+    "paintAllAgain": "Paint all first frames again",
+    "paintAllHint": "Paints first frames for every shot that has none — several each, checked, the best kept. A few minutes a shot on an 8 GB card.",
+    "painting": "Painting…",
+    "more": "Paint more",
+    "task": "First frames for shot {n}",
+    "allTask": "First frames for {title}",
+    "allDone": "First frames painted for {n} shots",
+    "none": "No first frames yet. Paint some: several are painted, checked, and the best one kept.",
+    "chosen": "In use",
+    "use": "Use this one",
+    "score": "Score {s}",
+    "unchecked": "Not checked",
+    "missing": "Missing {n} of its cards.",
+    "extra": "{n} people who shouldn't be there.",
+    "lettering": "Stray lettering.",
+    "checkSkipped": "The first frames weren't checked",
+    "delete": {
+      "action": "Delete",
+      "title": "Delete this first frame?",
+      "message": "The picture is deleted. If the shot used it, it takes its best other frame. This can't be undone.",
+      "confirm": "Delete frame"
+    }
+  },
   "shots": {
     "total": "{n} shots · {s} s",
     "add": "Add a shot",
@@ -240,13 +270,20 @@
       "windowsHint": "The app open in more than one place at once — the desktop app, a browser on this server, a phone: how often each one looks for what the others changed. It shows their changes by itself.",
       "checkSeconds": "Look for other windows' changes every (seconds)",
       "promptsTitle": "The words pictures are painted from",
-      "promptsHint": "Each kind of card's picture is painted from these words: {name} is the card's name, {description} its description and {look} the film's look.",
+      "promptsHint": "Each kind of card's picture is painted from these words: {name} is the card's name, {description} its description and {look} the film's look. A shot's first frame is painted from {size} (its framing), {action} (what happens), {cards} (each of its cards' looks) and {look}.",
       "prompt": {
         "character": "A character",
         "place": "A place",
         "prop": "A prop",
-        "look": "A look"
-      }
+        "look": "A look",
+        "frame": "A shot's first frame"
+      },
+      "framesTitle": "First frames",
+      "framesHint": "How many first frames a shot gets each time, how many of its cards' pictures go with them (who speaks first, then the other characters, the place, the props) and how small (smaller is faster and looks as good), and whether a vision model checks them and keeps the best.",
+      "frameCandidates": "Frames a shot gets",
+      "frameReferences": "Card pictures with each",
+      "framePixels": "Pixels in each card picture",
+      "frameCheck": "Check them and keep the best"
     },
     "appearanceHint": "How the app looks — applied at once and kept by the app.",
     "accentNote": "The default, 166°, is green.",

@@ -31,6 +31,9 @@ export const useFilmsStore = defineStore("films", {
     // the film being planned, and the shot whose change is being carried forward
     planning: false,
     carrying: null,
+    // shots whose first frames are being painted: id → true; the whole film's
+    framing: {},
+    framingFilm: false,
   }),
   getters: {
     cardsOf: (state) => (kind) => state.cards.filter((c) => c.kind === kind),
@@ -117,6 +120,54 @@ export const useFilmsStore = defineStore("films", {
         this.planning = false;
         await this.open(this.film.id).catch(() => {});
       }
+    },
+    /** A shot's first frames, the best checked first. */
+    async framesOf(shot) {
+      return (await get(`/v1/shots/${enc(shot.id)}/frames`)).items;
+    },
+    /** Paint a shot's first frames (a server job): candidates painted, checked, the best chosen. */
+    async paintFrames(shot, label, { count } = {}) {
+      this.framing = { ...this.framing, [shot.id]: true };
+      try {
+        const done = await runServerJob({
+          start: () => post(`/v1/shots/${enc(shot.id)}/frames`, count ? { count } : {}),
+          feature: "frames.paint",
+          label,
+          meta: { shotId: shot.id },
+          describe: (job, pct) => (job.message ? `${job.message} · ${pct}%` : `${pct}%`),
+        });
+        return done?.result ?? null;
+      } finally {
+        const { [shot.id]: _, ...rest } = this.framing;
+        this.framing = rest;
+        await this.loadShots().catch(() => {});
+      }
+    },
+    /** Paint the first frames of every shot that has none, or of every shot (a server job). */
+    async paintAllFrames(label, { all = false } = {}) {
+      this.framingFilm = true;
+      try {
+        const done = await runServerJob({
+          start: () => post(`/v1/films/${enc(this.film.id)}/frames`, { all }),
+          feature: "frames.paint",
+          label,
+          meta: { filmId: this.film.id },
+          describe: (job, pct) => (job.message ? `${job.message} · ${pct}%` : `${pct}%`),
+        });
+        return done?.result ?? null;
+      } finally {
+        this.framingFilm = false;
+        await this.loadShots().catch(() => {});
+      }
+    },
+    async chooseFrame(shot, frameId) {
+      const saved = await post(`/v1/shots/${enc(shot.id)}/frame`, { frameId });
+      this.shots = this.shots.map((s) => (s.id === saved.id ? saved : s));
+      return saved;
+    },
+    async deleteFrame(frame) {
+      await del(`/v1/frames/${enc(frame.id)}`);
+      await this.loadShots();
     },
     /** A hand edit to `shot` carried into the later shots nobody changed by hand (a server job). */
     async carry(shot, note, label) {

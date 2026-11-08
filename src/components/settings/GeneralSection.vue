@@ -5,7 +5,7 @@
 // route's own schema (`schemaRules(SettingsPatch)` from the server package), a 422 lands under its
 // field (`fieldErrors`), any other failure goes through `reportError`, Save is disabled while it
 // runs and sits on the row of the fields it saves — one card per group, each its own form.
-import { fieldErrors, reportError, schemaRules, UiButton, UiField, UiNumber, UiTextarea } from "@delebash/ui";
+import { fieldErrors, reportError, schemaRules, UiButton, UiField, UiNumber, UiTextarea, UiToggle } from "@delebash/ui";
 import { SettingsPatch } from "just-direct-server/schemas/settings.js";
 import { nextTick, onMounted, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -46,13 +46,28 @@ const GROUPS = [
       { key: "planner.wordsPerSecond", id: "setting-words-per-second", label: "settings.general.wordsPerSecond", step: 0.1 },
     ],
   },
+  // first frames: how many candidates, how many references and how small
+  {
+    id: "frames",
+    title: "settings.general.framesTitle",
+    hint: "settings.general.framesHint",
+    fields: [
+      { key: "frames.candidates", id: "setting-frame-candidates", label: "settings.general.frameCandidates" },
+      { key: "frames.maxReferences", id: "setting-frame-references", label: "settings.general.frameReferences" },
+      { key: "frames.referencePixels", id: "setting-frame-pixels", label: "settings.general.framePixels", step: 4096 },
+      { key: "frames.check", id: "setting-frame-check", label: "settings.general.frameCheck", type: "toggle" },
+    ],
+  },
   // the words each kind of card's picture is painted from
   {
     id: "prompts",
     title: "settings.general.promptsTitle",
     hint: "settings.general.promptsHint",
     text: true,
-    fields: ["character", "place", "prop", "look"].map((k) => ({ key: `cards.prompt.${k}`, id: `setting-prompt-${k}`, label: `settings.general.prompt.${k}` })),
+    fields: [
+      ...["character", "place", "prop", "look"].map((k) => ({ key: `cards.prompt.${k}`, id: `setting-prompt-${k}`, label: `settings.general.prompt.${k}`, type: "text" })),
+      { key: "frames.prompt", id: "setting-prompt-frame", label: "settings.general.prompt.frame", type: "text" },
+    ],
   },
   // how often a window looks for what other windows changed on the server (the kit's watchOtherWindows)
   {
@@ -109,15 +124,16 @@ async function save(group) {
 <template>
   <section v-for="group in GROUPS" :key="group.id" class="card">
     <h2>{{ t(group.title) }}</h2>
-    <p class="hint">{{ t(group.hint, { name: "{name}", description: "{description}", look: "{look}" }) }}</p>
+    <p class="hint">{{ t(group.hint, { name: "{name}", description: "{description}", look: "{look}", size: "{size}", action: "{action}", cards: "{cards}" }) }}</p>
     <q-form class="form" greedy @submit="save(group)" @keydown.enter.capture="(e) => !group.text && (enterFrom = e.target)">
       <div :class="group.text ? 'form' : 'form__row'">
         <UiField v-for="f in group.fields" :key="f.key" :label="t(f.label)" layout="block" :for="f.id">
           <UiTextarea
-            v-if="group.text" :id="f.id" v-model="draft[f.key]" width="prose" :rows="2" auto-resize :disabled="!loaded" lazy-rules
+            v-if="f.type === 'text'" :id="f.id" v-model="draft[f.key]" width="prose" :rows="2" auto-resize :disabled="!loaded" lazy-rules
             :rules="rules[f.key]" :error="!!serverErrors[f.key]" :error-message="serverErrors[f.key]"
             @update:model-value="serverErrors = {}"
           />
+          <UiToggle v-else-if="f.type === 'toggle'" :id="f.id" v-model="draft[f.key]" :disabled="!loaded" :aria-label="t(f.label)" />
           <UiNumber
             v-else :id="f.id" v-model="draft[f.key]" width="num" :step="f.step" :disabled="!loaded" lazy-rules
             :rules="rules[f.key]" :error="!!serverErrors[f.key]" :error-message="serverErrors[f.key]"

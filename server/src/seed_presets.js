@@ -54,6 +54,29 @@ export const DEFAULT_ENGINE_PRESETS = [
     reasoning_effort: "medium",
     samplers: { min_p: "0.05" },
   },
+  // A shot's first frames: FLUX.2 [klein] 4B with the shot's cards' pictures as references, its own preset so it can
+  // be tuned apart from the cards' pictures (the same measured recipe to start).
+  {
+    id: "p_frames",
+    name: "First frames",
+    provider_id: "local-sdcpp",
+    model: "flux2-klein-4b",
+    kind: "image",
+    params: { steps: 4, cfg: 1, strength: 1, sampler: "euler" },
+    position: 3,
+  },
+  // The first-frame check: Qwen3-VL 8B looking at each frame, no thinking, no randomness (framecheck.js ran it at
+  // temperature 0); its answer held to the run's schema.
+  {
+    id: "p_check",
+    name: "First-frame check",
+    provider_id: "local-llamacpp",
+    model: "qwen3-vl-8b",
+    temperature: 0,
+    top_p: 1,
+    position: 4,
+    think: false,
+  },
 ];
 
 export const DEFAULT_FEATURE_PRESETS = {
@@ -61,6 +84,8 @@ export const DEFAULT_FEATURE_PRESETS = {
   "plan.cards": "p_plan",
   "plan.shots": "p_plan",
   "plan.revise": "p_plan",
+  "frames.paint": "p_frames",
+  "frames.check": "p_check",
 };
 
 export const DEFAULT_PRESET_ID = "p_general";
@@ -180,6 +205,30 @@ export const MODEL_CATALOG = [
     description: "E4B model · 128k context · UD-Q4_K_XL (QAT)",
     notes:
       "Made for laptops with integrated graphics, where the GPU shares system memory. Small and quick, and holds its quality well for the size.",
+  },
+  // The first-frame check's eyes: Qwen3-VL 8B Instruct with its vision projector (the kit loads `mmproj` beside it), the
+  // pair the handoff's framecheck.js ran — it agreed with Claude's eye on 16 of 16 first frames. Qwen's own GGUF repo,
+  // Apache-2.0; sizes from the Hugging Face API at f982a07559d4 (2026-11-07), matching the probe's files byte for byte.
+  {
+    id: "qwen3-vl-8b",
+    name: "Qwen3-VL 8B Instruct (vision)",
+    hf_repo: "Qwen/Qwen3-VL-8B-Instruct-GGUF",
+    quant: "Q4_K_M",
+    mmproj: "mmproj-Qwen3VL-8B-Instruct-F16",
+    total_params: "8B",
+    mtp: false,
+    type: "dense",
+    size_bytes: 5027784800,
+    size_label: "8B",
+    est_vram_mb: 7200,
+    tier: "mid",
+    license: "Apache-2.0",
+    position: 3,
+    quality_rank: 30,
+    architecture: "qwen3vl",
+    experts: 0,
+    description: "8B vision-language model · Q4_K_M with its F16 vision projector",
+    notes: "Looks at pictures: checks each first frame against its shot and keeps the best. About 6.2 GB with its projector.",
   },
 ];
 

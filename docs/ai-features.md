@@ -31,6 +31,18 @@ the local model you set up — **Gemma 4 26B-A4B** is the one it was tested with
 takes about six minutes on an 8 GB graphics card. A stronger online model can be chosen for the
 preset on the AI page. The prompts can be read and changed in the AI page's Lab.
 
+## Paint a shot's first frame, and check it
+
+**✦** on a shot, or **Paint first frames** ([Your films](films.md)). **Paint a shot's first frame**
+runs on the **First frames** preset — FLUX.2 [klein] 4B again, with up to three of the shot's cards'
+pictures as references (made small: as good by eye, in under half the time). It paints several
+candidates, because the picture model sometimes adds a stranger or an extra object.
+
+**Check a first frame** then looks at each candidate with **Qwen3-VL 8B** (Apache-2.0, about 6 GB to
+download with its vision part), on the **First-frame check** preset, and the one that best matches its
+shot is used. In testing it agreed with a person's eye on 16 of 16 frames. Without that model set up,
+the frames are painted but not checked, and the app says so; the first one is used.
+
 ## Changing what a feature runs on
 
 Select the feature under **Routing by feature**: its preset can be pointed at another model, and its

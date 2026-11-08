@@ -30,6 +30,13 @@ export const SETTINGS = {
   "planner.maxShots": T.Integer({ minimum: 1, maximum: 60 }),
   "planner.maxTokens": T.Integer({ minimum: 2000, maximum: 32768 }),
   "planner.wordsPerSecond": T.Number({ minimum: 1, maximum: 5 }),
+  // First frames: how many candidates a shot gets, how many of its cards' pictures go with them and how small, whether
+  // the vision check picks the best, and the words they are painted from ({size}, {action}, {cards}, {look}).
+  "frames.candidates": T.Integer({ minimum: 1, maximum: 8 }),
+  "frames.maxReferences": T.Integer({ minimum: 0, maximum: 6 }),
+  "frames.referencePixels": T.Integer({ minimum: 65536, maximum: 1048576 }),
+  "frames.check": T.Boolean(),
+  "frames.prompt": T.String({ minLength: 1, maxLength: 600 }),
   // How often a window looks for what other windows changed on this server, in seconds.
   "windows.checkSeconds": T.Integer({ minimum: 1, maximum: 60 }),
 };

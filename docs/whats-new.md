@@ -9,5 +9,7 @@
 - **Shots**: the AI plans the film from its story — the cards it needs, then every shot — and after
   you change a shot by hand it carries your change into the later shots. Add, change, move and delete
   shots by hand too.
+- **First frames**: each shot's first frame painted with its cards' pictures, several at a time,
+  checked by a vision model and the best one used; compare them and choose by hand.
 - **More than one window**: the app open in several places at once shows each one's changes in the
   others by itself (**Settings → General → Other windows**).

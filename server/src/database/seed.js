@@ -38,6 +38,14 @@ export const SETTING_DEFAULTS = {
   "planner.maxShots": 24,
   "planner.maxTokens": 12000,
   "planner.wordsPerSecond": 2.5,
+  // First frames (Settings → General): three candidates a shot (klein adds stray people on many seeds — the handoff),
+  // up to three of its cards' pictures (cast, set and prop — feasibility §J.2) at 262,144 pixels each (as good by eye,
+  // under half the time), checked; the words: the framing, what happens, each card's look, the film's look.
+  "frames.candidates": 3,
+  "frames.maxReferences": 3,
+  "frames.referencePixels": 262144,
+  "frames.check": true,
+  "frames.prompt": "{size} {action} {cards} {look}",
   // How often a window looks for what other windows changed on this server, in seconds (Settings → General — the
   // kit's GET /v1/sync/rev `pollSeconds`).
   "windows.checkSeconds": 3,

@@ -57,6 +57,22 @@ changed in your own words in the box beside it; it helps.
 A shot with a line runs at least as long as it takes to say it (**App Settings → General →
 Planning**).
 
+### First frames
+
+A shot's clip starts from its first frame. **✦** on a shot paints its first frames: several
+candidates (three by default), each painted from the shot's words with its cards' pictures beside
+them — who speaks first, then the other characters, the place, the props — so the faces, clothes and
+places match the rest of the film. A vision model then looks at each one: is everyone and everything
+there, is anyone there who shouldn't be, is there stray lettering, a distorted hand or a doubled
+object. The best one is used. **Paint first frames** in the toolbar does this for every shot that has
+none (all of them are painted first, then all checked — the graphics card holds one model at a time).
+
+Click a shot's picture to see all its first frames side by side, each with its score and what the check
+found. **Use this one** picks another; **Paint more** paints another set; **Delete** removes one. How
+many are painted, how many card pictures go with each, and whether they're checked are in **App
+Settings → General → First frames**; the words they are painted from are under **The words pictures
+are painted from**.
+
 ## Deleting a film
 
 On **Films**, a film's **⋯** menu has **Delete film**. It asks first: the film and everything in it —
