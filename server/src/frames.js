@@ -62,6 +62,21 @@ export function referenceCards(shot, cards, max) {
   return [...shown].sort((a, b) => rank(a) - rank(b) || shown.indexOf(a) - shown.indexOf(b)).slice(0, max);
 }
 
+/** The cards `shots`' first frames would take as references but that have no picture yet — each once, in the shots'
+ *  order — so the frames job paints them first: a frame painted without its cards' pictures loses the film's faces,
+ *  clothes and places. */
+export function cardsToPaint(shots, cards, max) {
+  const out = new Map();
+  for (const shot of shots) {
+    // as referenceCards would choose them if every card had its picture
+    for (const c of referenceCards(shot, cards.map((x) => ({ ...x, picture: x.picture || "(to paint)" })), max)) {
+      const card = cards.find((x) => x.id === c.id);
+      if (!card.picture) out.set(card.id, card);
+    }
+  }
+  return [...out.values()];
+}
+
 /** A reference picture made small (at most `pixels` of it): klein reads small references as well by eye and in
  *  under half the time (20 s against 45–49 s at 1280×704, feasibility §J.2's `vae_input_max_pixels=262144`). */
 export async function smallReference(png, pixels) {

@@ -186,6 +186,7 @@
     "extra": "{n} people who shouldn't be there.",
     "lettering": "Stray lettering.",
     "checkSkipped": "The first frames weren't checked",
+    "cardsPainted": "{n} card pictures were painted first, so the frames keep their faces and places",
     "delete": {
       "action": "Delete",
       "title": "Delete this first frame?",

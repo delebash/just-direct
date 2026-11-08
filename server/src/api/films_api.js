@@ -106,6 +106,17 @@ async function savePicture(cardId, filmId, png) {
   return card;
 }
 
+/** Paint `card`'s picture from its words as they are now and keep it (the old one goes). `onProgress(fraction)`,
+ *  `signal` cancels. → the card. The Cards tab's Paint and the first frames' missing pictures both paint this way. */
+export async function paintCardPicture(cardId, film, { seed = randomInt(2147483647), signal = null, onProgress = null } = {}) {
+  const now = mustCard(cardId); // the words as they are when it starts
+  const prompt = picturePrompt(setting(`cards.prompt.${now.kind}`), now, film);
+  const size = pictureSize(now.kind, film, setting("cards.pictureSide"));
+  const png = await getState().services.paintImage("cards.paint", { prompt, ...size, seed }, { signal, onProgress: ({ fraction }) => onProgress?.(fraction || 0) });
+  signal?.throwIfAborted();
+  return savePicture(cardId, film.id, png);
+}
+
 const refuseFile = (msg, type) => new RequestValidationError([{ loc: ["body", "file"], msg, type }]);
 
 /** A picture file as a PNG the engines take: turned upright (EXIF), at most 2048 px on its long side. */
@@ -239,18 +250,12 @@ export function router() {
     const card = mustCard(c.req.valid("param").id);
     const film = mustFilm(card.filmId);
     const seed = c.req.valid("json")?.seed ?? randomInt(2147483647);
-    const { jobs, services } = getState();
-    const job = jobs.start(
+    const job = getState().jobs.start(
       { kind: "card-paint", key: card.id, label: card.name, failTitle: "The picture didn't finish", clientId: clientOf(c), meta: { seed } },
       async ({ signal, progress, update }) => {
         update({ filmId: film.id, cardId: card.id, seed });
-        const now = mustCard(card.id); // the words as they are when it starts
-        const prompt = picturePrompt(setting(`cards.prompt.${now.kind}`), now, film);
-        const size = pictureSize(now.kind, film, setting("cards.pictureSide"));
         progress(0.02, "painting");
-        const png = await services.paintImage("cards.paint", { prompt, ...size, seed }, { signal, onProgress: ({ fraction }) => progress(0.02 + 0.93 * (fraction || 0), "painting") });
-        signal.throwIfAborted();
-        return cardOut(await savePicture(card.id, film.id, png));
+        return cardOut(await paintCardPicture(card.id, film, { seed, signal, onProgress: (f) => progress(0.02 + 0.93 * f, "painting") }));
       },
     );
     return c.json(job, 202);

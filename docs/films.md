@@ -67,6 +67,9 @@ there, is anyone there who shouldn't be, is there stray lettering, a distorted h
 object. The best one is used. **Paint first frames** in the toolbar does this for every shot that has
 none (all of them are painted first, then all checked — the graphics card holds one model at a time).
 
+A card the frames need that has no picture yet — a character the planner added, say — gets its picture
+painted first, so you can plan and go straight to the first frames. A card that has a picture keeps it.
+
 Click a shot's picture to see all its first frames side by side, each with its score and what the check
 found. **Use this one** picks another; **Paint more** paints another set; **Delete** removes one. How
 many are painted, how many card pictures go with each, and whether they're checked are in **App

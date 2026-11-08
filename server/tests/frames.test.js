@@ -29,7 +29,8 @@ beforeEach(async () => {
   checks = [];
   verdicts = [];
   const paintImage = async (feature, request) => {
-    painted.push({ feature, ...request, refSizes: await Promise.all(request.refs.map(async (b) => (await sharp(b).metadata()).width)) });
+    // a card's picture is painted with no references
+    painted.push({ feature, ...request, refSizes: await Promise.all((request.refs ?? []).map(async (b) => (await sharp(b).metadata()).width)) });
     return png(request.width / 64, request.height / 64, painted.length * 20);
   };
   const run = async (body) => {
@@ -93,14 +94,19 @@ describe("a shot's first frames", () => {
     expect(r.statusCode).toBe(202);
     const done = await settle(r.json());
     expect(done.state).toBe("done");
-    expect(done.result).toMatchObject({ frames: 3, checked: true, checkSkipped: "" });
+    expect(done.result).toMatchObject({ frames: 3, cardsPainted: 1, checked: true, checkSkipped: "" });
 
-    expect(painted).toHaveLength(3);
-    expect(painted[0]).toMatchObject({ feature: "frames.paint", width: film.width, height: film.height });
-    // Teo speaks but has no picture: Mara, then the pier, then the ticket — each at most 512 × 512 (262,144 pixels)
-    expect(painted[0].refSizes).toEqual([512, 512, 512]);
-    expect(new Set(painted.map((p) => p.seed)).size).toBe(3);
-    expect(painted[0].prompt).toBe(
+    // Teo speaks but had no picture: his card's picture is painted first (a character, 3:4 at the long side's 1024)
+    expect(painted).toHaveLength(4);
+    expect(painted[0]).toMatchObject({ feature: "cards.paint", width: 768, height: 1024 });
+    expect((await client.get(`/v1/films/${film.id}/cards`)).json().items.find((c) => c.name === "Teo").picture).toBeTruthy();
+    const frameRuns = painted.slice(1);
+    expect(frameRuns[0]).toMatchObject({ feature: "frames.paint", width: film.width, height: film.height });
+    // then the frames' references: Teo (who speaks — the fake's tiny picture, kept as it is), Mara, the pier — each at
+    // most 512 × 512 (262,144 pixels)
+    expect(frameRuns[0].refSizes).toEqual([12, 512, 512]);
+    expect(new Set(frameRuns.map((p) => p.seed)).size).toBe(3);
+    expect(frameRuns[0].prompt).toBe(
       "A medium shot. Teo holds up the ticket to Mara. Ticket: a brass ferry ticket. Mara: sixty-one, grey braid, yellow oilskin coat. Teo: eleven, red wool hat. Hollow Pier: a wooden pier at dusk. moody 35mm film. hard shadows.",
     );
     // the check saw each frame, with the shot's cards to look for, in the schema built for it
@@ -172,10 +178,21 @@ test("the film's first frames: every shot without one painted first, then all ch
   getState().services.paintImage = async (...a) => (order.push("paint"), paintImage(...a));
   getState().services.run = async (...a) => (order.push("check"), run(...a));
   const done = await settle((await client.post(`/v1/films/${film.id}/frames`, { json: {} })).json());
-  expect(done.result).toEqual({ shots: 1, checked: 1, checkSkipped: "" });
-  expect(order).toEqual(["paint", "check"]);
+  // Teo's missing picture, then the shot's frame, then its check
+  expect(done.result).toEqual({ shots: 1, cardsPainted: 1, checked: 1, checkSkipped: "" });
+  expect(order).toEqual(["paint", "paint", "check"]);
+  expect(painted.map((p) => p.feature)).toEqual(["cards.paint", "frames.paint"]);
   expect((await client.get(`/v1/films/${film.id}/shots`)).json().items.find((s) => s.id === shot.id).frameId).toBeTruthy();
   expect(existsSync(path.join(filmDir(dataDir, film.id), "frames"))).toBe(true);
+});
+
+test("a card that already has its picture, a look, or a card the frames won't take isn't painted again", async () => {
+  const { film, teo } = await scene();
+  await upload(teo.id, await png(1024, 1024));
+  await client.patch("/v1/settings", { json: { "frames.candidates": 1, "frames.check": false } });
+  const done = await settle((await client.post(`/v1/films/${film.id}/frames`, { json: {} })).json());
+  expect(done.result).toMatchObject({ shots: 1, cardsPainted: 0 });
+  expect(painted.map((p) => p.feature)).toEqual(["frames.paint"]);
 });
 
 describe("the method", () => {

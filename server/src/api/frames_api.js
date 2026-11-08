@@ -21,11 +21,11 @@ import { SETTING_DEFAULTS } from "../database/seed.js";
 import { getSetting } from "../database/settings.js";
 import * as shots from "../database/shots.js";
 import { fileName, filmFile, removeFile, writeWhole } from "../files.js";
-import { CHECK_ACTION, checkImage, checkSchema, checkVariables, expectedRefs, framePrompt, referenceCards, scoreOf, smallReference } from "../frames.js";
+import { CHECK_ACTION, cardsToPaint, checkImage, checkSchema, checkVariables, expectedRefs, framePrompt, referenceCards, scoreOf, smallReference } from "../frames.js";
 import { cardRefs, parseAnswer } from "../planner.js";
 import { IdParams } from "../schemas/films.js";
 import { ChooseFrame, FilmFramesIn, FramesIn } from "../schemas/frames.js";
-import { mustFilm } from "./films_api.js";
+import { mustFilm, paintCardPicture } from "./films_api.js";
 import { mustShot, shotOut } from "./shots_api.js";
 
 const log = getLogger("just_direct.frames");
@@ -67,6 +67,19 @@ async function paintFrames(film, shot, count, { signal, onEach }) {
     onEach?.(i, 1);
   }
   return made;
+}
+
+/** Paint the pictures of the cards `todo`'s frames will take as references and that have none yet (frames.js
+ *  `cardsToPaint`); a card already being painted is left to its own job. `onEach(i, n, fraction)`. → how many. */
+async function paintMissingCards(film, todo, { signal, onEach }) {
+  const running = (id) => getState().jobs?.running?.("card-paint", id);
+  const missing = cardsToPaint(todo, films.listCards(getDb(), film.id), setting("frames.maxReferences")).filter((c) => !running(c.id));
+  for (const [i, card] of missing.entries()) {
+    signal.throwIfAborted();
+    await paintCardPicture(card.id, film, { signal, onProgress: (f) => onEach?.(i, missing.length, f) });
+  }
+  if (missing.length) log.info(`film ${film.id}: ${missing.length} card pictures painted for its first frames`);
+  return missing.length;
 }
 
 /** Check `made` frames of `shot` with the vision model; a check that can't run leaves them unchecked and says why. */
@@ -131,11 +144,13 @@ export function router() {
       async ({ signal, progress, update }) => {
         update({ filmId: film.id, shotId: shot.id });
         const now = mustShot(shot.id);
-        const made = await paintFrames(film, now, count, { signal, onEach: (i, f) => progress((0.85 * (i + f)) / count, "painting") });
+        const cardsPainted = await paintMissingCards(film, [now], { signal, onEach: (i, n, f) => progress((0.2 * (i + f)) / n, "cards") });
+        const from = cardsPainted ? 0.2 : 0;
+        const made = await paintFrames(film, now, count, { signal, onEach: (i, f) => progress(from + ((0.85 - from) * (i + f)) / count, "painting") });
         progress(0.86, "checking");
         const check = await checkFrames(film, now, made, { signal });
         const chosen = chooseBest(now, made);
-        return { shot: shotOut(chosen), frames: made.length, checked: check.checked, checkSkipped: check.why };
+        return { shot: shotOut(chosen), frames: made.length, cardsPainted, checked: check.checked, checkSkipped: check.why };
       },
     );
     return c.json(job, 202);
@@ -150,13 +165,16 @@ export function router() {
       async ({ signal, progress, update }) => {
         const todo = shots.listShots(getDb(), film.id).filter((s) => all || !s.frameId);
         update({ filmId: film.id, shots: todo.length });
-        // every shot painted first, then every one checked: the card holds one model at a time, so the picture model and
-        // the vision model change places twice, not twice a shot
+        // the cards' missing pictures first (the same picture model), then every shot painted, then every one checked:
+        // the card holds one model at a time, so the picture model and the vision model change places twice, not twice
+        // a shot
+        const cardsPainted = await paintMissingCards(film, todo, { signal, onEach: (i, n, f) => progress((0.15 * (i + f)) / n, "cards") });
+        const from = cardsPainted ? 0.15 : 0;
         const painted = [];
         for (const [i, s] of todo.entries()) {
           const now = shots.getShot(getDb(), s.id);
           if (!now) continue;
-          const made = await paintFrames(film, now, count, { signal, onEach: (k, f) => progress((0.8 * (i + (k + f) / count)) / todo.length, "painting") });
+          const made = await paintFrames(film, now, count, { signal, onEach: (k, f) => progress(from + ((0.8 - from) * (i + (k + f) / count)) / todo.length, "painting") });
           painted.push({ shot: now, made });
         }
         let checked = 0;
@@ -170,7 +188,7 @@ export function router() {
           }
           if (shots.getShot(getDb(), p.shot.id)) chooseBest(p.shot, p.made);
         }
-        return { shots: painted.length, checked, checkSkipped: skipped };
+        return { shots: painted.length, cardsPainted, checked, checkSkipped: skipped };
       },
     );
     return c.json(job, 202);

@@ -40,6 +40,7 @@ const missingFrames = computed(() => films.shots.filter((s) => !s.frameId).lengt
 /** What a frames job's end says: how many were checked, or why the check didn't run. */
 function framesDone(r) {
   if (!r) return;
+  if (r.cardsPainted) pushToast({ kind: "info", title: t("frames.cardsPainted", { n: r.cardsPainted }) });
   if (r.checkSkipped) pushToast({ kind: "warning", title: t("frames.checkSkipped"), description: r.checkSkipped });
 }
 async function paintFrames(shot) {
