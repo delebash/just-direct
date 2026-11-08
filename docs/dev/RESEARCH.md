@@ -114,6 +114,9 @@ free). Files in `E:\Dev\Web\test-just-direct\real-run-2026-11-07\`; frames looke
   2 s of the talking clip re-encoded: VP9 CRF 30 → SSIM 0.958 against the original, 329 KB; CRF 15 → 0.978, 2,099 KB;
   CRF 15 keeps the skin and fabric grain (`scratchpad\crf\compare.png`). The repaired clip is now CRF 15, near-lossless
   like the cut's own pieces (`cut.js`, x264 CRF 16), since the export encodes it again.
+- **The window plays every kind of file the app makes, with sound:** played in Electron 45's Chromium (the app's own,
+  a hidden window), each decoded picture and sound — sd.cpp's clip (VP8 with PCM sound in WebM: 113 KB of sound in
+  0.85 s), the repaired clip (VP9, Opus), the export (H.264, AAC).
 
 ### The voices round trip through JustVoice's server (2026-11-08, 06:43–06:47 UTC)
 
