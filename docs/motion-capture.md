@@ -65,7 +65,9 @@ A walk where the left foot slides between frames 40 and 55:
 
 The **Live** tab tracks the webcam in this window: press **Start camera**. **Record** keeps the motion; save it as BVH
 and the face as a Live Link Face CSV. **Send to** streams it while it runs: VMC to VSeeFace, VNyan, Warudo or Unity
-(their VMC receiver, usually port 39539), or plain OSC to a receiver of your own. Live keeps the hips in one place.
+(their VMC receiver, usually port 39539), or plain OSC to a receiver of your own. Live keeps the hips in one place, at
+standing height, so crouching or jumping puts the feet through the floor or lifts them off it. Over VMC the face moves an
+avatar that has Perfect Sync (ARKit) blendshapes; an avatar with only VRM's standard expressions gets the body and hands.
 
 ## When something goes wrong
 
