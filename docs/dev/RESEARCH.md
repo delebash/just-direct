@@ -66,7 +66,37 @@ five sentences, two characters, one line. *measured*.
   the bow and the board, which this story asks for.
 - **Voices (Qwen3-TTS VoiceDesign 1.7B):** the line, 2.6–2.7 s, spoken in 13 s. The planner had written the voices as
   `(sixties, "", "")` (fixed: a plain sentence asked for, weak ones dropped, the card's description used instead).
-  Not yet heard by a person.
+  **Heard by the user: "Not usable" — "does not sound like a women at all"** (both takes, for an older woman;
+  `E:\Dev\Web\test-just-direct\review-answers-run.json`). Every word clear; it sounds like a person.
 - **Music and effects (Stable Audio 3, mem_saver):** 20 s of music in 21 s and a 5 s hammer effect in 18 s, each
-  with its model's load. Not yet heard by a person.
-- **Not run:** clips and the export — they need our sd.cpp release in the kit's pin (building).
+  with its model's load. **Heard by the user:** the music "Use with edits" — guitar and strings yes, quiet and hopeful
+  mostly, it doesn't swell toward the end; the effect "Use with edits" — mostly a hammer on wood, more strikes wanted,
+  no rain under it.
+- **Not run then:** clips and the export. They run on the `jd` development build (`server/src/dev_builds.js`); no
+  release is needed (the user, 2026-11-07).
+
+### Voices: what JustVoice tested, and why JustDirect's voice failed (read 2026-11-07)
+
+Read in JustVoice's code and docs (E:\Dev\Web\JustVioce). *code* / *read*.
+
+- **JustVoice's recipe** (`server/src/book_voices/index.js`): a language model writes each voice's description from the
+  speaker's own passages; the description is designed once on `book_voices.design_model` speaking an audition line;
+  the audition is kept at once as the clip of a voice on `book_voices.clone_model`; every line is cloned from that
+  clip. The defaults: `qwen3-vd` designs, `breeze_tts` clones and narrates (`server/src/models.js:517-519`).
+- **The request was not the fault:** JustVoice sends Qwen3-TTS VoiceDesign the description as `instructions`
+  (`server/src/engines/audiocpp/slot.js:683`), as JustDirect does; JustDirect's language is "English" (`seed.js:60`).
+  What differed: JustDirect designed every line afresh from the card's words ("an older woman's low, weathered voice,
+  calm and dry"); JustVoice's descriptions lead with the gender and age ("Female, in her seventies, low and husky
+  pitch …"). Which of the two made the voice male is not proven.
+- **Breeze TTS 2's licence rules it out of JustDirect's default route:** "Any Commercial Purpose involving the Model
+  Materials, a Derivative Model, or an Output requires a separate written commercial license from BreezeBlue"
+  (JustVoice RESEARCH §10.13, `curated/breeze_tts.js:22-23`). Qwen3-TTS: commercial "Yes" (`curated/qwen3_tts.js:10`).
+- **JustVoice's round 4** (its RESEARCH §10.22, 2026-10-16): nine cloning setups, 2,700 takes, scored by its test kit;
+  the Apache-2.0 ones were CosyVoice3 and VoxCPM2; Qwen3-TTS Base was not among them. Its words: "this ranks, the ear
+  decides".
+- **JustVoice's file paths for other apps:** its standard JSON import (`imports/adapters/justvoice_standard.js`; a
+  character's `voice_hint` goes into the speaker's sheet, `api/projects_api.js:454`) and
+  `POST /v1/projects/:project_id/export_voicelines` (`api/projects_api.js:1547`); `book_voices_api.js` has no check on
+  the project's kind.
+- **The JustWrite ↔ JustVoice rule** "Neither app calls or spawns the other at runtime" (JustVoice
+  `docs/dev/design-decisions.md` §3) covers those two apps only; the family rules expect "other apps calling the API".

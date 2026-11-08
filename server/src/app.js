@@ -52,6 +52,7 @@ import { router as soundsRouter } from "./api/sounds_api.js";
 import { AppState, setState } from "./app_state.js";
 import { readAuth } from "./auth.js";
 import { router as dataRouter } from "./data_admin.js";
+import { runtimeExeOverrides } from "./dev_builds.js";
 import { openAppDatabase } from "./database/index.js";
 import { getSetting, setSetting } from "./database/settings.js";
 import { FEATURE_CATALOG } from "./feature_catalog.js";
@@ -138,6 +139,8 @@ const llmArgs = (db, dataDir) => ({
   // frames and joins the film.
   runtimes: ["sdcpp", "audiocpp", "ffmpeg"],
   runtimeModels: [FLUX2_KLEIN, LTX_23, QWEN3_VOICE_DESIGN, QWEN3_VOICE_CLONE, STABLE_AUDIO_MUSIC, STABLE_AUDIO_EFFECTS, ACE_STEP_SONGS],
+  // a development build of our sd.cpp or audio.cpp fork in place of the installed one (dev_builds.js — the variables)
+  runtimeExeOverrides: runtimeExeOverrides(),
 });
 
 /** The Hono app, not yet listening. `dataDir` defaults to the family data-folder ladder; `services` replaces some of
