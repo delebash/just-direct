@@ -4,7 +4,7 @@
 import { randomUUID } from "node:crypto";
 
 const now = () => new Date().toISOString();
-const COLUMNS = "id, film_id, shot_id, kind, prompt, file, seconds, start, volume, created_at";
+const COLUMNS = "id, film_id, shot_id, kind, prompt, lyrics, file, seconds, start, volume, created_at";
 
 function fromRow(row) {
   if (!row) return null;
@@ -14,6 +14,7 @@ function fromRow(row) {
     shotId: row.shot_id ?? null,
     kind: row.kind,
     prompt: row.prompt,
+    lyrics: row.lyrics ?? "",
     file: row.file,
     seconds: row.seconds,
     start: row.start,
@@ -36,8 +37,8 @@ export function lineOf(db, shotId) {
   return fromRow(db.one(`SELECT ${COLUMNS} FROM sounds WHERE shot_id = ? AND kind = 'line' ORDER BY created_at DESC, id LIMIT 1`, [shotId]));
 }
 
-export function addSound(db, { id = randomUUID(), filmId, shotId = null, kind, prompt = "", file, seconds, start = 0, volume = 1 }) {
-  db.run(`INSERT INTO sounds (${COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [id, filmId, shotId, kind, prompt, file, seconds, start, volume, now()]);
+export function addSound(db, { id = randomUUID(), filmId, shotId = null, kind, prompt = "", lyrics = "", file, seconds, start = 0, volume = 1 }) {
+  db.run(`INSERT INTO sounds (${COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [id, filmId, shotId, kind, prompt, lyrics, file, seconds, start, volume, now()]);
   return getSound(db, id);
 }
 

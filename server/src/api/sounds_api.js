@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 // /v1/shots/:id/line, /v1/films/:id/lines, /v1/films/:id/sounds and /v1/sounds — a shot's line spoken in its character's
 // voice (Qwen3-TTS VoiceDesign on the kit's audio.cpp runtime, from the words on the character's card), and the film's
-// music and sound effects (Stable Audio 3 through the kit's audio features), each placed in the cut at a start time.
+// music and sound effects (Stable Audio 3 through the kit's audio features; music with lyrics is a song, sung by
+// ACE-Step 1.5), each placed in the cut at a start time.
 //
 //   POST   /v1/shots/:id/line       → 202 job (kind line): the line spoken, kept as the shot's (the old one goes)
 //   POST   /v1/films/:id/lines      → 202 job (kind lines): every shot with a line and a speaker but no voice yet
@@ -126,20 +127,32 @@ export function router() {
   app.post("/v1/films/:id/sounds", input({ params: IdParams, body: SoundIn }), (c) => {
     const film = mustFilm(c.req.valid("param").id);
     const body = c.req.valid("json");
-    const feature = body.kind === "music" ? "sounds.music" : "sounds.effect";
+    const lyrics = body.kind === "music" ? (body.lyrics ?? "").trim() : "";
+    const feature = lyrics ? "sounds.song" : body.kind === "music" ? "sounds.music" : "sounds.effect";
     const seconds = body.seconds ?? setting(body.kind === "music" ? "sounds.musicSeconds" : "sounds.effectSeconds");
+    const failTitle = lyrics ? "The song wasn't made" : body.kind === "music" ? "The music wasn't made" : "The sound effect wasn't made";
     const job = getState().jobs.start(
-      { kind: "sound", key: `${film.id}:${randomUUID()}`, label: film.title, failTitle: body.kind === "music" ? "The music wasn't made" : "The sound effect wasn't made", clientId: clientOf(c) },
+      { kind: "sound", key: `${film.id}:${randomUUID()}`, label: film.title, failTitle, clientId: clientOf(c) },
       async ({ signal, progress, update }) => {
         update({ filmId: film.id, kind: body.kind });
         progress(0.05, "making");
-        const result = await getState().services.makeAudio(feature, {
+        const request = {
           text: body.prompt,
           duration_seconds: seconds,
           num_inference_steps: setting("sounds.steps"),
           ...(body.kind === "music" ? { guidance_scale: 1.0 } : {}),
           seed: randomInt(2147483647),
-        });
+        };
+        // a song: ACE-Step's text-to-music route with its lyrics, its planner's own reasoning off — the request the
+        // test on this PC ran (feasibility §J.3.1, queue22.ps1 ace)
+        if (lyrics) {
+          Object.assign(request, {
+            lyrics,
+            task_route: "text2music",
+            options: { enable_thinking: false, use_cot_metas: false, use_cot_caption: false, use_cot_language: false },
+          });
+        }
+        const result = await getState().services.makeAudio(feature, request);
         signal.throwIfAborted();
         const wav = Buffer.from(String(result?.audio ?? ""), "base64");
         const made = wavSeconds(wav);
@@ -147,7 +160,7 @@ export function router() {
         const id = randomUUID();
         const file = `${id}.wav`;
         await writeWhole(filmFile(getState().dataDir, film.id, "sounds", file), wav);
-        return soundOut(sounds.addSound(getDb(), { id, filmId: film.id, shotId: null, kind: body.kind, prompt: body.prompt, file, seconds: made, start: body.start ?? 0, volume: body.volume ?? (body.kind === "music" ? 0.6 : 1) }));
+        return soundOut(sounds.addSound(getDb(), { id, filmId: film.id, shotId: null, kind: body.kind, prompt: body.prompt, lyrics, file, seconds: made, start: body.start ?? 0, volume: body.volume ?? (body.kind === "music" ? 0.6 : 1) }));
       },
     );
     return c.json(job, 202);

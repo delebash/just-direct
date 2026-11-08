@@ -63,7 +63,7 @@ function fakeFetch(input, init = {}) {
     return Promise.resolve(json({ id: "job-line", state: "running", progress: 0 }, 202));
   }
   if (p === "/v1/films/f1/sounds" && method === "POST") {
-    server.sounds = [...server.sounds, sound({ id: "m1", kind: body.kind, prompt: body.prompt, seconds: 30, start: body.start, volume: 0.6 })];
+    server.sounds = [...server.sounds, sound({ id: "m1", kind: body.kind, prompt: body.prompt, lyrics: body.lyrics ?? "", seconds: 30, start: body.start, volume: 0.6 })];
     return Promise.resolve(json({ id: "job-sound", state: "running", progress: 0 }, 202));
   }
   if (p.startsWith("/v1/sounds/") && method === "PATCH") {
@@ -80,6 +80,12 @@ function fakeFetch(input, init = {}) {
   }
   if (p === "/v1/ai/resolved-route") return Promise.resolve(json(server.route));
   if (p.endsWith("/readiness")) return Promise.resolve(json({ ready: true, need: "", model: "sa3", modelState: { name: "Stable Audio 3 Medium", license: "Stability AI Community License" } }));
+  if (/^\/v1\/cards\/c\d+\/paint$/.test(p) && method === "POST") return Promise.resolve(json({ id: "job-paint", state: "running", progress: 0 }, 202));
+  if (p === "/v1/jobs/job-paint") {
+    server.cards = server.cards.map((c) => ({ ...c, picture: "c1-1.png", pictureUrl: "/v1/cards/c1/picture?v=c1-1.png", version: '"p"' }));
+    return Promise.resolve(json({ id: "job-paint", state: "done", progress: 1, result: server.cards[0] }));
+  }
+  if (p.startsWith("/v1/cards/") && p.includes("/picture")) return Promise.resolve(new Response(new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" })));
   if (p === "/v1/jobs/job-line") return Promise.resolve(json({ id: "job-line", state: "done", progress: 1, result: server.sounds.at(-1) }));
   if (p === "/v1/jobs/job-sound") return Promise.resolve(json({ id: "job-sound", state: "done", progress: 1, result: server.sounds.at(-1) }));
   if (p === "/v1/jobs/job-export") return Promise.resolve(json({ id: "job-export", state: "done", progress: 1, result: { file: server.exported.file, seconds: 7.5, shots: 2, skipped: 1 } }));
@@ -164,6 +170,11 @@ test("Cards: a character added from its kind's button", async () => {
   await click(byText(".form__actions button", "Add"));
   expect(server.calls.find((c) => c[0] === "POST" && c[1] === "/v1/films/f1/cards")[2]).toEqual({ kind: "character", name: "Mara", description: "", voice: "a low, weathered voice" });
   expect(document.querySelector(".card-tile")?.textContent).toContain("Mara");
+  // painted by the AI (a job): the card shows its picture at once — the job's result is the card
+  await click(byText(".card-tile button", "Paint"));
+  await settle();
+  expect(server.calls.some((c) => c[0] === "POST" && c[1] === "/v1/cards/c1/paint")).toBe(true);
+  expect(byText(".card-tile button", "Paint again")).toBeTruthy();
 });
 
 test("Shots: no story, no plan; with one, Plan the shots runs as a job and shows the shots", async () => {
@@ -269,4 +280,19 @@ test("Cut: music made from words is laid over the film, its licence shown; its s
   await new Promise((r) => setTimeout(r, 450));
   await flushPromises();
   expect(server.calls.find((c) => c[0] === "PATCH" && c[1] === "/v1/sounds/m1")?.[2]).toEqual({ start: 1.5 });
+});
+
+test("Cut: lyrics make the music a song — asked of the song feature, listed as Song", async () => {
+  server.shots = [{ ...shot(1, "Mara looks out."), clipId: "c1", clipSeconds: 4 }];
+  await mountPage("/films/f1/cut");
+  await type(document.getElementById("sound-prompt"), "warm acoustic folk, a woman's voice");
+  await type(document.getElementById("sound-lyrics"), "Still here, still here");
+  // the banner and the model line follow the song's own feature
+  expect(server.calls.some((c) => c[1] === "/v1/ai/features/sounds.song/readiness")).toBe(true);
+  await click(byText("button", "Make it"));
+  await settle();
+  expect(server.calls.find((c) => c[0] === "POST" && c[1] === "/v1/films/f1/sounds")[2]).toEqual({ kind: "music", prompt: "warm acoustic folk, a woman's voice", start: 0, lyrics: "Still here, still here" });
+  expect(document.querySelector(".cut-sound .ui-tag")?.textContent).toContain("Song");
+  expect(document.getElementById("sound-prompt").value).toBe("");
+  expect(document.getElementById("sound-lyrics").value).toBe("");
 });

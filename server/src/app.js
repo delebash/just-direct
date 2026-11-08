@@ -59,6 +59,7 @@ import { filmsRoot } from "./files.js";
 import { defaultDataDir, SOURCE_ROOT } from "./paths.js";
 import { DEFAULT_FEATURE_PROMPTS } from "./seed_feature_prompts.js";
 import {
+  ACE_STEP_SONGS,
   CLASS_TUNE_IDENTITY,
   CLASS_TUNES,
   DEFAULT_ENGINE_PRESETS,
@@ -135,7 +136,7 @@ const llmArgs = (db, dataDir) => ({
   // audio.cpp speaks the lines and makes the music and effects; FFmpeg (the kit's tool runtime) reads a guide video's
   // frames and joins the film.
   runtimes: ["sdcpp", "audiocpp", "ffmpeg"],
-  runtimeModels: [FLUX2_KLEIN, LTX_23, QWEN3_VOICE_DESIGN, STABLE_AUDIO_MUSIC, STABLE_AUDIO_EFFECTS],
+  runtimeModels: [FLUX2_KLEIN, LTX_23, QWEN3_VOICE_DESIGN, STABLE_AUDIO_MUSIC, STABLE_AUDIO_EFFECTS, ACE_STEP_SONGS],
 });
 
 /** The Hono app, not yet listening. `dataDir` defaults to the family data-folder ladder; `services` replaces some of

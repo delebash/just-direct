@@ -141,6 +141,23 @@ describe("music and effects", () => {
     expect(readdirSync(path.join(filmDir(dataDir, film.id), "sounds"))).toEqual([music.result.file]);
   });
 
+  test("music with lyrics is a song: sung by the song feature on ACE-Step's text-to-music route, its lyrics kept", async () => {
+    const { film } = await scene();
+    const lyrics = "Still here, still here,\nthe ferry and me.";
+    const song = await settle((await client.post(`/v1/films/${film.id}/sounds`, { json: { kind: "music", prompt: "warm acoustic folk, a woman's voice", lyrics, seconds: 40 } })).json());
+    expect(made[0]).toMatchObject({ feature: "sounds.song", text: "warm acoustic folk, a woman's voice", lyrics, task_route: "text2music", duration_seconds: 40, num_inference_steps: 8 });
+    expect(made[0].options).toEqual({ enable_thinking: false, use_cot_metas: false, use_cot_caption: false, use_cot_language: false });
+    expect(song.result).toMatchObject({ kind: "music", lyrics, seconds: 40 });
+    // blank lyrics are no song; an effect never sings
+    await settle((await client.post(`/v1/films/${film.id}/sounds`, { json: { kind: "music", prompt: "rain", lyrics: "   " } })).json());
+    await settle((await client.post(`/v1/films/${film.id}/sounds`, { json: { kind: "effect", prompt: "a horn", lyrics: "la la" } })).json());
+    expect(made.slice(1).map((m) => [m.feature, m.lyrics])).toEqual([
+      ["sounds.music", undefined],
+      ["sounds.effect", undefined],
+    ]);
+    expect((await client.get(`/v1/films/${film.id}/sounds`)).json().items.map((s) => s.lyrics)).toEqual(expect.arrayContaining([lyrics, "", ""]));
+  });
+
   test("words required, a length past 60 s refused, an unknown kind refused", async () => {
     const { film } = await scene();
     expect((await client.post(`/v1/films/${film.id}/sounds`, { json: { kind: "music", prompt: "" } })).statusCode).toBe(422);

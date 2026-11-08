@@ -77,6 +77,9 @@ engine, each in a few seconds once loaded; the Cut tab offers the engine and the
 Licence: the Stability AI Community License — free for commercial use for a person or business under
 US$1 million a year in revenue.
 
+A song — music with lyrics — runs on the **Songs** preset with **ACE-Step 1.5 Turbo** (MIT, about 6.2 GB to
+download): a minute of song in about 12 seconds on an 8 GB card.
+
 ## Changing what a feature runs on
 
 Select the feature under **Routing by feature**: its preset can be pointed at another model, and its

@@ -15,7 +15,7 @@
   13 seconds, drawn to the character's voice, led by paths you draw on the frame or by a guide video.
 - **Voices**: each shot's line spoken in its character's voice, made from the words on the
   character's card; a clip made after it moves the mouth with it.
-- **Cut**: the film's shots on a timeline with their trims and transitions (cut, dissolve, fade), music and sound effects made from words and laid over the film, and **Export the
+- **Cut**: the film's shots on a timeline with their trims and transitions (cut, dissolve, fade), music, songs with your own lyrics and sound effects made from words and laid over the film, and **Export the
   film** as one MP4 to watch and save.
 - **More than one window**: the app open in several places at once shows each one's changes in the
   others by itself (**Settings → General → Other windows**).

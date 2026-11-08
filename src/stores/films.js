@@ -2,7 +2,8 @@
 // The films store (app-structure §4: one store per domain): the list of films, and the film open on its page with its
 // cards. The server owns them (family rule 2); this holds what the screens show and calls /v1/films and /v1/cards
 // through the kit's transport. A failed call throws the kit's Error (§15) and the page decides how to show it.
-// Long work (a card's picture painted) is a server job on the AI tasks strip (the kit's runServerJob).
+// Long work (a card's picture painted) is a server job on the AI tasks strip (the kit's runServerJob, which resolves
+// with the job's result itself — not a job wrapped around it).
 import { del, get, patch as patchJson, post, postForm, runServerJob, saveUrlAs } from "@delebash/ui";
 import { defineStore } from "pinia";
 
@@ -109,7 +110,7 @@ export const useFilmsStore = defineStore("films", {
       this.speaking = { ...this.speaking, [shot.id]: true };
       try {
         const done = await runServerJob({ start: () => post(`/v1/shots/${enc(shot.id)}/line`, {}), feature: "voices.line", label, meta: { shotId: shot.id } });
-        return done?.result ?? null;
+        return done ?? null;
       } finally {
         const { [shot.id]: _, ...rest } = this.speaking;
         this.speaking = rest;
@@ -121,7 +122,7 @@ export const useFilmsStore = defineStore("films", {
       this.speakingFilm = true;
       try {
         const done = await runServerJob({ start: () => post(`/v1/films/${enc(this.film.id)}/lines`, {}), feature: "voices.line", label, meta: { filmId: this.film.id } });
-        return done?.result ?? null;
+        return done ?? null;
       } finally {
         this.speakingFilm = false;
         await this.loadSounds().catch(() => {});
@@ -133,7 +134,7 @@ export const useFilmsStore = defineStore("films", {
       try {
         const feature = input.kind === "music" ? "sounds.music" : "sounds.effect";
         const done = await runServerJob({ start: () => post(`/v1/films/${enc(this.film.id)}/sounds`, input), feature, label, meta: { filmId: this.film.id } });
-        return done?.result ?? null;
+        return done ?? null;
       } finally {
         this.makingSounds -= 1;
         await this.loadSounds().catch(() => {});
@@ -170,7 +171,7 @@ export const useFilmsStore = defineStore("films", {
           meta: { filmId: this.film.id },
           describe: (job, pct) => (job.message ? `${job.message} · ${pct}%` : `${pct}%`),
         });
-        return done?.result ?? null;
+        return done ?? null;
       } finally {
         this.exporting = false;
         await this.loadExport().catch(() => {});
@@ -219,7 +220,7 @@ export const useFilmsStore = defineStore("films", {
           meta: { filmId: this.film.id },
           describe: (job, pct) => (job.message ? `${job.message} · ${pct}%` : `${pct}%`),
         });
-        return done?.result ?? null;
+        return done ?? null;
       } finally {
         this.planning = false;
         await this.open(this.film.id).catch(() => {});
@@ -240,7 +241,7 @@ export const useFilmsStore = defineStore("films", {
           meta: { shotId: shot.id },
           describe: (job, pct) => (job.message ? `${job.message} · ${pct}%` : `${pct}%`),
         });
-        return done?.result ?? null;
+        return done ?? null;
       } finally {
         const { [shot.id]: _, ...rest } = this.framing;
         this.framing = rest;
@@ -258,7 +259,7 @@ export const useFilmsStore = defineStore("films", {
           meta: { filmId: this.film.id },
           describe: (job, pct) => (job.message ? `${job.message} · ${pct}%` : `${pct}%`),
         });
-        return done?.result ?? null;
+        return done ?? null;
       } finally {
         this.framingFilm = false;
         await this.loadShots().catch(() => {});
@@ -282,7 +283,7 @@ export const useFilmsStore = defineStore("films", {
       this.clipping = { ...this.clipping, [shot.id]: true };
       try {
         const done = await runServerJob({ start: () => post(`/v1/shots/${enc(shot.id)}/clips`, {}), feature: "clips.make", label, meta: { shotId: shot.id } });
-        return done?.result ?? null;
+        return done ?? null;
       } finally {
         const { [shot.id]: _, ...rest } = this.clipping;
         this.clipping = rest;
@@ -300,7 +301,7 @@ export const useFilmsStore = defineStore("films", {
           meta: { filmId: this.film.id },
           describe: (job, pct) => (job.data?.at ? `${job.data.at}/${job.data.shots} · ${pct}%` : `${pct}%`),
         });
-        return done?.result ?? null;
+        return done ?? null;
       } finally {
         this.clippingFilm = false;
         await this.loadShots().catch(() => {});
@@ -333,7 +334,7 @@ export const useFilmsStore = defineStore("films", {
       this.carrying = shot.id;
       try {
         const done = await runServerJob({ start: () => post(`/v1/shots/${enc(shot.id)}/carry`, { note }), feature: "plan.revise", label, meta: { shotId: shot.id } });
-        return done?.result ?? null;
+        return done ?? null;
       } finally {
         this.carrying = null;
         await this.loadShots().catch(() => {});
@@ -375,7 +376,7 @@ export const useFilmsStore = defineStore("films", {
       this.painting = { ...this.painting, [card.id]: true };
       try {
         const done = await runServerJob({ start: () => post(`/v1/cards/${enc(card.id)}/paint`, {}), feature: "cards.paint", label, meta: { cardId: card.id } });
-        return done?.result ? this._put(done.result) : null;
+        return done ? this._put(done) : null;
       } finally {
         const { [card.id]: _, ...rest } = this.painting;
         this.painting = rest;

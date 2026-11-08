@@ -5,7 +5,7 @@
 // effects laid over it at a start time and a volume, each made from words (a server job); and Export the film, which
 // joins it all into one MP4 (the kit's FFmpeg), played here and saved where the user picks. A shot with no clip yet is
 // left out of the film, and says so. The PRD keeps a full editing suite out of scope: the MP4 can go on to one.
-import { canSaveNatively, confirmDialog, EmptyState, get, Icon, LuEngineNeeded, pushToast, relativeTime, reportError, serverUrl, UiButton, UiField, UiInput, UiNumber, UiSegmented, UiSelect, UiServerImage, UiSlider, UiTag } from "@delebash/ui";
+import { canSaveNatively, confirmDialog, EmptyState, get, Icon, LuEngineNeeded, pushToast, relativeTime, reportError, serverUrl, UiButton, UiField, UiInput, UiNumber, UiSegmented, UiSelect, UiServerImage, UiSlider, UiTag, UiTextarea } from "@delebash/ui";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useFilmsStore } from "../../stores/films.js";
@@ -94,12 +94,14 @@ async function move(s, by) {
 }
 
 // ── music and sound effects ──
-const form = reactive({ kind: "music", prompt: "", seconds: null, start: 0 });
+const form = reactive({ kind: "music", prompt: "", lyrics: "", seconds: null, start: 0 });
+// music with lyrics is a song, sung (the server's sounds.song feature)
+const singing = computed(() => form.kind === "music" && !!form.lyrics.trim());
 const KINDS = computed(() => [
   { value: "music", label: t("cut.sounds.kinds.music") },
   { value: "effect", label: t("cut.sounds.kinds.effect") },
 ]);
-const feature = computed(() => (form.kind === "music" ? "sounds.music" : "sounds.effect"));
+const feature = computed(() => (singing.value ? "sounds.song" : form.kind === "music" ? "sounds.music" : "sounds.effect"));
 // the model a sound is made with, and its licence (the feature's readiness names them)
 const madeWith = ref(null);
 async function readModel() {
@@ -116,11 +118,15 @@ onMounted(readModel);
 async function makeSound() {
   const input = { kind: form.kind, prompt: form.prompt.trim(), start: Math.max(0, Number(form.start) || 0) };
   if (form.seconds) input.seconds = Number(form.seconds);
+  const song = singing.value;
+  if (song) input.lyrics = form.lyrics.trim();
+  const what = song ? "song" : form.kind;
   try {
-    const made = await films.makeSound(input, t(form.kind === "music" ? "cut.sounds.musicTask" : "cut.sounds.effectTask", { title: films.film.title }));
+    const made = await films.makeSound(input, t(`cut.sounds.${what}Task`, { title: films.film.title }));
     if (made) {
-      pushToast({ kind: "success", title: t(form.kind === "music" ? "cut.sounds.musicDone" : "cut.sounds.effectDone", { s: seconds(made.seconds) }) });
+      pushToast({ kind: "success", title: t(`cut.sounds.${what}Done`, { s: seconds(made.seconds) }) });
       form.prompt = "";
+      form.lyrics = "";
     }
   } catch (e) {
     if (e?.name !== "AbortError") reportError(e);
@@ -254,11 +260,14 @@ const saveLabel = computed(() => (canSaveNatively() ? t("cut.export.save") : t("
 
       <h2 class="cut-panel__heading">{{ t("cut.sounds.heading") }}</h2>
       <p class="hint cut-panel__lede">{{ t("cut.sounds.lede") }}</p>
-      <LuEngineNeeded :key="feature" :feature="feature" :label="form.kind === 'music' ? t('cut.sounds.musicFeature') : t('cut.sounds.effectFeature')" />
+      <LuEngineNeeded :key="feature" :feature="feature" :label="singing ? t('cut.sounds.songFeature') : form.kind === 'music' ? t('cut.sounds.musicFeature') : t('cut.sounds.effectFeature')" />
       <form class="cut-sound-form" @submit.prevent="makeSound">
         <UiSegmented v-model="form.kind" :options="KINDS" :aria-label="t('cut.sounds.kind')" />
         <UiField class="cut-sound-form__prompt" :label="t('cut.sounds.prompt')" layout="block" for="sound-prompt">
           <UiInput id="sound-prompt" v-model="form.prompt" width="prose" :placeholder="form.kind === 'music' ? t('cut.sounds.musicPlaceholder') : t('cut.sounds.effectPlaceholder')" />
+        </UiField>
+        <UiField v-if="form.kind === 'music'" class="cut-sound-form__prompt" :label="t('cut.sounds.lyrics')" :hint="t('cut.sounds.lyricsHint')" layout="block" for="sound-lyrics">
+          <UiTextarea id="sound-lyrics" v-model="form.lyrics" width="prose" :rows="3" auto-resize :placeholder="t('cut.sounds.lyricsPlaceholder')" />
         </UiField>
         <UiField :label="t('cut.sounds.seconds')" layout="block" for="sound-seconds">
           <UiNumber id="sound-seconds" v-model="form.seconds" :min="1" :max="60" :step="1" width="num" :placeholder="t('cut.sounds.secondsDefault')" />
@@ -275,7 +284,7 @@ const saveLabel = computed(() => (canSaveNatively() ? t("cut.export.save") : t("
       <EmptyState v-if="!films.laidSounds.length" compact icon="Waveform" :message="t('cut.sounds.none')" />
       <ul v-else class="cut-sounds" role="list">
         <li v-for="x in films.laidSounds" :key="x.id" class="cut-sound">
-          <UiTag :intent="x.kind === 'music' ? 'info' : 'accent2'" :value="t(`cut.sounds.kinds.${x.kind}`)" />
+          <UiTag :intent="x.kind === 'music' ? 'info' : 'accent2'" :value="x.lyrics ? t('cut.sounds.kinds.song') : t(`cut.sounds.kinds.${x.kind}`)" :title="x.lyrics || undefined" />
           <div class="cut-sound__body">
             <p class="cut-sound__prompt">{{ x.prompt }}</p>
             <audio controls preload="none" crossorigin="anonymous" :src="serverUrl(x.audioUrl)" :aria-label="t('cut.sounds.play', { what: x.prompt })" />

@@ -137,7 +137,9 @@ Each change is saved by itself a moment after you stop typing.
 ### Music and sound effects
 
 Choose **Music** or **Sound effect**, describe it in **What it sounds like** — "a slow, tense string
-swell under rain", "two swords clash and ring" — and **Make it**. **Length** is in seconds (empty: 30
+swell under rain", "two swords clash and ring" — and **Make it**. For a song, choose **Music** and write
+its words in **Lyrics**: it is sung in the style **What it sounds like** describes ("warm acoustic folk, a
+woman's voice"), and shows as **Song** in the list. **Length** is in seconds (empty: 30
 for music, 6 for an effect — **App Settings → General → Music and sound effects**), **Starts at** is
 where in the film it begins. It runs on the **AI tasks** strip; you can make several at once.
 

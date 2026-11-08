@@ -134,8 +134,15 @@
       "kinds": {
         "music": "Music",
         "effect": "Sound effect",
-        "line": "Line"
+        "line": "Line",
+        "song": "Song"
       },
+      "lyrics": "Lyrics (for a song)",
+      "lyricsHint": "Words here make it a song, sung. Leave it empty for music without words.",
+      "lyricsPlaceholder": "Still here, still here, the ferry and me…",
+      "songFeature": "Making a song",
+      "songTask": "A song for {title}",
+      "songDone": "The song is made: {s} s",
       "prompt": "What it sounds like",
       "musicPlaceholder": "A slow, tense string swell under rain",
       "effectPlaceholder": "Two swords clash and ring",

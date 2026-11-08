@@ -81,4 +81,12 @@ export const FEATURE_CATALOG = [
     group: "Sound",
     kind: "sfx",
   }),
+  // A song: music with sung lyrics (ACE-Step 1.5 on the same runtime) — music asked for with lyrics.
+  FeatureCatalogEntry({
+    key: "sounds.song",
+    label: "Make a song",
+    hint: "Makes a song from a description of its style and its lyrics — “warm acoustic folk, a woman's voice” — sung, placed in the film's cut.",
+    group: "Sound",
+    kind: "music",
+  }),
 ];

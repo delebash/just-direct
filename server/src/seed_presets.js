@@ -109,6 +109,16 @@ export const DEFAULT_ENGINE_PRESETS = [
     params: { placement: "auto" },
     position: 7,
   },
+  // Songs: ACE-Step 1.5 Turbo on the same runtime's music provider.
+  {
+    id: "p_songs",
+    name: "Songs",
+    provider_id: "local-audiocpp-music",
+    model: "ace-step-1.5-turbo",
+    kind: "music",
+    params: { placement: "auto" },
+    position: 8,
+  },
 ];
 
 export const DEFAULT_FEATURE_PRESETS = {
@@ -121,6 +131,7 @@ export const DEFAULT_FEATURE_PRESETS = {
   "clips.make": "p_clips",
   "sounds.music": "p_music",
   "sounds.effect": "p_effects",
+  "sounds.song": "p_songs",
 };
 
 export const DEFAULT_PRESET_ID = "p_general";
@@ -427,6 +438,23 @@ export const STABLE_AUDIO_MUSIC = {
   minRamMb: 0,
   refSpeed: {},
   spec: STABLE_AUDIO_SPEC,
+};
+// Songs — music with sung lyrics: ACE-Step 1.5 Turbo at Q8, one package from audio.cpp's GGUF repository at the same
+// pinned revision (size and LFS hash from the Hugging Face API, 2026-11-07, matching the copy on this PC byte for byte);
+// licence MIT (huggingface.co/ACE-Step/Ace-Step1.5, read 2026-11-07). Feasibility §J.3.1: 60 s in 12 s on 8 GB, the
+// user's review "use with edits"; run with its memory saver, as tested. Its memory on the card is an estimate (the
+// file and room to work) until the kit measures a load.
+export const ACE_STEP_SONGS = {
+  runtime: "audiocpp",
+  id: "ace-step-1.5-turbo",
+  name: "ACE-Step 1.5 Turbo (songs)",
+  kind: "music",
+  license: "MIT",
+  files: [{ slot: "model", ...AUDIOCPP_GGUF, path: "ACE-Step1.5-GGUF/turbo/ace-step-1.5-turbo-q8_0.gguf", sha256: "1f0015f81c10a1182531e6207c7aeaa060b8cad3470a2f88daa3cb74ed636e63", bytes: 6185468096 }],
+  peakVramMb: 7168,
+  minRamMb: 0,
+  refSpeed: {},
+  spec: { family: "ace_step", task: "gen", sessionOptions: { "ace_step.mem_saver": "true" } },
 };
 export const STABLE_AUDIO_EFFECTS = {
   runtime: "audiocpp",

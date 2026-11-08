@@ -131,6 +131,14 @@ export const MIGRATIONS = [
       ALTER TABLE shots ADD COLUMN guide_frames INTEGER NOT NULL DEFAULT 0;
     `,
   },
+  {
+    version: 3,
+    name: "a song's lyrics",
+    up: `
+      -- The words a piece of music sings (a song, made by ACE-Step); '' for music without words and for effects.
+      ALTER TABLE sounds ADD COLUMN lyrics TEXT NOT NULL DEFAULT '';
+    `,
+  },
 ];
 
 /**
