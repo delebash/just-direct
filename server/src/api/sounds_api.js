@@ -43,13 +43,24 @@ function voiceReady() {
   return model;
 }
 
+/** The words a line's voice is designed from: the speaker card's Voice; else, for a speaker the card describes, "The
+ *  voice of <name>: <description>" — the voice model hears their age and sex in it (a boy is never given the default
+ *  adult voice); else `fallback`, the default voice (Settings → Voices). */
+export function voiceWords(speaker, fallback) {
+  const voice = String(speaker?.voice ?? "").trim();
+  if (voice) return voice;
+  const description = String(speaker?.description ?? "").trim();
+  if (description) return `The voice of ${speaker.name}: ${description}`;
+  return fallback;
+}
+
 /** Speak `shot`'s line in its speaker's voice; the WAV kept as the shot's line (its old one removed). → the sound. */
 async function speakLine(film, shot, { signal }) {
   const db = getDb();
   if (!shot.line.trim()) throw new ApiError(409, "no-line", "The shot has no line", "Write the words spoken in the shot first.");
   const speaker = shot.speakerId ? films.getCard(db, shot.speakerId) : null;
   const model = voiceReady();
-  const instructions = (speaker?.voice || "").trim() || setting("voices.default");
+  const instructions = voiceWords(speaker, setting("voices.default"));
   const wav = await getState().services.speak(model, { input: shot.line.trim(), language: setting("voices.language"), seed: randomInt(2147483647), instructions }, { signal });
   signal?.throwIfAborted();
   const id = randomUUID();

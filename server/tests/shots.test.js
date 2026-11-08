@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { createApp } from "../src/app.js";
 import { getDb, getState } from "../src/app_state.js";
 import { seedWorkspace } from "../src/database/seed.js";
-import { cardRefs, newCards, shotFrom } from "../src/planner.js";
+import { cardRefs, newCards, plannedVoice, shotFrom } from "../src/planner.js";
 import { testClient, tmpDir, useHermeticKit } from "./helpers.js";
 
 useHermeticKit();
@@ -252,5 +252,13 @@ describe("the planner's repairs", () => {
     expect(newCards({ cards: [{ kind: "monster", name: "x" }, { kind: "prop", name: "  Ticket " }, { kind: "prop", name: "ticket" }, { kind: "prop", name: "" }] }, [])).toEqual([
       { kind: "prop", name: "Ticket", description: "", voice: "" },
     ]);
+  });
+  test("a planned voice that says too little is dropped, so Speak designs it from the description", () => {
+    expect(plannedVoice('(sixties, "", "")')).toBe("");
+    expect(plannedVoice("ten")).toBe("");
+    expect(plannedVoice("an older woman's low, weathered voice")).toBe("an older woman's low, weathered voice");
+    expect(plannedVoice('(deep, "gravelly")')).toBe("deep, gravelly");
+    const [mara] = newCards({ cards: [{ kind: "character", name: "Mara", description: "a ferry captain in her sixties", voice: '(sixties, "", "")' }] }, []);
+    expect(mara.voice).toBe("");
   });
 });

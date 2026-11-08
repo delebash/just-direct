@@ -37,3 +37,24 @@ audio.cpp, §13 FFmpeg). Read those before researching anything here.
 
 - [docs/plans/2026-11-07-v1.md](../plans/2026-11-07-v1.md) — how v1 is built: its standards table, the two kit
   changes it needs, its decisions with their attacks, its milestones (record, 2026-11-07).
+
+### The first real run through the app (2026-11-07, this PC: RTX 2070 SUPER 8 GB, 32 GB RAM)
+
+The app's own server on its real data folder (`data/`), the family's shared model cache
+(`E:\Dev\Web\justwrite-app\data\ai-cache`, taken by itself on a fresh start), every step through the API the window
+calls (`E:\Dev\Web\test-just-direct\real-run-2026-11-07\` holds the run's log, plan, pictures and sounds). The story:
+five sentences, two characters, one line. *measured*.
+
+- **Setup a fresh data folder needs:** a language model set as default (Quick Setup's "Set as default"); without one
+  the plan fails at once with the kit's "No model is set" (now said on the Shots tab before Plan). The model files
+  already on the PC were adopted into the shared cache by hard link after their SHA-256 matched the pinned rows (12
+  files: LTX-2.3's 8, Stable Audio's 2, Qwen3-VL 8B's 2) — nothing downloaded again.
+- **Two faults no test caught,** both fixed: the server didn't start under Node (a kit name imported from the wrong
+  entry — Vitest passes it as undefined; `server/tests/boot.test.js`), and every plan and frame check failed because
+  the routes read the kit's answer as `content` where `runAction` answers `text` (`server/tests/services.test.js`).
+- **The planner (Gemma 4 26B-A4B, thinking "medium", 4,096 tokens):** the cards pass took 58–194 s (seven tries, all
+  answered; two reached the thinking budget and still answered — the thought is closed and the answer follows), the
+  whole plan 6.5 min: 7 cards and 12 shots, each in the story's order with its framing and camera, the line given to
+  its speaker. Whether through /v1/ai/run, streamed, or straight to llama-server, the reply was the same.
+- **Card pictures (FLUX.2 klein 4B):** 6–15 s each on a loaded engine; full-length characters on grey as asked, the
+  board's "STILL HERE" lettered right.

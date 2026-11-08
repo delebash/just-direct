@@ -88,11 +88,14 @@ describe("a line spoken", () => {
     expect(audio.headers["content-type"]).toBe("audio/wav");
   });
 
-  test("a character with no Voice words speaks in the default voice; a shot with no line is a refusal", async () => {
+  test("no Voice words: designed from the card's description, else the default voice; a shot with no line is a refusal", async () => {
     const { film, teo } = await scene();
     const shot = (await client.post(`/v1/films/${film.id}/shots`, { json: { line: "Is it still good?", speakerId: teo.id } })).json();
     await settle((await client.post(`/v1/shots/${shot.id}/line`, { json: {} })).json());
     expect(spoken[0].instructions).toBe("A natural, clear adult voice, calm and unhurried.");
+    await client.patch(`/v1/cards/${teo.id}`, { json: { description: "a ten-year-old boy in a red hoodie" } });
+    await settle((await client.post(`/v1/shots/${shot.id}/line`, { json: {} })).json());
+    expect(spoken[1].instructions).toBe("The voice of Teo: a ten-year-old boy in a red hoodie");
     const silent = (await client.post(`/v1/films/${film.id}/shots`, { json: { action: "The lake." } })).json();
     const r = await settle((await client.post(`/v1/shots/${silent.id}/line`, { json: {} })).json());
     expect(r.error.title).toBe("The shot has no line");

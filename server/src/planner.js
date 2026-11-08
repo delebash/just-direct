@@ -23,7 +23,7 @@ const ROLE = "You are a film director's first assistant. Use only what the story
 export const PLANNER_PROMPTS = {
   [ACTIONS.cards]: {
     feature: ACTIONS.cards,
-    system: `${ROLE} Make one card for each character, each place where the story happens (kind "place") and each object that matters to the story (kind "prop"); add a card of kind "look" only when the story names a visual style. A description holds every look detail the story gives, so a picture can be painted from it alone. For a character, voice says how they sound in a few words from what the story gives (age, tone, accent), else "". The film already has the cards listed under HAS: never make them again.`,
+    system: `${ROLE} Make one card for each character, each place where the story happens (kind "place") and each object that matters to the story (kind "prop"); add a card of kind "look" only when the story names a visual style. A description holds every look detail the story gives, so a picture can be painted from it alone. For a character, voice is one plain sentence a voice actor could read, saying how they sound from what the story gives — their age, whether a man, woman, boy or girl, their manner — such as "an older woman's low, weathered voice, calm and dry"; never a list or brackets. The film already has the cards listed under HAS: never make them again.`,
     user_template: "STORY:\n{{story}}\n\nHAS:\n{{cards}}",
     json_mode: true,
   },
@@ -179,6 +179,18 @@ export function parseAnswer(content) {
 
 const clean = (s, max) => String(s ?? "").trim().slice(0, max);
 
+/** A character's voice as the planner wrote it, or "" when it says too little to design a voice from: its brackets and
+ *  quotes gone, fewer than two words left (the first real run's `(sixties, "", "")`). With none, Speak designs the
+ *  voice from the card's description (sounds_api.js `voiceWords`). */
+export function plannedVoice(text) {
+  const s = clean(text, 600)
+    .replace(/["“”()[\]{}]/g, " ")
+    .replace(/(\s*,)+/g, ",")
+    .replace(/^[\s,]+|[\s,]+$/g, "")
+    .replace(/\s{2,}/g, " ");
+  return s.split(/[\s,]+/).filter((w) => /\p{L}/u.test(w)).length >= 2 ? s : "";
+}
+
 /** New cards from the cards pass: valid kinds, a name, none the film has (by name, any case), none twice. */
 export function newCards(answer, existing) {
   const have = new Set(existing.map((c) => c.name.trim().toLowerCase()));
@@ -187,7 +199,7 @@ export function newCards(answer, existing) {
     const name = clean(c?.name, 80);
     if (!name || !CARD_KINDS.includes(c?.kind) || have.has(name.toLowerCase())) continue;
     have.add(name.toLowerCase());
-    out.push({ kind: c.kind, name, description: clean(c.description, 2000), voice: c.kind === "character" ? clean(c.voice, 600) : "" });
+    out.push({ kind: c.kind, name, description: clean(c.description, 2000), voice: c.kind === "character" ? plannedVoice(c.voice) : "" });
   }
   return out;
 }
