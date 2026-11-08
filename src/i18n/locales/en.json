@@ -445,6 +445,8 @@
       "play": "{name}'s voice, as JustVoice auditioned it",
       "described": "Made from: “{words}”",
       "auditioned": "It says: “{line}”",
+      "staleTag": "Words changed",
+      "staleHint": "The description or the voice words changed since this voice was made: Make it again to hear them.",
       "fromRecording": "Made from the recording below.",
       "licence": "{name} — selling what it makes: {word}",
       "unknown": "not said"

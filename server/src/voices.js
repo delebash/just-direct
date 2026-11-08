@@ -36,6 +36,10 @@ export async function mustReachJustVoice() {
 }
 
 /** Who a character is, in the words their voice is made from: the card's description and its Voice words. */
+/** Whether `card`'s words changed since its voice was made from them (its description or Voice words) — the voice is
+ *  then made again on Make it again; a voice from a recording never is. */
+export const voiceStale = (card) => card.voiceInfo?.source === "made" && card.voiceInfo.madeFrom != null && card.voiceInfo.madeFrom !== whoTheyAre(card);
+
 function whoTheyAre(card) {
   const description = String(card.description ?? "").trim();
   const voice = String(card.voice ?? "").trim();
@@ -99,6 +103,8 @@ export async function ensureVoice(film, card, { signal, onProgress } = {}) {
     voiceId = r.voice_id;
     info = {
       source: "made",
+      // the card's words it was made from: a change to them shows on the card (voiceStale)
+      madeFrom: whoTheyAre(card),
       description: r.description ?? "",
       gender: r.gender ?? null,
       describedBy: r.described_by ?? null,

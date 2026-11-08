@@ -225,6 +225,18 @@ describe("a character's voice on the card", () => {
     expect((await client.post(`/v1/cards/${pier.id}/voice`, { json: {} })).json()).toMatchObject({ status: 409, title: "Only a character speaks" });
   });
 
+  test("the card's words changed after its voice was made: said, until it is made again", async () => {
+    const { film, mara } = await scene();
+    await settle((await client.post(`/v1/cards/${mara.id}/voice`, { json: {} })).json());
+    const cardNow = async () => (await client.get(`/v1/films/${film.id}/cards`)).json().items.find((c) => c.id === mara.id);
+    expect((await cardNow()).voiceStale).toBe(false);
+    await client.patch(`/v1/cards/${mara.id}`, { json: { voice: "a bright, quick young voice" } });
+    expect((await cardNow()).voiceStale).toBe(true);
+    await settle((await client.post(`/v1/cards/${mara.id}/voice`, { json: {} })).json());
+    expect((await cardNow()).voiceStale).toBe(false);
+    expect(callsOf("characterVoice").at(-1).description).toContain("a bright, quick young voice");
+  });
+
   test("a deleted character's voice leaves JustVoice with it", async () => {
     const { mara } = await scene();
     await settle((await client.post(`/v1/cards/${mara.id}/voice`, { json: {} })).json());

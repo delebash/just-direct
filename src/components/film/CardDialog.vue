@@ -234,6 +234,7 @@ async function remove() {
             <p v-if="voiceInfo.description" class="hint">{{ t("cards.voice.described", { words: voiceInfo.description }) }}</p>
             <p v-else-if="voiceInfo.source === 'recording'" class="hint">{{ t("cards.voice.fromRecording") }}</p>
             <p v-for="m in [voiceInfo.design, voiceInfo.clone].filter(Boolean)" :key="m.model || m.name" class="hint">{{ licenceLine(m) }}</p>
+            <p v-if="current.voiceStale" class="card-dialog__stale"><UiTag intent="secondary" :value="t('cards.voice.staleTag')" /> {{ t("cards.voice.staleHint") }}</p>
           </template>
           <p v-else class="hint">{{ t("cards.voice.none") }}</p>
           <div class="card-dialog__sample-actions">

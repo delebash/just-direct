@@ -43,7 +43,7 @@ import { getSetting } from "../database/settings.js";
 import { dropCardFromShots } from "../database/shots.js";
 import { ensureFilmDirs, fileName, filmFile, newWorkDir, removeFile, removeFilmDirs, writeWhole } from "../files.js";
 import { CardIn, CardPatch, FilmIn, FilmPatch, IdParams, PaintIn } from "../schemas/films.js";
-import { ensureVoice, forgetVoice, mustReachJustVoice } from "../voices.js";
+import { ensureVoice, forgetVoice, mustReachJustVoice, voiceStale } from "../voices.js";
 
 const log = getLogger("just_direct.films");
 
@@ -66,6 +66,7 @@ export function cardOut(card) {
     pictureUrl: card.picture ? `/v1/cards/${card.id}/picture?v=${encodeURIComponent(card.picture)}` : null,
     voiceSampleUrl: card.voiceSample ? `/v1/cards/${card.id}/voice-sample?v=${encodeURIComponent(card.voiceSample)}` : null,
     voiceAuditionUrl: card.voiceInfo?.audition ? `/v1/cards/${card.id}/voice-audition?v=${encodeURIComponent(card.voiceInfo.audition)}` : null,
+    voiceStale: voiceStale(card),
   };
 }
 
