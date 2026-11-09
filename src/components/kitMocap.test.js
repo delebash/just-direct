@@ -39,7 +39,7 @@ function fakeFetch(input, init = {}) {
         [60, 80],
       ],
     ];
-    return Promise.resolve(json({ fps: 30, frames: 90, mode: "flat", edited: false, automatic: ranges, applied: ranges }));
+    return Promise.resolve(json(server.contacts ?? { fps: 30, frames: 90, mode: "flat", edited: false, automatic: ranges, applied: ranges }));
   }
   if (p === "/v1/mocap/takes/t1/run" && method === "POST") return Promise.resolve(json({ id: "job-take", state: "running", progress: 0 }, 202));
   if (p === "/v1/jobs/job-take") return Promise.resolve(json({ id: "job-take", state: "done", progress: 1, result: { ...server.take } }));
@@ -118,4 +118,20 @@ test("a stopped take continued: one button says Capturing…, the other keeps it
   expect(buttons.filter((b) => b.textContent.includes("Capturing…"))).toHaveLength(1);
   const again = buttons.find((b) => b.textContent.includes("Capture again from the start"));
   expect(again.getAttribute("aria-disabled") ?? String(again.disabled)).toMatch(/true/);
+});
+
+test("the foot contacts say edited ones are in use only while they differ from the found ones", async () => {
+  const found = [[[0, 90]], [[0, 90]]];
+  // the found contacts applied again by hand: the engine marks them edited, but they are the found ones
+  server.contacts = { fps: 30, frames: 90, mode: "flat", edited: true, automatic: found, applied: found };
+  wrapper = mount(MocapArea, { attachTo: document.body, global: { plugins: plugins() } });
+  await settle();
+  expect(text()).toContain("Foot contacts");
+  expect(text()).not.toContain("Edited contacts are in use");
+  wrapper.unmount();
+  document.body.innerHTML = "";
+  server.contacts = { ...server.contacts, applied: [[[0, 90]], [[0, 60]]] };
+  wrapper = mount(MocapArea, { attachTo: document.body, global: { plugins: plugins() } });
+  await settle();
+  expect(text()).toContain("Edited contacts are in use");
 });
