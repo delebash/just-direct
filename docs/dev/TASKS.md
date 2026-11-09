@@ -22,13 +22,14 @@
 STATE:  building v1 to the plan's milestones; every decision Claude's rec under the go, recorded in the plan with its attack
 WHY:    the user wants a free, local AI film studio (docs/dev/PRD.md) and has asked for it finished
 HERE:   v1 complete (2026-11-08): every PRD row built; run on real models — the JustVoice round trip, clips, lip repair,
-        a song, a clone, Make the film end to end (RESEARCH); the end run green but the kit's fit-chip contrast (the
-        kit's TASKS, just-core 7c4849db). The user, 2026-11-08: "6 your rec, finish this app so it is ready for
-        release dont sto until it is all done" — the chip goes to the rec (--warn-ink on --warn-bg), built by web-9e
-        in the kit; ready for release means the packaged app makes clips on the kit's pinned sd.cpp (the fork's
-        release, below), the e2e 16/16, and the release workflow's dry run green. Then the user's listening and
-        watching — http://127.0.0.1:18190/review.html?set=jv, ?set=clips, ?set=film (answers in
-        E:\Dev\Web\test-just-direct\review-answers-<set>.json)
+        a song, a clone, Make the film end to end (RESEARCH). The user, 2026-11-08: "6 your rec, finish this app so it
+        is ready for release dont sto until it is all done" — ready for release means the packaged app makes clips on
+        the kit's pinned sd.cpp, the e2e 16/16, and the release workflow's dry run green. Done 2026-11-08 evening under
+        the finish go: our sd.cpp fork released (jd-1078-3dba814) and pinned in the kit; Motion capture's Takes tab
+        walked in the real window (five kit faults fixed there); a clip from a take's pose from the dev window and from
+        the packaged app on the pinned build; the end run green (e2e 16/16). Left: the release workflow's dry run; then
+        the user's listening and watching — http://127.0.0.1:18190/review.html?set=jv, ?set=clips, ?set=film (answers in
+        E:\Dev\Web\test-just-direct\review-answers-<set>.json); cloud pictures and clips wait for a provider and key.
 GO:     the user, 2026-11-07: "finish the app, dont stop coding at turns or decsions, for decisions you think adverserily
         multiple times on each decision you need to make and take your own rec, do not stop to ask me to make decsions,
         complete the app until all bugs features things you find our think of to do are donel, finish the app"; and
@@ -69,19 +70,6 @@ HERE:   JustDirect's own speech path is gone (the Qwen3 rows, services.speak/voi
 GO:     the user, 2026-11-08: "there is a jv session running i fyou need to have it do any code changes jv needs, your
         rec think on it adverserily ... any decisions are yours to make"
 PLAN:   docs/plans/2026-11-07-v1.md "The voice decision"
-
-### Our sd.cpp fork's next release, then the kit's pin on it — waits for the user's word [2026-11-08]
-STATE:  Claude's rec: release the fork's `jd` (upstream 5f8c19f merged; its Linux CPU and Vulkan jobs on ubuntu-24.04,
-        5b169e5), measure its rows (sizes, hashes, what each build needs — release-rows.js, build-needs.js), pin the
-        kit on it and run clips on the installed build. The green jd-1068-4400f6d isn't pinned as it is: its Linux
-        builds moved to Ubuntu 26.04 and need glibc 2.43 (measured), which would cut off Ubuntu 24.04 LTS users.
-WHY:    a packaged JustDirect runs the kit's pinned sd.cpp, not a development build — its clips need our `jd` build
-HERE:   2026-11-08: jd brought up to date again (upstream's 6 commits to 3d315c4, merged as 3dba814, pushed) and
-        released as jd-1078-3dba814 (18:00 UTC, every job of run 42493526732 green). Next: the rows measured, the kit
-        pinned after the family release's tags, and clips run on the packaged app.
-GO:     the user, 2026-11-08: "create repo yo should do this stuff yourself i gave you auth to do anything stop asking
-        me just fucking stop"; then "6 your rec, finish this app so it is ready for release dont sto until it is all
-        done"
 
 ### Cloud pictures and clips on the user's own key — waits for a key to test with [2026-11-08]
 STATE:  the PRD's row "Local or your own cloud key, per feature" holds today for the language-model features only
