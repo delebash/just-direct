@@ -195,3 +195,19 @@ Read in JustVoice's code and docs (E:\Dev\Web\JustVioce). *code* / *read*.
   the project's kind.
 - **The JustWrite ↔ JustVoice rule** "Neither app calls or spawns the other at runtime" (JustVoice
   `docs/dev/design-decisions.md` §3) covers those two apps only; the family rules expect "other apps calling the API".
+
+### The finish go's window run and the release dry run (2026-11-08 evening)
+
+- **Motion capture in the real window, engine r7** (*measured*, 19:29–19:36 local, this PC): the guitar take captured
+  again from the start — GEM-X body 145 s, SAM 3D Body 67 s, the whole take ~7 min; the person picked in the picture
+  seen in 151 of 151 frames (the morning's wrong pick: 6). Every file saved through the Save dialog read back identical.
+  Details and the faults fixed: `docs/plans/2026-11-07-v1.md`, "WINDOW RUN".
+- **A clip led by a take's pose** (*measured*): 4 s, 1280×704, 97 frames at 24 fps on the kit's pinned sd.cpp
+  jd-1078-3dba814, from the dev window (19:51–19:58) and from the packaged app (20:03–20:14). The clip follows the
+  pose, push-in included; LTX drew the hands without the guitar once the pose had none — a pose guide carries no
+  props.
+- **The release dry run** (*measured*, run 42545403584, publish off): Windows, macOS, Linux and the AppImage as a user
+  opens it all start and answer. On Linux sharp warns "[SharpElectronLinux] Binaries provided by Electron for use on
+  Linux may be incompatible with sharp"; sharp's install page (*web*, its Electron and Linux section): Electron's Linux
+  binaries link a global glib and leak its symbols, which "may cause" GLib-GObject assertion errors, no workaround,
+  Electron issue #46323. Not reproduced: no Linux machine here, and the start checks don't run sharp.
