@@ -39,6 +39,15 @@ GO:     the user, 2026-11-07: "finish the app, dont stop coding at turns or decs
         finish it!!!" — the decisions and the checklist: the plan's "THE FINISH GO"
 PLAN:   docs/plans/2026-11-07-v1.md
 
+### JustDirect's first release, done by the release session [2026-11-09]
+STATE:  the user, verbatim, 2026-11-09, after "is the app finished?": "send it to the releae session to do a normal
+        relelawe no input should be needed fropm me". Handed to the family-release session (a5d7b8) the same hour with
+        the facts (v0.0.1, the end run, the dry run 42545403584, the steps: tag v0.0.1, `npm run release -- --yes`).
+WHY:    v1 is complete and ready for release (Finish the app, above)
+HERE:   waiting for the release session's "published" (it is mid-way through JustVoice's release); fixes in
+        JustDirect's own code come back to this repo's session
+GO:     the user, 2026-11-09: "send it to the releae session to do a normal relelawe no input should be needed fropm me"
+
 ### Character voices: what JustDirect speaks with [2026-11-07]
 STATE:  decided (the user, 2026-11-08: "any decisions are yours to make"), built 2026-11-08 on JustVoice's client
         API and its contract fixtures (JustVoice 29eb8380; JustDirect b4712eb) — the plan
