@@ -59,7 +59,8 @@ A walk where the left foot slides between frames 40 and 55:
 2. Under **Left foot**, press **Add a contact** and set **From frame** 40 and **To frame** 55 (the end is the first frame
    after the contact). The take is at 30 frames a second, so that is 0.5 s.
 3. Press **Apply contacts**. The feet and everything after them are made again in seconds — the models don't run again.
-4. **Back to the found contacts** returns to what the capture found.
+4. **Back to the found contacts** puts the contacts the capture found back in the list; press **Apply contacts** to
+   make the take from them again.
 
 ## Live
 
